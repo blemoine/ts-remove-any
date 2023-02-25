@@ -33,6 +33,8 @@ export function removeAny(sourceFile: SourceFile): void {
         } else {
           if (callsiteTypes.every((t) => t.isNumber() || t.isNumberLiteral())) {
             parametersFn.setType("number");
+          } else if (callsiteTypes.every((t) => t.isString() || t.isStringLiteral())) {
+            parametersFn.setType("string");
           }
         }
       }

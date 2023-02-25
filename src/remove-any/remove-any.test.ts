@@ -130,6 +130,33 @@ function callsite(n: User) {
         );
     })
 
+    it("should set the type to string if more than 5 calls", () => {
+        const sourceFile = createSourceFile(`
+function fnToIgnore(my_explicit_variable) {
+  return { value: my_explicit_variable };
+}
+
+fnToIgnore('1');
+fnToIgnore('4');
+fnToIgnore('3');
+fnToIgnore('2');
+fnToIgnore('5');
+`);
+
+        removeAny(sourceFile);
+        expect(sourceFile.print()).toStrictEqual(
+            `function fnToIgnore(my_explicit_variable: string) {
+    return { value: my_explicit_variable };
+}
+fnToIgnore('1');
+fnToIgnore('4');
+fnToIgnore('3');
+fnToIgnore('2');
+fnToIgnore('5');
+`
+        );
+    });
+
 
 
 });
