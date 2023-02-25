@@ -7,7 +7,7 @@
     "build": "./node_modules/.bin/rimraf dist && tsc",
     "lint": "eslint './src/**/*.ts'",
     "prepare": "npm run build",
-    "release": "npx standard-version && git push --follow-tags origin master",
+    "release": "npx standard-version && git push --follow-tags origin main",
     "test": "jest",
     "typecheck": "tsc --noEmit"
   },
