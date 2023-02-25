@@ -2,7 +2,7 @@
   "name": "ts-remove-any",
   "version": "0.1.2",
   "description": "",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
     "build": "./node_modules/.bin/rimraf dist && tsc",
     "lint": "eslint './src/**/*.ts'",
@@ -25,6 +25,9 @@
   },
   "dependencies": {
     "ts-morph": "17.0.1"
+  },
+  "engines": {
+    "node": ">=18.3"
   },
   "repository": {
     "type": "git",
