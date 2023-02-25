@@ -3,7 +3,7 @@
   "version": "0.1.5",
   "description": "",
   "main": "dist/index.js",
-  "bin": "dist/index.js",
+  "bin": "bin/ts-remove-any",
   "scripts": {
     "build": "./node_modules/.bin/rimraf dist && tsc",
     "lint": "eslint './src/**/*.ts'",
