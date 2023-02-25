@@ -3,6 +3,7 @@
   "version": "0.1.4",
   "description": "",
   "main": "dist/index.js",
+  "bin": "dist/index.js",
   "scripts": {
     "build": "./node_modules/.bin/rimraf dist && tsc",
     "lint": "eslint './src/**/*.ts'",
