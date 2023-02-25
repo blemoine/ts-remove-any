@@ -107,6 +107,30 @@ fnToIgnore(true);
     );
   })
 
+    it("should set the type to the transitively found type", () => {
+        const sourceFile = createSourceFile(`
+function fnToIgnore(my_explicit_variable) {
+  return { value: my_explicit_variable };
+}
+
+function callsite(n: User) {
+   fnToIgnore(n);
+}
+`);
+
+        removeAny(sourceFile);
+        expect(sourceFile.print()).toStrictEqual(
+            `function fnToIgnore(my_explicit_variable: User) {
+    return { value: my_explicit_variable };
+}
+function callsite(n: User) {
+    fnToIgnore(n);
+}
+`
+        );
+    })
+
+
 
 });
 

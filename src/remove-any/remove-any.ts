@@ -8,8 +8,6 @@ export function removeAny(sourceFile: SourceFile): void {
       const isImplicitAny = isAny && !declaredType;
 
       if (isImplicitAny) {
-        // TODO that works \o/ parametersFn.setType('prout');
-
         const callsiteTypes = sourceFn
           .findReferencesAsNodes()
           .map((ref) => {
