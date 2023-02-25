@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.8](https://github.com/blemoine/ts-remove-any/compare/v0.1.7...v0.1.8) (2023-02-25)
+
+
+### Bug Fixes
+
+* add missing quote to executable ([184a1b9](https://github.com/blemoine/ts-remove-any/commit/184a1b9cb7910f7701a3c3c8e841d659d23eec32))
+
 ### [0.1.7](https://github.com/blemoine/ts-remove-any/compare/v0.1.6...v0.1.7) (2023-02-25)
 
 
