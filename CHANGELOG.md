@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.9](https://github.com/blemoine/ts-remove-any/compare/v0.1.8...v0.1.9) (2023-02-26)
+
+
+### Features
+
+* read from tsconfig and persist changes ([2a67fb7](https://github.com/blemoine/ts-remove-any/commit/2a67fb7fe36c0339870c4838b60bc7cc8d8eada8))
+
 ### [0.1.8](https://github.com/blemoine/ts-remove-any/compare/v0.1.7...v0.1.8) (2023-02-25)
 
 
