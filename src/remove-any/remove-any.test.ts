@@ -171,8 +171,8 @@ fnToIgnore('1');
 fnToIgnore('1');
 `);
 
-    const numberOfChange = removeAny(sourceFile);
-    expect(numberOfChange).toBe(1);
+    const numberOfChanges = removeAny(sourceFile);
+    expect(numberOfChanges).toBe(1);
     expect(sourceFile.print()).toStrictEqual(
       `function fnToIgnore(my_explicit_variable: "1") {
     return { value: my_explicit_variable };
@@ -195,8 +195,8 @@ function callsite(n: any) {
 }
 `);
 
-    const numberOfChange = removeAny(sourceFile);
-    expect(numberOfChange).toBe(0);
+    const numberOfChanges = removeAny(sourceFile);
+    expect(numberOfChanges).toBe(0);
     expect(sourceFile.print()).toStrictEqual(
       `function fnToIgnore(my_explicit_variable) {
     return { value: my_explicit_variable };
@@ -207,6 +207,36 @@ function callsite(n: any) {
 `
     );
   });
+
+    it("should not merge string and literal string", () => {
+        const sourceFile = createSourceFile(`
+function fnToIgnore(my_explicit_variable) {
+  return { value: my_explicit_variable };
+}
+
+function callsite(n: string) {
+   fnToIgnore(n);
+}
+function callsite2(n: 'test') {
+   fnToIgnore(n);
+}
+`);
+
+        const numberOfChanges = removeAny(sourceFile);
+        expect(numberOfChanges).toBe(1);
+        expect(sourceFile.print()).toStrictEqual(
+            `function fnToIgnore(my_explicit_variable: string) {
+    return { value: my_explicit_variable };
+}
+function callsite(n: string) {
+    fnToIgnore(n);
+}
+function callsite2(n: 'test') {
+    fnToIgnore(n);
+}
+`
+        );
+    });
 });
 
 function createSourceFile(code: string): SourceFile {

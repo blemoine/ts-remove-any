@@ -33,8 +33,20 @@ function removeAnyInFunction(sourceFn: FunctionDeclaration): number {
         } else if (callsiteTypes.length === 1) {
           newType = callsiteTypes[0].getText();
         } else if (callsiteTypes.length <= 4) {
-          const newTypes = [...new Set(callsiteTypes.map((t) => t.getText()))];
-          newType = newTypes.join(" | ");
+          if (
+            callsiteTypes.every((t) => t.isNumber() || t.isNumberLiteral()) &&
+            callsiteTypes.some((t) => t.isNumber())
+          ) {
+            newType = "number";
+          } else if (
+            callsiteTypes.every((t) => t.isString() || t.isStringLiteral()) &&
+            callsiteTypes.some((t) => t.isString())
+          ) {
+            newType = "string";
+          } else {
+            const newTypes = [...new Set(callsiteTypes.map((t) => t.getText()))];
+            newType = newTypes.join(" | ");
+          }
         } else {
           if (callsiteTypes.every((t) => t.isNumber() || t.isNumberLiteral())) {
             newType = "number";
