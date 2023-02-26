@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.10](https://github.com/blemoine/ts-remove-any/compare/v0.1.9...v0.1.10) (2023-02-26)
+
+
+### Features
+
+* ignore JS file ([d47eb6a](https://github.com/blemoine/ts-remove-any/commit/d47eb6a86c15d833d69b8bcf2ba0b209e997c3c3))
+
 ### [0.1.9](https://github.com/blemoine/ts-remove-any/compare/v0.1.8...v0.1.9) (2023-02-26)
 
 
