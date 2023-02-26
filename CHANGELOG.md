@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.15](https://github.com/blemoine/ts-remove-any/compare/v0.1.14...v0.1.15) (2023-02-26)
+
+
+### Features
+
+* loop to remove successive any ([28a077f](https://github.com/blemoine/ts-remove-any/commit/28a077fe456d9dfa88f5cb0bc48f3e6253eb4ddd))
+* track the number of file done ([ea6b267](https://github.com/blemoine/ts-remove-any/commit/ea6b267267f090f6ff7608b7de97fd7f30c8c099))
+
 ### [0.1.14](https://github.com/blemoine/ts-remove-any/compare/v0.1.13...v0.1.14) (2023-02-26)
 
 
