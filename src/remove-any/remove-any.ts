@@ -7,7 +7,7 @@ function removeAnyInFunction(sourceFn: FunctionDeclaration) {
     const isImplicitAny = isAny && !declaredType;
 
     if (isImplicitAny) {
-      const rawCallsiteTypes = sourceFn
+      const callsiteTypes = sourceFn
         .findReferencesAsNodes()
         .map((ref) => {
           const parent = ref.getParent();
@@ -18,8 +18,9 @@ function removeAnyInFunction(sourceFn: FunctionDeclaration) {
             return null;
           }
         })
-        .filter(isNotNil);
-      const callsiteTypes = rawCallsiteTypes.filter((t) => !t.isAny());
+        .filter(isNotNil)
+        .filter((t) => !t.isAny() && !t.getText().includes("any[]"))
+        .filter((t) => !t.getText().startsWith("import("));
 
       if (callsiteTypes.length === 0) {
         return;

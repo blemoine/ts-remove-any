@@ -76,7 +76,7 @@ fnToIgnore(5)`);
 
     removeAny(sourceFile);
     expect(sourceFile.print()).toStrictEqual(
-        `function fnToIgnore(my_explicit_variable: number) {
+      `function fnToIgnore(my_explicit_variable: number) {
     return { value: my_explicit_variable };
 }
 fnToIgnore(1);
@@ -86,7 +86,7 @@ fnToIgnore(2);
 fnToIgnore(5);
 `
     );
-  })
+  });
 
   it("should set the type to boolean if called with boolean", () => {
     const sourceFile = createSourceFile(`
@@ -99,16 +99,16 @@ fnToIgnore(true)
 
     removeAny(sourceFile);
     expect(sourceFile.print()).toStrictEqual(
-        `function fnToIgnore(my_explicit_variable: boolean) {
+      `function fnToIgnore(my_explicit_variable: boolean) {
     return { value: my_explicit_variable };
 }
 fnToIgnore(true);
 `
     );
-  })
+  });
 
-    it("should set the type to the transitively found type", () => {
-        const sourceFile = createSourceFile(`
+  it("should set the type to the transitively found type", () => {
+    const sourceFile = createSourceFile(`
 interface User { }        
 function fnToIgnore(my_explicit_variable) {
   return { value: my_explicit_variable };
@@ -119,9 +119,9 @@ function callsite(n: User) {
 }
 `);
 
-        removeAny(sourceFile);
-        expect(sourceFile.print()).toStrictEqual(
-            `interface User {
+    removeAny(sourceFile);
+    expect(sourceFile.print()).toStrictEqual(
+      `interface User {
 }
 function fnToIgnore(my_explicit_variable: User) {
     return { value: my_explicit_variable };
@@ -130,11 +130,11 @@ function callsite(n: User) {
     fnToIgnore(n);
 }
 `
-        );
-    })
+    );
+  });
 
-    it("should set the type to string if more than 5 calls", () => {
-        const sourceFile = createSourceFile(`
+  it("should set the type to string if more than 5 calls", () => {
+    const sourceFile = createSourceFile(`
 function fnToIgnore(my_explicit_variable) {
   return { value: my_explicit_variable };
 }
@@ -146,9 +146,9 @@ fnToIgnore('2');
 fnToIgnore('5');
 `);
 
-        removeAny(sourceFile);
-        expect(sourceFile.print()).toStrictEqual(
-            `function fnToIgnore(my_explicit_variable: string) {
+    removeAny(sourceFile);
+    expect(sourceFile.print()).toStrictEqual(
+      `function fnToIgnore(my_explicit_variable: string) {
     return { value: my_explicit_variable };
 }
 fnToIgnore('1');
@@ -157,11 +157,11 @@ fnToIgnore('3');
 fnToIgnore('2');
 fnToIgnore('5');
 `
-        );
-    });
+    );
+  });
 
-    it("should deduplicate the types added", () => {
-        const sourceFile = createSourceFile(`
+  it("should deduplicate the types added", () => {
+    const sourceFile = createSourceFile(`
 function fnToIgnore(my_explicit_variable) {
   return { value: my_explicit_variable };
 }
@@ -171,20 +171,20 @@ fnToIgnore('1');
 fnToIgnore('1');
 `);
 
-        removeAny(sourceFile);
-        expect(sourceFile.print()).toStrictEqual(
-            `function fnToIgnore(my_explicit_variable: "1") {
+    removeAny(sourceFile);
+    expect(sourceFile.print()).toStrictEqual(
+      `function fnToIgnore(my_explicit_variable: "1") {
     return { value: my_explicit_variable };
 }
 fnToIgnore('1');
 fnToIgnore('1');
 fnToIgnore('1');
 `
-        );
-    });
+    );
+  });
 
-    it("should not set any", () => {
-        const sourceFile = createSourceFile(`
+  it("should not set any", () => {
+    const sourceFile = createSourceFile(`
 function fnToIgnore(my_explicit_variable) {
   return { value: my_explicit_variable };
 }
@@ -194,20 +194,17 @@ function callsite(n: any) {
 }
 `);
 
-        removeAny(sourceFile);
-        expect(sourceFile.print()).toStrictEqual(
-            `function fnToIgnore(my_explicit_variable) {
+    removeAny(sourceFile);
+    expect(sourceFile.print()).toStrictEqual(
+      `function fnToIgnore(my_explicit_variable) {
     return { value: my_explicit_variable };
 }
 function callsite(n: any) {
     fnToIgnore(n);
 }
 `
-        );
-    })
-
-
-
+    );
+  });
 });
 
 function createSourceFile(code: string): SourceFile {
