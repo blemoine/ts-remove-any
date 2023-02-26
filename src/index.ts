@@ -37,8 +37,14 @@ async function main(args: string[]) {
   while (numberOfChanges !== 0) {
     numberOfChanges = sum(
       allSourceFiles.map((sourceFile, idx) => {
-        console.log(`Lopp ${loopCount}: file ${idx + 1}/ ${allSourceFiles.length}`);
-        return removeAny(sourceFile);
+        const changes = removeAny(sourceFile);
+        console.log(
+          `Loop ${loopCount}, ${idx + 1}/ ${
+            allSourceFiles.length
+          }: file ${sourceFile.getBaseName()} , ${changes} change(s) done`
+        );
+
+        return changes;
       })
     );
 
