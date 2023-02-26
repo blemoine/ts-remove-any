@@ -29,7 +29,10 @@ async function main(args: string[]) {
 
   const project = new Project();
   project.addSourceFilesFromTsConfig(mainTsConfigPath);
-  project.getSourceFiles().forEach((sourceFile) => {
+  const allSourceFiles = project.getSourceFiles();
+
+  allSourceFiles.forEach((sourceFile, idx) => {
+    console.log(`File ${idx + 1}/ ${allSourceFiles.length}`);
     removeAny(sourceFile);
   });
   await project.save();
