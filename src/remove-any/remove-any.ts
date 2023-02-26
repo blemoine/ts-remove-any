@@ -1,6 +1,9 @@
 import { CallExpression, SourceFile } from "ts-morph";
 
 export function removeAny(sourceFile: SourceFile): void {
+  if (sourceFile.getBaseName().endsWith("js")) {
+    return;
+  }
   sourceFile.getFunctions().forEach((sourceFn) => {
     sourceFn.getParameters().forEach((parametersFn, parametersIdx) => {
       const isAny = parametersFn.getType().isAny();
