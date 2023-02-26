@@ -12,7 +12,14 @@ export function removeAny(sourceFile: SourceFile): number {
   });
 
   const resultsInLets = sourceFile.getVariableDeclarations().map((variableDeclaration) => {
-    return removeAnyInLetDeclaration(variableDeclaration);
+    const result = removeAnyInLetDeclaration(variableDeclaration);
+    const diagnostic = sourceFile.getPreEmitDiagnostics();
+    if (diagnostic.length > 0) {
+      result.revert();
+      return 0;
+    }
+
+    return result.countChangesDone;
   });
 
   return sum(resultsInFunctions) + sum(resultsInLets);

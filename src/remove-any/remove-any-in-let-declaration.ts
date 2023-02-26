@@ -1,10 +1,11 @@
 import { Node, VariableDeclaration } from "ts-morph";
 import { computeTypesFromList, isImplicitAny } from "./type.utils";
 import { isNotNil } from "../utils/is-not-nil";
+import { noopRevertableOperation, RevertableOperation } from "./revert-operation";
 
-export function removeAnyInLetDeclaration(variableDeclaration: VariableDeclaration): number {
+export function removeAnyInLetDeclaration(variableDeclaration: VariableDeclaration): RevertableOperation {
   if (!isImplicitAny(variableDeclaration)) {
-    return 0;
+    return noopRevertableOperation;
   }
 
   const typesOfSets = variableDeclaration
@@ -29,7 +30,12 @@ export function removeAnyInLetDeclaration(variableDeclaration: VariableDeclarati
 
   if (newType) {
     variableDeclaration.setType(newType);
-    return 1;
+    return {
+      countChangesDone: 1,
+      revert() {
+        variableDeclaration.removeType();
+      },
+    };
   }
-  return 0;
+  return noopRevertableOperation;
 }

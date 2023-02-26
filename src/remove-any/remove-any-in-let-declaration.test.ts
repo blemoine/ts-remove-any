@@ -16,6 +16,24 @@ x = 1;
 `
     );
   });
+
+  it("should not do a change if doesn't compile", () => {
+    const sourceFile = createSourceFile(`
+let x;
+x = {};
+x.test = 2;
+`);
+
+    const numberOfChanges = removeAny(sourceFile);
+
+    expect(sourceFile.print()).toStrictEqual(
+      `let x;
+x = {};
+x.test = 2;
+`
+    );
+    expect(numberOfChanges).toBe(0);
+  });
 });
 
 function createSourceFile(code: string): SourceFile {
