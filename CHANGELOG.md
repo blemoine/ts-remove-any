@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.14](https://github.com/blemoine/ts-remove-any/compare/v0.1.13...v0.1.14) (2023-02-26)
+
+
+### Features
+
+* remove typeof types ([8fa07df](https://github.com/blemoine/ts-remove-any/commit/8fa07df83410a6a56f5e85c049ac958d2ac9892b))
+
 ### [0.1.13](https://github.com/blemoine/ts-remove-any/compare/v0.1.12...v0.1.13) (2023-02-26)
 
 
