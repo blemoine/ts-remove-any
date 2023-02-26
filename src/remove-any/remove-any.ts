@@ -22,7 +22,8 @@ export function removeAny(sourceFile: SourceFile): void {
               return null;
             }
           })
-          .filter(isNotNil);
+          .filter(isNotNil)
+          .filter((t) => !t.isAny());
 
         if (callsiteTypes.length === 0) {
           return;
@@ -32,7 +33,8 @@ export function removeAny(sourceFile: SourceFile): void {
         } else if (callsiteTypes.length === 1) {
           parametersFn.setType(callsiteTypes[0].getText());
         } else if (callsiteTypes.length <= 4) {
-          parametersFn.setType(callsiteTypes.map((t) => t.getText()).join(" | "));
+          const newTypes = [...new Set(callsiteTypes.map((t) => t.getText()))];
+          parametersFn.setType(newTypes.join(" | "));
         } else {
           if (callsiteTypes.every((t) => t.isNumber() || t.isNumberLiteral())) {
             parametersFn.setType("number");

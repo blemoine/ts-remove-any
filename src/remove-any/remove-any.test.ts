@@ -109,6 +109,7 @@ fnToIgnore(true);
 
     it("should set the type to the transitively found type", () => {
         const sourceFile = createSourceFile(`
+interface User { }        
 function fnToIgnore(my_explicit_variable) {
   return { value: my_explicit_variable };
 }
@@ -120,7 +121,9 @@ function callsite(n: User) {
 
         removeAny(sourceFile);
         expect(sourceFile.print()).toStrictEqual(
-            `function fnToIgnore(my_explicit_variable: User) {
+            `interface User {
+}
+function fnToIgnore(my_explicit_variable: User) {
     return { value: my_explicit_variable };
 }
 function callsite(n: User) {
@@ -156,6 +159,52 @@ fnToIgnore('5');
 `
         );
     });
+
+    it("should deduplicate the types added", () => {
+        const sourceFile = createSourceFile(`
+function fnToIgnore(my_explicit_variable) {
+  return { value: my_explicit_variable };
+}
+
+fnToIgnore('1');
+fnToIgnore('1');
+fnToIgnore('1');
+`);
+
+        removeAny(sourceFile);
+        expect(sourceFile.print()).toStrictEqual(
+            `function fnToIgnore(my_explicit_variable: "1") {
+    return { value: my_explicit_variable };
+}
+fnToIgnore('1');
+fnToIgnore('1');
+fnToIgnore('1');
+`
+        );
+    });
+
+    it("should not set any", () => {
+        const sourceFile = createSourceFile(`
+function fnToIgnore(my_explicit_variable) {
+  return { value: my_explicit_variable };
+}
+
+function callsite(n: any) {
+   fnToIgnore(n);
+}
+`);
+
+        removeAny(sourceFile);
+        expect(sourceFile.print()).toStrictEqual(
+            `function fnToIgnore(my_explicit_variable) {
+    return { value: my_explicit_variable };
+}
+function callsite(n: any) {
+    fnToIgnore(n);
+}
+`
+        );
+    })
 
 
 
