@@ -1,23 +1,7 @@
-/*
-import { Project } from "ts-morph";
-import { removeAny } from "./remove-any/remove-any";
-
-const project = new Project();
-
-const dir = __dirname + "/__tests__/!**!/!*{.d.ts,.ts}";
-console.log("Directory", dir);
-project.addSourceFilesAtPaths(dir);
-project.resolveSourceFileDependencies();
-
-project.getSourceFiles().forEach((sourceFile) => {
-  removeAny(sourceFile);
-  console.log("#### RESULT ####");
-  console.log(sourceFile.print());
-});
-*/
-
 import { parseArgs } from "node:util";
 import { readdir } from "node:fs/promises";
+import { Project } from "ts-morph";
+import { removeAny } from "./remove-any/remove-any";
 
 async function main(args: string[]) {
   const options = {
@@ -40,8 +24,15 @@ async function main(args: string[]) {
   if (!files.includes(tsconfigFile)) {
     throw new Error(`The directory must contain a tsconfig.json file`);
   }
-  
-  return `${directory}/${tsconfigFile}`;
+
+  const mainTsConfigPath = `${directory}/${tsconfigFile}`;
+
+  const project = new Project();
+  project.addSourceFilesFromTsConfig(mainTsConfigPath);
+  project.getSourceFiles().forEach((sourceFile) => {
+    removeAny(sourceFile);
+  });
+  await project.save();
 }
 
 const args = process.argv.slice(2);
