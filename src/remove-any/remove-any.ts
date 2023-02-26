@@ -20,7 +20,7 @@ function removeAnyInFunction(sourceFn: FunctionDeclaration) {
         })
         .filter(isNotNil)
         .filter((t) => !t.isAny() && !t.getText().includes("any[]"))
-        .filter((t) => !t.getText().startsWith("import("));
+        .filter((t) => !t.getText().startsWith("import(") && !t.getText().startsWith("typeof"));
 
       if (callsiteTypes.length === 0) {
         return;
