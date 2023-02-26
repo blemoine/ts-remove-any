@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.17](https://github.com/blemoine/ts-remove-any/compare/v0.1.16...v0.1.17) (2023-02-26)
+
+
+### Features
+
+* add support for let rewrite ([9e94d70](https://github.com/blemoine/ts-remove-any/commit/9e94d706067d10bf7e98fbd36996451d48deb35b))
+
 ### [0.1.16](https://github.com/blemoine/ts-remove-any/compare/v0.1.15...v0.1.16) (2023-02-26)
 
 
