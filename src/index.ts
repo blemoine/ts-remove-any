@@ -31,10 +31,18 @@ async function main(args: string[]) {
   project.addSourceFilesFromTsConfig(mainTsConfigPath);
   const allSourceFiles = project.getSourceFiles();
 
-  allSourceFiles.forEach((sourceFile, idx) => {
-    console.log(`File ${idx + 1}/ ${allSourceFiles.length}`);
-    removeAny(sourceFile);
-  });
+  let numberOfChanges = 1;
+  let loopCount = 1;
+  while (numberOfChanges !== 0) {
+    numberOfChanges = allSourceFiles
+      .map((sourceFile, idx) => {
+        console.log(`Lopp ${loopCount}: file ${idx + 1}/ ${allSourceFiles.length}`);
+        return removeAny(sourceFile);
+      })
+      .reduce((a, b) => a + b, 0);
+
+    ++loopCount;
+  }
   await project.save();
 }
 

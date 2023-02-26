@@ -171,7 +171,8 @@ fnToIgnore('1');
 fnToIgnore('1');
 `);
 
-    removeAny(sourceFile);
+    const numberOfChange = removeAny(sourceFile);
+    expect(numberOfChange).toBe(1);
     expect(sourceFile.print()).toStrictEqual(
       `function fnToIgnore(my_explicit_variable: "1") {
     return { value: my_explicit_variable };
@@ -194,7 +195,8 @@ function callsite(n: any) {
 }
 `);
 
-    removeAny(sourceFile);
+    const numberOfChange = removeAny(sourceFile);
+    expect(numberOfChange).toBe(0);
     expect(sourceFile.print()).toStrictEqual(
       `function fnToIgnore(my_explicit_variable) {
     return { value: my_explicit_variable };
