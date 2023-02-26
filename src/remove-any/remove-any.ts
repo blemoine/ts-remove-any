@@ -17,7 +17,7 @@ export function removeAny(sourceFile: SourceFile): void {
             const parent = ref.getParent();
             if (parent instanceof CallExpression) {
               const argument = parent.getArguments()[parametersIdx];
-              return argument.getType();
+              return argument?.getType();
             } else {
               return null;
             }
