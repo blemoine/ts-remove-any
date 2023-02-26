@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.19](https://github.com/blemoine/ts-remove-any/compare/v0.1.18...v0.1.19) (2023-02-26)
+
+
+### Features
+
+* filter imports/any for let ([32e353e](https://github.com/blemoine/ts-remove-any/commit/32e353e9f7ef3239b8c475c760826ab35925fa9b))
+
 ### [0.1.18](https://github.com/blemoine/ts-remove-any/compare/v0.1.17...v0.1.18) (2023-02-26)
 
 
