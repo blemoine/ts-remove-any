@@ -2,6 +2,7 @@ import { parseArgs } from "node:util";
 import { readdir } from "node:fs/promises";
 import { Project } from "ts-morph";
 import { removeAny } from "./remove-any/remove-any";
+import { sum } from "./utils/array.utils";
 
 async function main(args: string[]) {
   const options = {
@@ -34,12 +35,12 @@ async function main(args: string[]) {
   let numberOfChanges = 1;
   let loopCount = 1;
   while (numberOfChanges !== 0) {
-    numberOfChanges = allSourceFiles
-      .map((sourceFile, idx) => {
+    numberOfChanges = sum(
+      allSourceFiles.map((sourceFile, idx) => {
         console.log(`Lopp ${loopCount}: file ${idx + 1}/ ${allSourceFiles.length}`);
         return removeAny(sourceFile);
       })
-      .reduce((a, b) => a + b, 0);
+    );
 
     ++loopCount;
   }
