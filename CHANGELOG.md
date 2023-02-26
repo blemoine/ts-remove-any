@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.16](https://github.com/blemoine/ts-remove-any/compare/v0.1.15...v0.1.16) (2023-02-26)
+
+
+### Features
+
+* factorize literal and super type ([316a8ae](https://github.com/blemoine/ts-remove-any/commit/316a8aeeca6111ee527a7cdf826f68b468f7061b))
+
 ### [0.1.15](https://github.com/blemoine/ts-remove-any/compare/v0.1.14...v0.1.15) (2023-02-26)
 
 
