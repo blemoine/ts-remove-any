@@ -8,7 +8,14 @@ export function removeAny(sourceFile: SourceFile): number {
     return 0;
   }
   const resultsInFunctions = sourceFile.getFunctions().map((sourceFn) => {
-    return removeAnyInFunction(sourceFn);
+    const result = removeAnyInFunction(sourceFn);
+    const diagnostic = sourceFile.getPreEmitDiagnostics();
+    if (diagnostic.length > 0) {
+      result.revert();
+      return 0;
+    }
+
+    return result.countChangesDone;
   });
 
   const resultsInLets = sourceFile.getVariableDeclarations().map((variableDeclaration) => {

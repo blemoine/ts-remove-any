@@ -1,6 +1,7 @@
 import { Node, FunctionDeclaration, ParameterDeclaration } from "ts-morph";
 import { isNotNil } from "../utils/is-not-nil";
 import { computeTypesFromList, isImplicitAny } from "./type.utils";
+import { concatRevertableOperation, noopRevertableOperation, RevertableOperation } from "./revert-operation";
 
 function getParameterComputedType(
   parametersFn: ParameterDeclaration,
@@ -29,15 +30,21 @@ function getParameterComputedType(
   return computeTypesFromList(callsiteTypes);
 }
 
-export function removeAnyInFunction(sourceFn: FunctionDeclaration): number {
+export function removeAnyInFunction(sourceFn: FunctionDeclaration): RevertableOperation {
   return sourceFn
     .getParameters()
     .map((parametersFn, parametersIdx) => {
       const newType = getParameterComputedType(parametersFn, sourceFn, parametersIdx);
       if (newType) {
         parametersFn.setType(newType);
+        return {
+          countChangesDone: 1,
+          revert() {
+            parametersFn.removeType();
+          },
+        };
       }
-      return newType;
+      return noopRevertableOperation;
     })
-    .filter(isNotNil).length;
+    .reduce((a, b) => concatRevertableOperation(a, b), noopRevertableOperation);
 }
