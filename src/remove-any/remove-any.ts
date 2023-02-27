@@ -26,7 +26,7 @@ function revertableOperation(sourceFile: SourceFile, revertableFn: () => Reverta
   const result = revertableFn();
   const postChangeDiagnostic = sourceFile.getPreEmitDiagnostics();
   if (postChangeDiagnostic.length > preChangeDiagnostic.length) {
-    console.warn(`Reverting ${sourceFile.getBaseName()}`);
+    console.warn(`Reverting ${result.countChangesDone} changes in ${sourceFile.getBaseName()}`);
     result.revert();
     return 0;
   }
