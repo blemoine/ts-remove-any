@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.20](https://github.com/blemoine/ts-remove-any/compare/v0.1.19...v0.1.20) (2023-02-27)
+
+
+### Features
+
+* revert let that won't compile ([1698734](https://github.com/blemoine/ts-remove-any/commit/1698734ee54eb5494c67903b08afdfa34d639c91))
+* revert non compiling transformation ([5e2c208](https://github.com/blemoine/ts-remove-any/commit/5e2c2085a39e07bac72a3827ea37f43bb39db067))
+
 ### [0.1.19](https://github.com/blemoine/ts-remove-any/compare/v0.1.18...v0.1.19) (2023-02-26)
 
 
