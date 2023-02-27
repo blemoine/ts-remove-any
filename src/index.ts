@@ -19,6 +19,7 @@ async function main(args: string[]) {
     noReverts: {
       type: "boolean",
       default: false,
+      short: "r"
     },
   } as const;
 
