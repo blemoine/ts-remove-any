@@ -8,9 +8,10 @@ export function removeAny(sourceFile: SourceFile): number {
     return 0;
   }
   const resultsInFunctions = sourceFile.getFunctions().map((sourceFn) => {
+    const preChangeDiagnostic = sourceFile.getPreEmitDiagnostics();
     const result = removeAnyInFunction(sourceFn);
-    const diagnostic = sourceFile.getPreEmitDiagnostics();
-    if (diagnostic.length > 0) {
+    const postChangeDiagnostic = sourceFile.getPreEmitDiagnostics();
+    if (postChangeDiagnostic.length > preChangeDiagnostic.length) {
       console.warn(`Reverting ${sourceFile.getBaseName()}`);
       result.revert();
       return 0;
@@ -20,9 +21,10 @@ export function removeAny(sourceFile: SourceFile): number {
   });
 
   const resultsInLets = sourceFile.getVariableDeclarations().map((variableDeclaration) => {
+    const preChangeDiagnostic = sourceFile.getPreEmitDiagnostics();
     const result = removeAnyInLetDeclaration(variableDeclaration);
-    const diagnostic = sourceFile.getPreEmitDiagnostics();
-    if (diagnostic.length > 0) {
+    const postChangeDiagnostic = sourceFile.getPreEmitDiagnostics();
+    if (postChangeDiagnostic.length > preChangeDiagnostic.length) {
       console.warn(`Reverting ${sourceFile.getBaseName()}`);
       result.revert();
       return 0;
