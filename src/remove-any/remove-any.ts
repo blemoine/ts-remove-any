@@ -4,24 +4,28 @@ import { sum } from "../utils/array.utils";
 import { removeAnyInLetDeclaration } from "./remove-any-in-let-declaration";
 import { RevertableOperation } from "./revert-operation";
 
-export function removeAny(sourceFile: SourceFile): number {
+export function removeAny(sourceFile: SourceFile, options?: { noReverts?: boolean }): number {
   if (sourceFile.getBaseName().endsWith("js")) {
     return 0;
   }
+  const noReverts = options?.noReverts ?? false;
   const resultsInFunctions = sourceFile
     .getFunctions()
-    .map((sourceFn) => revertableOperation(sourceFile, () => removeAnyInFunction(sourceFn)));
+    .map((sourceFn) => revertableOperation(sourceFile, noReverts, () => removeAnyInFunction(sourceFn)));
 
   const resultsInLets = sourceFile
     .getVariableDeclarations()
     .map((variableDeclaration) =>
-      revertableOperation(sourceFile, () => removeAnyInLetDeclaration(variableDeclaration))
+      revertableOperation(sourceFile, noReverts, () => removeAnyInLetDeclaration(variableDeclaration))
     );
 
   return sum(resultsInFunctions) + sum(resultsInLets);
 }
 
-function revertableOperation(sourceFile: SourceFile, revertableFn: () => RevertableOperation) {
+function revertableOperation(sourceFile: SourceFile, noReverts: boolean, revertableFn: () => RevertableOperation) {
+  if (noReverts) {
+    return revertableFn().countChangesDone;
+  }
   const preChangeDiagnostic = sourceFile.getPreEmitDiagnostics();
   const result = revertableFn();
   const postChangeDiagnostic = sourceFile.getPreEmitDiagnostics();

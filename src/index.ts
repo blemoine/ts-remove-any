@@ -3,26 +3,37 @@ import { readdir } from "node:fs/promises";
 import { Project } from "ts-morph";
 import { removeAny } from "./remove-any/remove-any";
 import { sum } from "./utils/array.utils";
+import { ParseArgsConfig } from "util";
 
 async function main(args: string[]) {
-  const options = {
+  const options: ParseArgsConfig["options"] = {
     directory: {
       type: "string",
       short: "d",
       default: ".",
     },
+    file: {
+      type: "string",
+      short: "f",
+    },
+    noReverts: {
+      type: "boolean",
+      default: false,
+    },
   } as const;
 
   const { values } = parseArgs({ args, options, strict: true });
-  const { directory } = values;
-
-  if (!directory) {
+  const { directory, file, noReverts } = values;
+  if (!directory || typeof directory !== "string") {
     throw new Error(`Directory parameter is mandatory`);
   }
+  if (typeof noReverts !== "boolean") {
+    throw new Error(`Revertable must be boolean`);
+  }
 
-  const files = await readdir(directory);
+  const filesInDir = await readdir(directory);
   const tsconfigFile = "tsconfig.json";
-  if (!files.includes(tsconfigFile)) {
+  if (!filesInDir.includes(tsconfigFile)) {
     throw new Error(`The directory must contain a tsconfig.json file`);
   }
 
@@ -36,16 +47,18 @@ async function main(args: string[]) {
   let loopCount = 1;
   while (numberOfChanges !== 0) {
     numberOfChanges = sum(
-      allSourceFiles.map((sourceFile, idx) => {
-        const changes = removeAny(sourceFile);
-        console.log(
-          `Loop ${loopCount}, ${idx + 1}/ ${
-            allSourceFiles.length
-          }: file ${sourceFile.getBaseName()} , ${changes} change(s) done`
-        );
+      allSourceFiles
+        .filter((sourceFile) => !file || sourceFile.getBaseName() === file)
+        .map((sourceFile, idx) => {
+          const changes = removeAny(sourceFile, { noReverts });
+          console.log(
+            `Loop ${loopCount}, ${idx + 1}/ ${
+              allSourceFiles.length
+            }: file ${sourceFile.getBaseName()} , ${changes} change(s) done`
+          );
 
-        return changes;
-      })
+          return changes;
+        })
     );
 
     ++loopCount;
