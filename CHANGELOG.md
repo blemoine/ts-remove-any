@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.27](https://github.com/blemoine/ts-remove-any/compare/v0.1.26...v0.1.27) (2023-02-27)
+
+
+### Bug Fixes
+
+* load conf from local tsconfig ([a0dd017](https://github.com/blemoine/ts-remove-any/commit/a0dd017272bcfa1aec42f593d561eeddb4047825))
+
 ### [0.1.26](https://github.com/blemoine/ts-remove-any/compare/v0.1.25...v0.1.26) (2023-02-27)
 
 
