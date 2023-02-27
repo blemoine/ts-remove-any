@@ -48,8 +48,10 @@ async function main(args: string[]) {
 
   const mainTsConfigPath = `${directory}/${tsconfigFile}`;
 
-  const project = new Project();
-  project.addSourceFilesFromTsConfig(mainTsConfigPath);
+  const project = new Project({
+    tsConfigFilePath: mainTsConfigPath,
+  });
+
   const allSourceFiles = project.getSourceFiles();
 
   let numberOfChanges = 1;
