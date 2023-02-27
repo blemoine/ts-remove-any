@@ -11,6 +11,7 @@ export function removeAny(sourceFile: SourceFile): number {
     const result = removeAnyInFunction(sourceFn);
     const diagnostic = sourceFile.getPreEmitDiagnostics();
     if (diagnostic.length > 0) {
+      console.warn(`Reverting ${sourceFile.getBaseName()}`);
       result.revert();
       return 0;
     }
@@ -22,6 +23,7 @@ export function removeAny(sourceFile: SourceFile): number {
     const result = removeAnyInLetDeclaration(variableDeclaration);
     const diagnostic = sourceFile.getPreEmitDiagnostics();
     if (diagnostic.length > 0) {
+      console.warn(`Reverting ${sourceFile.getBaseName()}`);
       result.revert();
       return 0;
     }
