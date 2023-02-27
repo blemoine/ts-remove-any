@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.26](https://github.com/blemoine/ts-remove-any/compare/v0.1.25...v0.1.26) (2023-02-27)
+
+
+### Features
+
+* add `r` as a short option to deactivate revertable changes ([9ce15d6](https://github.com/blemoine/ts-remove-any/commit/9ce15d634b2eb83d52985e3813a3b6e613edf043))
+* add verbose option ([776182c](https://github.com/blemoine/ts-remove-any/commit/776182c33d5364a5e2409729d3810e91409db0df))
+
 ### [0.1.25](https://github.com/blemoine/ts-remove-any/compare/v0.1.24...v0.1.25) (2023-02-27)
 
 
