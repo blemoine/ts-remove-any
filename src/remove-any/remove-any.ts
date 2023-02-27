@@ -4,25 +4,36 @@ import { sum } from "../utils/array.utils";
 import { removeAnyInLetDeclaration } from "./remove-any-in-let-declaration";
 import { RevertableOperation } from "./revert-operation";
 
-export function removeAny(sourceFile: SourceFile, options?: { noReverts?: boolean }): number {
+interface RemoveAnyOptions {
+  noReverts: boolean;
+  verbose: boolean;
+}
+
+export function removeAny(sourceFile: SourceFile, options?: Partial<RemoveAnyOptions>): number {
   if (sourceFile.getBaseName().endsWith("js")) {
     return 0;
   }
   const noReverts = options?.noReverts ?? false;
+  const verbose = options?.verbose ?? false;
+
   const resultsInFunctions = sourceFile
     .getFunctions()
-    .map((sourceFn) => revertableOperation(sourceFile, noReverts, () => removeAnyInFunction(sourceFn)));
+    .map((sourceFn) => revertableOperation(sourceFile, { noReverts, verbose }, () => removeAnyInFunction(sourceFn)));
 
   const resultsInLets = sourceFile
     .getVariableDeclarations()
     .map((variableDeclaration) =>
-      revertableOperation(sourceFile, noReverts, () => removeAnyInLetDeclaration(variableDeclaration))
+      revertableOperation(sourceFile, { noReverts, verbose }, () => removeAnyInLetDeclaration(variableDeclaration))
     );
 
   return sum(resultsInFunctions) + sum(resultsInLets);
 }
 
-function revertableOperation(sourceFile: SourceFile, noReverts: boolean, revertableFn: () => RevertableOperation) {
+function revertableOperation(
+  sourceFile: SourceFile,
+  { verbose, noReverts }: RemoveAnyOptions,
+  revertableFn: () => RevertableOperation
+) {
   if (noReverts) {
     return revertableFn().countChangesDone;
   }
@@ -30,7 +41,12 @@ function revertableOperation(sourceFile: SourceFile, noReverts: boolean, reverta
   const result = revertableFn();
   const postChangeDiagnostic = sourceFile.getPreEmitDiagnostics();
   if (postChangeDiagnostic.length > preChangeDiagnostic.length) {
-    console.warn(`Reverting ${result.countChangesDone} changes in ${sourceFile.getBaseName()}`);
+    if (verbose) {
+      console.warn(`Reverting ${result.countChangesDone} changes in ${sourceFile.getBaseName()}`);
+      postChangeDiagnostic.forEach((diagnostic) => {
+        console.info(diagnostic.getMessageText());
+      });
+    }
     result.revert();
     return 0;
   }

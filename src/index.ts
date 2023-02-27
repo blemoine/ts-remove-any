@@ -19,17 +19,25 @@ async function main(args: string[]) {
     noReverts: {
       type: "boolean",
       default: false,
-      short: "r"
+      short: "r",
+    },
+    verbose: {
+      type: "boolean",
+      default: false,
+      short: "v",
     },
   } as const;
 
   const { values } = parseArgs({ args, options, strict: true });
-  const { directory, file, noReverts } = values;
+  const { directory, file, noReverts, verbose } = values;
   if (!directory || typeof directory !== "string") {
     throw new Error(`Directory parameter is mandatory`);
   }
   if (typeof noReverts !== "boolean") {
-    throw new Error(`Revertable must be boolean`);
+    throw new Error(`noReverts must be boolean`);
+  }
+  if (typeof verbose !== "boolean") {
+    throw new Error(`verbose must be boolean`);
   }
 
   const filesInDir = await readdir(directory);
@@ -51,12 +59,14 @@ async function main(args: string[]) {
       allSourceFiles
         .filter((sourceFile) => !file || sourceFile.getBaseName() === file)
         .map((sourceFile, idx) => {
-          const changes = removeAny(sourceFile, { noReverts });
-          console.log(
-            `Loop ${loopCount}, ${idx + 1}/ ${
-              allSourceFiles.length
-            }: file ${sourceFile.getBaseName()} , ${changes} change(s) done`
-          );
+          const changes = removeAny(sourceFile, { noReverts, verbose });
+          if (verbose) {
+            console.log(
+              `Loop ${loopCount}, ${idx + 1}/ ${
+                allSourceFiles.length
+              }: file ${sourceFile.getBaseName()} , ${changes} change(s) done`
+            );
+          }
 
           return changes;
         })
