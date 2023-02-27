@@ -1,4 +1,4 @@
-import { Node, Type, FunctionDeclaration, ParameterDeclaration, PropertyAccessExpression, Identifier } from "ts-morph";
+import { FunctionDeclaration, Identifier, Node, ParameterDeclaration, PropertyAccessExpression, Type } from "ts-morph";
 import { isNotNil } from "../utils/is-not-nil";
 import { computeTypesFromList, isImplicitAny } from "./type.utils";
 import { concatRevertableOperation, noopRevertableOperation, RevertableOperation } from "./revert-operation";
@@ -30,11 +30,20 @@ function getParameterComputedType(
             return firstChildren
               .getType()
               .getCallSignatures()
-              .map((s) => s.getParameters()[parametersIdx].getTypeAtLocation(firstChildren));
+              .map((s) => s.getParameters()[parametersIdx]?.getTypeAtLocation(firstChildren));
           }
           if (firstChildren instanceof PropertyAccessExpression) {
-            // TODO this the case of `[].map`
-            // firstChildren.getType().getCallSignatures()[0].getParameters()[0].getTypeAtLocation(firstChildren).getgetText()
+            const idxOfCallParameter = 0; //TODO
+            return firstChildren
+              .getType()
+              .getCallSignatures()
+              .flatMap((signature) => {
+                const parameters = signature.getParameters();
+                return parameters[idxOfCallParameter]
+                  ?.getTypeAtLocation(firstChildren)
+                  .getCallSignatures()
+                  .map((s) => s.getParameters()[parametersIdx]?.getTypeAtLocation(firstChildren));
+              });
           }
         }
 

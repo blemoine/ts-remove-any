@@ -262,6 +262,29 @@ map(fnToIgnore);
     );
     expect(numberOfChanges).toBe(1);
   });
+
+    it("should set the type even in a beta reduction case with dotted property", () => {
+        const sourceFile = createSourceFile(`
+function fnToIgnore(my_explicit_variable) {
+  return { value: my_explicit_variable };
+}
+
+const arr: number[] = [];
+arr.map(fnToIgnore);
+`);
+
+        const numberOfChanges = removeAny(sourceFile);
+
+        expect(sourceFile.print()).toStrictEqual(
+            `function fnToIgnore(my_explicit_variable: number) {
+    return { value: my_explicit_variable };
+}
+const arr: number[] = [];
+arr.map(fnToIgnore);
+`
+        );
+        expect(numberOfChanges).toBe(1);
+    })
 });
 
 function createSourceFile(code: string): SourceFile {
