@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.28](https://github.com/blemoine/ts-remove-any/compare/v0.1.27...v0.1.28) (2023-02-27)
+
+
+### Features
+
+* support for beta reduction call site ([0a67ca6](https://github.com/blemoine/ts-remove-any/commit/0a67ca6d2047db70b6d6bd4b84632692f39901bb))
+
 ### [0.1.27](https://github.com/blemoine/ts-remove-any/compare/v0.1.26...v0.1.27) (2023-02-27)
 
 
