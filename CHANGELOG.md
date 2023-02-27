@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.22](https://github.com/blemoine/ts-remove-any/compare/v0.1.21...v0.1.22) (2023-02-27)
+
+
+### Bug Fixes
+
+* compare pre and post for diagnostic ([f218bfb](https://github.com/blemoine/ts-remove-any/commit/f218bfb1bc15b801f13cc4c8ba4ffb5ce9f1dd44))
+
 ### [0.1.21](https://github.com/blemoine/ts-remove-any/compare/v0.1.20...v0.1.21) (2023-02-27)
 
 ### [0.1.20](https://github.com/blemoine/ts-remove-any/compare/v0.1.19...v0.1.20) (2023-02-27)
