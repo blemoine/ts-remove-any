@@ -208,8 +208,8 @@ function callsite(n: any) {
     );
   });
 
-    it("should not merge string and literal string", () => {
-        const sourceFile = createSourceFile(`
+  it("should not merge string and literal string", () => {
+    const sourceFile = createSourceFile(`
 function fnToIgnore(my_explicit_variable) {
   return { value: my_explicit_variable };
 }
@@ -222,10 +222,10 @@ function callsite2(n: 'test') {
 }
 `);
 
-        const numberOfChanges = removeAny(sourceFile);
-        expect(numberOfChanges).toBe(1);
-        expect(sourceFile.print()).toStrictEqual(
-            `function fnToIgnore(my_explicit_variable: string) {
+    const numberOfChanges = removeAny(sourceFile);
+    expect(numberOfChanges).toBe(1);
+    expect(sourceFile.print()).toStrictEqual(
+      `function fnToIgnore(my_explicit_variable: string) {
     return { value: my_explicit_variable };
 }
 function callsite(n: string) {
@@ -235,8 +235,33 @@ function callsite2(n: 'test') {
     fnToIgnore(n);
 }
 `
-        );
-    });
+    );
+  });
+
+  it("should set the type even in a beta reduction case", () => {
+    const sourceFile = createSourceFile(`
+function fnToIgnore(my_explicit_variable) {
+  return { value: my_explicit_variable };
+}
+function map(x: number) {}
+
+const arr: number[] = [];
+map(fnToIgnore);
+`);
+
+    const numberOfChanges = removeAny(sourceFile);
+
+    expect(sourceFile.print()).toStrictEqual(
+      `function fnToIgnore(my_explicit_variable: number) {
+    return { value: my_explicit_variable };
+}
+function map(x: number) { }
+const arr: number[] = [];
+map(fnToIgnore);
+`
+    );
+    expect(numberOfChanges).toBe(1);
+  });
 });
 
 function createSourceFile(code: string): SourceFile {

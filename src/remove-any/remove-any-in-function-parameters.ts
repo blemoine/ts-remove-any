@@ -1,4 +1,4 @@
-import { Node, FunctionDeclaration, ParameterDeclaration } from "ts-morph";
+import { Node, Type, FunctionDeclaration, ParameterDeclaration, PropertyAccessExpression, Identifier } from "ts-morph";
 import { isNotNil } from "../utils/is-not-nil";
 import { computeTypesFromList, isImplicitAny } from "./type.utils";
 import { concatRevertableOperation, noopRevertableOperation, RevertableOperation } from "./revert-operation";
@@ -11,17 +11,36 @@ function getParameterComputedType(
   if (!isImplicitAny(parametersFn)) {
     return null;
   }
+  const sourceName = sourceFn.getName();
 
   const callsiteTypes = sourceFn
     .findReferencesAsNodes()
-    .map((ref) => {
+    .flatMap((ref): Type[] => {
       const parent = ref.getParent();
       if (Node.isCallExpression(parent)) {
-        const argument = parent.getArguments()[parametersIdx];
-        return argument?.getType();
-      } else {
-        return null;
+        if (sourceName && parent.getText().startsWith(sourceName)) {
+          const argument = parent.getArguments()[parametersIdx];
+          return [argument?.getType()];
+        }
+        const children = parent.getChildren();
+        if (children.length > 0) {
+          const firstChildren = children[0];
+
+          if (firstChildren instanceof Identifier) {
+            return firstChildren
+              .getType()
+              .getCallSignatures()
+              .map((s) => s.getParameters()[parametersIdx].getTypeAtLocation(firstChildren));
+          }
+          if (firstChildren instanceof PropertyAccessExpression) {
+            // TODO this the case of `[].map`
+            // firstChildren.getType().getCallSignatures()[0].getParameters()[0].getTypeAtLocation(firstChildren).getgetText()
+          }
+        }
+
+        return [];
       }
+      return [];
     })
     .filter(isNotNil)
     .filter((t) => !t.isAny() && !t.getText().includes("any[]") && !t.getText().includes(": any"))
@@ -35,6 +54,7 @@ export function removeAnyInFunction(sourceFn: FunctionDeclaration): RevertableOp
     .getParameters()
     .map((parametersFn, parametersIdx) => {
       const newType = getParameterComputedType(parametersFn, sourceFn, parametersIdx);
+
       if (newType) {
         parametersFn.setType(newType);
         return {
