@@ -23,7 +23,7 @@ export function removeAnyInLetDeclaration(variableDeclaration: VariableDeclarati
       return parent.getRight().getType() ?? null;
     })
     .filter(isNotNil)
-    .filter((t) => !t.isAny() && !t.getText().includes("any[]"))
+    .filter((t) => !t.isAny() && !t.getText().includes("any[]") && !t.getText().includes(": any"))
     .filter((t) => !t.getText().startsWith("import(") && !t.getText().startsWith("typeof"));
 
   const newType = computeTypesFromList(typesOfSets);
