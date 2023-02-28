@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.29](https://github.com/blemoine/ts-remove-any/compare/v0.1.28...v0.1.29) (2023-02-28)
+
+
+### Features
+
+* add initial support for call site mapping ([1ed5477](https://github.com/blemoine/ts-remove-any/commit/1ed5477943557859f99416afcaa7a277923ff166))
+* add support for call parameters ([2dd6ee5](https://github.com/blemoine/ts-remove-any/commit/2dd6ee5b35939b6574ec355017f9082928a2e103))
+
 ### [0.1.28](https://github.com/blemoine/ts-remove-any/compare/v0.1.27...v0.1.28) (2023-02-27)
 
 
