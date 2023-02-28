@@ -285,6 +285,37 @@ arr.map(fnToIgnore);
         );
         expect(numberOfChanges).toBe(1);
     })
+
+    it("should set the type even in a beta reduction case with dotted property and the callback is the 2nd parameter", () => {
+        const sourceFile = createSourceFile(`
+function fnToIgnore(my_explicit_variable) {
+  return { value: my_explicit_variable };
+}
+class Test {
+    highLevelMethod(arr: string[], fn: (n:number) => unknown) {
+    }
+}
+
+const test = new Test();
+test.highLevelMethod([], fnToIgnore);
+`);
+
+        const numberOfChanges = removeAny(sourceFile);
+
+        expect(sourceFile.print()).toStrictEqual(
+            `function fnToIgnore(my_explicit_variable: number) {
+    return { value: my_explicit_variable };
+}
+class Test {
+    highLevelMethod(arr: string[], fn: (n: number) => unknown) {
+    }
+}
+const test = new Test();
+test.highLevelMethod([], fnToIgnore);
+`
+        );
+        expect(numberOfChanges).toBe(1);
+    })
 });
 
 function createSourceFile(code: string): SourceFile {

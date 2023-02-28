@@ -33,7 +33,8 @@ function getParameterComputedType(
               .map((s) => s.getParameters()[parametersIdx]?.getTypeAtLocation(firstChildren));
           }
           if (firstChildren instanceof PropertyAccessExpression) {
-            const idxOfCallParameter = 0; //TODO
+            const idxOfCallParameter = parent.getArguments().indexOf(ref);
+
             return firstChildren
               .getType()
               .getCallSignatures()
