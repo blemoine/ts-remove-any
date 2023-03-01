@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.33](https://github.com/blemoine/ts-remove-any/compare/v0.1.32...v0.1.33) (2023-03-01)
+
+
+### Features
+
+* add correct support for method usage ([e4f9f30](https://github.com/blemoine/ts-remove-any/commit/e4f9f308647c871414f12549977287cff305e6f1))
+* introduce commander ([c36c12a](https://github.com/blemoine/ts-remove-any/commit/c36c12aa149c2640aa824695e48db7b8e82dd61e))
+
 ### [0.1.32](https://github.com/blemoine/ts-remove-any/compare/v0.1.31...v0.1.32) (2023-03-01)
 
 
