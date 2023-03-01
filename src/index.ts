@@ -1,58 +1,16 @@
-import { parseArgs } from "node:util";
-import { readdir } from "node:fs/promises";
 import { Project } from "ts-morph";
 import { removeAny } from "./remove-any/remove-any";
 import { sum } from "./utils/array.utils";
-import { ParseArgsConfig } from "util";
+import { parseCliArgs } from "./cli-parser";
 
 async function main(args: string[]) {
-  const options: ParseArgsConfig["options"] = {
-    directory: {
-      type: "string",
-      short: "d",
-      default: ".",
-    },
-    file: {
-      type: "string",
-      short: "f",
-    },
-    noReverts: {
-      type: "boolean",
-      default: false,
-      short: "r",
-    },
-    verbose: {
-      type: "boolean",
-      default: false,
-      short: "v",
-    },
-  } as const;
+  const { project, file, noReverts, verbosity } = parseCliArgs(args);
 
-  const { values } = parseArgs({ args, options, strict: true });
-  const { directory, file, noReverts, verbose } = values;
-  if (!directory || typeof directory !== "string") {
-    throw new Error(`Directory parameter is mandatory`);
-  }
-  if (typeof noReverts !== "boolean") {
-    throw new Error(`noReverts must be boolean`);
-  }
-  if (typeof verbose !== "boolean") {
-    throw new Error(`verbose must be boolean`);
-  }
-
-  const filesInDir = await readdir(directory);
-  const tsconfigFile = "tsconfig.json";
-  if (!filesInDir.includes(tsconfigFile)) {
-    throw new Error(`The directory must contain a tsconfig.json file`);
-  }
-
-  const mainTsConfigPath = `${directory}/${tsconfigFile}`;
-
-  const project = new Project({
-    tsConfigFilePath: mainTsConfigPath,
+  const tsMorphProject = new Project({
+    tsConfigFilePath: project,
   });
 
-  const allSourceFiles = project.getSourceFiles();
+  const allSourceFiles = tsMorphProject.getSourceFiles();
 
   let numberOfChanges = 1;
   let loopCount = 1;
@@ -61,8 +19,8 @@ async function main(args: string[]) {
       allSourceFiles
         .filter((sourceFile) => !file || sourceFile.getBaseName() === file)
         .map((sourceFile, idx) => {
-          const changes = removeAny(sourceFile, { noReverts, verbose });
-          if (verbose) {
+          const changes = removeAny(sourceFile, { noReverts, verbosity });
+          if (verbosity > 0) {
             console.log(
               `Loop ${loopCount}, ${idx + 1}/ ${
                 allSourceFiles.length
@@ -76,10 +34,9 @@ async function main(args: string[]) {
 
     ++loopCount;
   }
-  await project.save();
+  await tsMorphProject.save();
 }
 
-const args = process.argv.slice(2);
-main(args)
+main(process.argv)
   .then((s) => console.log("success", s))
   .catch((e) => console.error("error", e));

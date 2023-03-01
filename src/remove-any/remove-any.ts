@@ -6,7 +6,7 @@ import { RevertableOperation } from "./revert-operation";
 
 interface RemoveAnyOptions {
   noReverts: boolean;
-  verbose: boolean;
+  verbosity: number;
 }
 
 export function removeAny(sourceFile: SourceFile, options?: Partial<RemoveAnyOptions>): number {
@@ -14,16 +14,16 @@ export function removeAny(sourceFile: SourceFile, options?: Partial<RemoveAnyOpt
     return 0;
   }
   const noReverts = options?.noReverts ?? false;
-  const verbose = options?.verbose ?? false;
+  const verbosity = options?.verbosity ?? 0;
 
   const resultsInFunctions = sourceFile
     .getFunctions()
-    .map((sourceFn) => revertableOperation(sourceFile, { noReverts, verbose }, () => removeAnyInFunction(sourceFn)));
+    .map((sourceFn) => revertableOperation(sourceFile, { noReverts, verbosity }, () => removeAnyInFunction(sourceFn)));
 
   const resultsInLets = sourceFile
     .getVariableDeclarations()
     .map((variableDeclaration) =>
-      revertableOperation(sourceFile, { noReverts, verbose }, () => removeAnyInLetDeclaration(variableDeclaration))
+      revertableOperation(sourceFile, { noReverts, verbosity }, () => removeAnyInLetDeclaration(variableDeclaration))
     );
 
   return sum(resultsInFunctions) + sum(resultsInLets);
@@ -31,7 +31,7 @@ export function removeAny(sourceFile: SourceFile, options?: Partial<RemoveAnyOpt
 
 function revertableOperation(
   sourceFile: SourceFile,
-  { verbose, noReverts }: RemoveAnyOptions,
+  { verbosity, noReverts }: RemoveAnyOptions,
   revertableFn: () => RevertableOperation
 ) {
   if (noReverts) {
@@ -41,10 +41,12 @@ function revertableOperation(
   const result = revertableFn();
   const postChangeDiagnostic = sourceFile.getPreEmitDiagnostics();
   if (postChangeDiagnostic.length > preChangeDiagnostic.length) {
-    if (verbose) {
+    if (verbosity > 0) {
       console.warn(`Reverting ${result.countChangesDone} changes in ${sourceFile.getBaseName()}`);
       postChangeDiagnostic.forEach((diagnostic) => {
-        console.info(diagnostic.getMessageText());
+        if (verbosity > 1) {
+          console.info(diagnostic.getMessageText());
+        }
       });
     }
     result.revert();
