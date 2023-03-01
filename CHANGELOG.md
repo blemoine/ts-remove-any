@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.32](https://github.com/blemoine/ts-remove-any/compare/v0.1.31...v0.1.32) (2023-03-01)
+
+
+### Bug Fixes
+
+* filter invalid value for function computation ([039c514](https://github.com/blemoine/ts-remove-any/commit/039c5148eaab5a257d1d2d63704cc2b93ee14665))
+
 ### [0.1.31](https://github.com/blemoine/ts-remove-any/compare/v0.1.30...v0.1.31) (2023-03-01)
 
 
