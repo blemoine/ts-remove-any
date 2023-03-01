@@ -1,4 +1,3 @@
-* Use diagnostic to check if the change break the project
-* remove any for `const` declaration
 * Optimize performances
-* the case of function called with beta reduction
+* Case `image-gallery.test.tsx` 
+* For function where I can't get anything useful from the caller, check if I can get something from the usage

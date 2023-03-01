@@ -56,7 +56,20 @@ function getParameterComputedType(
     .filter((t) => !t.isAny() && !t.getText().includes("any[]") && !t.getText().includes(": any"))
     .filter((t) => !t.getText().startsWith("import("));
 
-  return computeTypesFromList(callsiteTypes);
+  const result = computeTypesFromList(callsiteTypes);
+  if (!result) {
+    const typesFromUsage = parametersFn.findReferencesAsNodes().flatMap((ref) => {
+      const parent = ref.getParent();
+      if (Node.isVariableDeclaration(parent)) {
+        const declarations = parent.getVariableStatement()?.getDeclarations();
+
+        return (declarations ?? [])?.map((d) => d.getType());
+      }
+      return [];
+    });
+    return computeTypesFromList(typesFromUsage);
+  }
+  return result;
 }
 
 export function removeAnyInFunction(sourceFn: FunctionDeclaration): RevertableOperation {
