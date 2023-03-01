@@ -65,6 +65,34 @@ function getParameterComputedType(
 
         return (declarations ?? [])?.map((d) => d.getType());
       }
+      if (Node.isCallExpression(parent)) {
+        // TODO refactor it's basically duplication
+        const children = parent.getChildren();
+        if (children.length > 0) {
+          const firstChildren = children[0];
+
+          if (firstChildren instanceof Identifier) {
+            return firstChildren
+              .getType()
+              .getCallSignatures()
+              .map((s) => s.getParameters()[parametersIdx]?.getTypeAtLocation(firstChildren));
+          }
+          if (firstChildren instanceof PropertyAccessExpression) {
+            const idxOfCallParameter = parent.getArguments().indexOf(ref);
+
+            return firstChildren
+              .getType()
+              .getCallSignatures()
+              .flatMap((signature) => {
+                const parameters = signature.getParameters();
+                return parameters[idxOfCallParameter]
+                  ?.getTypeAtLocation(firstChildren)
+                  .getCallSignatures()
+                  .map((s) => s.getParameters()[parametersIdx]?.getTypeAtLocation(firstChildren));
+              });
+          }
+        }
+      }
       return [];
     });
     return computeTypesFromList(typesFromUsage);

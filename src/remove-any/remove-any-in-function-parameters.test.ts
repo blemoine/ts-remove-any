@@ -234,6 +234,33 @@ function callsite(n: any) {
         );
     });
 
+    it("should use the usage type in function call  if possible", () => {
+        const sourceFile = createSourceFile(`
+function fnToIgnore(my_explicit_variable) {
+  wellDefinedFn(my_explicit_variable);
+}
+
+function wellDefinedFn(x: string) { }
+
+function callsite(n: any) {
+   fnToIgnore(n);
+}
+`);
+
+        const numberOfChanges = removeAny(sourceFile);
+        expect(numberOfChanges).toBe(1);
+        expect(sourceFile.print()).toStrictEqual(
+            `function fnToIgnore(my_explicit_variable: string) {
+    wellDefinedFn(my_explicit_variable);
+}
+function wellDefinedFn(x: string) { }
+function callsite(n: any) {
+    fnToIgnore(n);
+}
+`
+        );
+    })
+
 
     it("should not merge string and literal string", () => {
     const sourceFile = createSourceFile(`
