@@ -23,6 +23,12 @@ npx ts-remove-any
 Don't forget to re-run your formatter and typechecker afterward, `ts-remove-any` may reformat your code, and leave
 some type errors.
 
+More options are available, and can be found from the cli help
+
+```
+npx ts-remove-any --help
+```
+
 ## Release procedure
 
 ```
