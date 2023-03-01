@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.30](https://github.com/blemoine/ts-remove-any/compare/v0.1.29...v0.1.30) (2023-03-01)
+
+
+### Features
+
+* try to generate function any from usage in declaration ([9f0de7b](https://github.com/blemoine/ts-remove-any/commit/9f0de7b9b9291ed8ce8ba9c0728921320f933fd2))
+
 ### [0.1.29](https://github.com/blemoine/ts-remove-any/compare/v0.1.28...v0.1.29) (2023-02-28)
 
 
