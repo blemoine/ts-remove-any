@@ -1,9 +1,17 @@
 import { TypedNode, Node, Type } from "ts-morph";
+import { isNotNil } from "../utils/is-not-nil";
 
 export function isImplicitAny(node: TypedNode & Node) {
   const isAny = node.getType().isAny();
   const declaredType = node.getTypeNode();
   return isAny && !declaredType;
+}
+
+export function filterUnusableTypes(types: (Type | null | undefined)[]): Type[] {
+  return types.filter(isNotNil).filter((t) => {
+    const text = t.getText();
+    return !t.isAny() && !text.includes("any[]") && !text.includes(": any") && !text.startsWith("import(");
+  });
 }
 
 export function computeTypesFromList(callsiteTypes: Type[]): string | null {

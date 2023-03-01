@@ -3,10 +3,11 @@ export interface RevertableOperation {
   countChangesDone: number;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+const noop = () => {};
 export const noopRevertableOperation: RevertableOperation = {
   countChangesDone: 0,
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  revert() {},
+  revert: noop,
 };
 
 export function concatRevertableOperation(r1: RevertableOperation, r2: RevertableOperation): RevertableOperation {
