@@ -79,10 +79,8 @@ function getParameterComputedType(
               .getCallSignatures()
               .flatMap((signature) => {
                 const parameters = signature.getParameters();
-                return parameters[idxOfCallParameter]
-                  ?.getTypeAtLocation(firstChildren)
-                  .getCallSignatures()
-                  .map((s) => s.getParameters()[parametersIdx]?.getTypeAtLocation(firstChildren));
+
+                return parameters[idxOfCallParameter]?.getTypeAtLocation(firstChildren);
               });
           }
         }

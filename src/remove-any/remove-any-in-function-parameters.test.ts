@@ -261,6 +261,39 @@ function callsite(n: any) {
         );
     })
 
+    it("should use the usage type in method call if possible", () => {
+        const sourceFile = createSourceFile(`
+function fnToIgnore(my_explicit_variable) {
+  const test = new Test();
+  test.wellDefinedFn(1, my_explicit_variable);
+}
+
+class Test {
+    wellDefinedFn(t: number, x: string) { }
+}
+
+function callsite(n: any) {
+   fnToIgnore(n);
+}
+`);
+
+        const numberOfChanges = removeAny(sourceFile);
+        expect(numberOfChanges).toBe(1);
+        expect(sourceFile.print()).toStrictEqual(
+            `function fnToIgnore(my_explicit_variable: string) {
+    const test = new Test();
+    test.wellDefinedFn(1, my_explicit_variable);
+}
+class Test {
+    wellDefinedFn(t: number, x: string) { }
+}
+function callsite(n: any) {
+    fnToIgnore(n);
+}
+`
+        );
+    })
+
 
     it("should not merge string and literal string", () => {
     const sourceFile = createSourceFile(`
