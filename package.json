@@ -7,6 +7,7 @@
   "scripts": {
     "build": "./node_modules/.bin/rimraf dist && tsc",
     "lint": "eslint './src/**/*.ts'",
+    "postinstall": "patch-package",
     "prepare": "npm run build",
     "release": "npx standard-version && git push --follow-tags origin main",
     "test": "jest",
@@ -27,6 +28,7 @@
   },
   "dependencies": {
     "commander": "10.0.0",
+    "patch-package": "6.5.1",
     "ts-morph": "17.0.1"
   },
   "engines": {
