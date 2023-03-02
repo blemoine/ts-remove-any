@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.34](https://github.com/blemoine/ts-remove-any/compare/v0.1.33...v0.1.34) (2023-03-02)
+
+
+### Features
+
+* add support for React Props ([bd668b5](https://github.com/blemoine/ts-remove-any/commit/bd668b51af4e2b9a18c5c5c891c5e0ccf5191e78))
+
 ### [0.1.33](https://github.com/blemoine/ts-remove-any/compare/v0.1.32...v0.1.33) (2023-03-01)
 
 
