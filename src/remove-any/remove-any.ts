@@ -1,4 +1,4 @@
-import { SourceFile } from "ts-morph";
+import { FunctionDeclaration, SourceFile, VariableDeclaration } from "ts-morph";
 import { removeAnyInFunction } from "./remove-any-in-function-parameters";
 import { sum } from "../utils/array.utils";
 import { removeAnyInLetDeclaration } from "./remove-any-in-let-declaration";
@@ -16,15 +16,24 @@ export function removeAny(sourceFile: SourceFile, options?: Partial<RemoveAnyOpt
   const noReverts = options?.noReverts ?? false;
   const verbosity = options?.verbosity ?? 0;
 
-  const resultsInFunctions = sourceFile
-    .getFunctions()
-    .map((sourceFn) => revertableOperation(sourceFile, { noReverts, verbosity }, () => removeAnyInFunction(sourceFn)));
+  const variableDeclarations: VariableDeclaration[] = [];
+  const functions: FunctionDeclaration[] = [];
+  sourceFile.forEachDescendant((d) => {
+    if (d instanceof VariableDeclaration) {
+      variableDeclarations.push(d);
+    } else if (d instanceof FunctionDeclaration) {
+      functions.push(d);
+    }
+  });
 
-  const resultsInLets = sourceFile
-    .getVariableDeclarations()
-    .map((variableDeclaration) =>
-      revertableOperation(sourceFile, { noReverts, verbosity }, () => removeAnyInLetDeclaration(variableDeclaration))
-    );
+  const validatedOptions = { noReverts, verbosity };
+  const resultsInFunctions = functions.map((sourceFn) =>
+    revertableOperation(sourceFile, validatedOptions, () => removeAnyInFunction(sourceFn))
+  );
+
+  const resultsInLets = variableDeclarations.map((variableDeclaration) =>
+    revertableOperation(sourceFile, validatedOptions, () => removeAnyInLetDeclaration(variableDeclaration))
+  );
 
   return sum(resultsInFunctions) + sum(resultsInLets);
 }
