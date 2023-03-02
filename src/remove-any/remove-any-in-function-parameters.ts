@@ -10,18 +10,6 @@ function getParameterComputedType(
 ): string | null {
   const parameterTypeProperties = parametersFn.getType().getProperties();
   if (!parametersFn.getTypeNode() && parameterTypeProperties.some((p) => p.getTypeAtLocation(parametersFn).isAny())) {
-    const result =
-      "{" +
-      parameterTypeProperties
-        .map((p) => {
-          const propertyName = p.getName();
-
-          return `${propertyName}: ${p.getTypeAtLocation(parametersFn).getText()}`;
-        })
-        .join(",") +
-      "}";
-
-    // TODO find a way to understand of this parameter is used.
     const propertyTypePairs = parametersFn.getChildren().flatMap((child) => {
       if (Node.isObjectBindingPattern(child)) {
         return child
@@ -51,8 +39,6 @@ function getParameterComputedType(
         })
         .join(",")}}`;
     }
-
-    return result;
   }
 
   if (!isImplicitAny(parametersFn)) {
