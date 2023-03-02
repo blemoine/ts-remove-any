@@ -10,7 +10,15 @@ export function isImplicitAny(node: TypedNode & Node) {
 export function filterUnusableTypes(types: (Type | null | undefined)[]): Type[] {
   return types.filter(isNotNil).filter((t) => {
     const text = t.getText();
-    return !t.isAny() && !text.includes("any[]") && !text.includes(": any") && !text.startsWith("import(");
+    return (
+      !t.isAny() &&
+      !text.includes("any[]") &&
+      !text.includes(": any") &&
+      !text.startsWith("import(") &&
+      !t.isNever() &&
+      !text.includes("never[]") &&
+      !text.includes(": never")
+    );
   });
 }
 
