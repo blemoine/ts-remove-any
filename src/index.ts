@@ -11,25 +11,30 @@ async function main(args: string[]) {
   });
 
   const allSourceFiles = tsMorphProject.getSourceFiles();
+  const filteredSourceFiles = allSourceFiles.filter((sourceFile) => {
+    if (!file) {
+      return true;
+    }
+
+    return sourceFile.getFilePath().includes(file);
+  });
 
   let numberOfChanges = 1;
   let loopCount = 1;
   while (numberOfChanges !== 0) {
     numberOfChanges = sum(
-      allSourceFiles
-        .filter((sourceFile) => !file || sourceFile.getBaseName() === file)
-        .map((sourceFile, idx) => {
-          const changes = removeAny(sourceFile, { noReverts, verbosity });
-          if (verbosity > 0) {
-            console.log(
-              `Loop ${loopCount}, ${idx + 1}/ ${
-                allSourceFiles.length
-              }: file ${sourceFile.getBaseName()} , ${changes} change(s) done`
-            );
-          }
+      filteredSourceFiles.map((sourceFile, idx) => {
+        const changes = removeAny(sourceFile, { noReverts, verbosity });
+        if (verbosity > 0) {
+          console.log(
+            `Loop ${loopCount}, ${idx + 1}/ ${
+              allSourceFiles.length
+            }: file ${sourceFile.getBaseName()} , ${changes} change(s) done`
+          );
+        }
 
-          return changes;
-        })
+        return changes;
+      })
     );
 
     ++loopCount;
