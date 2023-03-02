@@ -100,13 +100,18 @@ export function removeAnyInFunction(sourceFn: FunctionDeclaration): RevertableOp
       const newType = getParameterComputedType(parametersFn, sourceFn, parametersIdx);
 
       if (newType) {
-        parametersFn.setType(newType);
-        return {
-          countChangesDone: 1,
-          revert() {
-            parametersFn.removeType();
-          },
-        };
+        try {
+          parametersFn.setType(newType);
+          return {
+            countChangesDone: 1,
+            revert() {
+              parametersFn.removeType();
+            },
+          };
+        } catch (e) {
+          console.error("Unexpected error, please notify ts-remove-any maintainer", e);
+          return noopRevertableOperation;
+        }
       }
       return noopRevertableOperation;
     })
