@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.36](https://github.com/blemoine/ts-remove-any/compare/v0.1.35...v0.1.36) (2023-03-02)
+
+
+### Features
+
+* filter out never ([90b7a37](https://github.com/blemoine/ts-remove-any/commit/90b7a3757c2d6e190e9837cd55f6e42580592303))
+* support for inner function/and variable ([a08ca47](https://github.com/blemoine/ts-remove-any/commit/a08ca4773e718be0fd05590970f66a3f6ef93b36))
+
 ### [0.1.35](https://github.com/blemoine/ts-remove-any/compare/v0.1.34...v0.1.35) (2023-03-02)
 
 
