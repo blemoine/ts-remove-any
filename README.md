@@ -23,7 +23,17 @@ npx ts-remove-any
 Don't forget to re-run your formatter and typechecker afterward, `ts-remove-any` may reformat your code, and leave
 some type errors.
 
-More options are available, and can be found from the cli help
+More options are available, and can be found from the cli help.
+
+---
+
+[This bug](https://github.com/dsherret/ts-morph/pull/1380) in ts-morph is blocking some transformation if you're using
+`ts-remove-any` from npx.
+The other solution is [to clone the repository](github.com/blemoine/ts-remove-any), execute `npm install` and
+then `npx ts-node src/index.ts`
+That way a patch will be applied, and you will benefit from the latest feature of `ts-remove-any`
+
+
 
 ```
 npx ts-remove-any --help

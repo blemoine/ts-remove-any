@@ -17,7 +17,27 @@ x = 1;
     );
   });
 
-  it("should not do a change if doesn't compile", () => {
+    it("should add a type in let declaration inside functions", () => {
+        const sourceFile = createSourceFile(`
+before(() => {        
+    let x;
+    it(() => { x = 'test' });
+});
+`);
+
+        const numberOfChanges = removeAny(sourceFile);
+        expect(numberOfChanges).toBe(1);
+        expect(sourceFile.print()).toStrictEqual(
+            `before(() => {
+    let x: "test";
+    it(() => { x = 'test'; });
+});
+`
+        );
+    });
+
+
+    it("should not do a change if doesn't compile", () => {
     const sourceFile = createSourceFile(`
 let x;
 x = {};
