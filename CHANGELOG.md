@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.37](https://github.com/blemoine/ts-remove-any/compare/v0.1.36...v0.1.37) (2023-03-03)
+
+
+### Features
+
+* add support for arrow functions ([46244a5](https://github.com/blemoine/ts-remove-any/commit/46244a579e8089582cde9d0b79e50ce75420c047))
+
+
+### Bug Fixes
+
+* filter files only once ([4953038](https://github.com/blemoine/ts-remove-any/commit/4953038b6b2e3a485a84418d3bc356f74dbe410b))
+
 ### [0.1.36](https://github.com/blemoine/ts-remove-any/compare/v0.1.35...v0.1.36) (2023-03-02)
 
 
