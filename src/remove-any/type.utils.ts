@@ -1,4 +1,4 @@
-import { TypedNode, Node, Type } from "ts-morph";
+import { Identifier, Node, PropertyAccessExpression, ReferenceFindableNode, Type, TypedNode } from "ts-morph";
 import { isNotNil } from "../utils/is-not-nil";
 
 export function isImplicitAny(node: TypedNode & Node) {
@@ -50,4 +50,82 @@ export function computeTypesFromList(callsiteTypes: Type[]): string | null {
     return "string";
   }
   return null;
+}
+
+export function findTypesFromCallSite(
+  node: { getName(): string | undefined } & ReferenceFindableNode,
+  parametersIdx: number
+): Type[] {
+  const sourceName = node.getName();
+  return node.findReferencesAsNodes().flatMap((ref): Type[] => {
+    const parent = ref.getParent();
+    if (Node.isCallExpression(parent)) {
+      if (sourceName && parent.getText().startsWith(sourceName)) {
+        const argument = parent.getArguments()[parametersIdx];
+        return [argument?.getType()];
+      }
+      const children = parent.getChildren();
+      if (children.length > 0) {
+        const firstChildren = children[0];
+
+        if (firstChildren instanceof Identifier) {
+          return firstChildren
+            .getType()
+            .getCallSignatures()
+            .map((s) => s.getParameters()[parametersIdx]?.getTypeAtLocation(firstChildren));
+        }
+        if (firstChildren instanceof PropertyAccessExpression) {
+          const idxOfCallParameter = parent.getArguments().indexOf(ref);
+
+          return firstChildren
+            .getType()
+            .getCallSignatures()
+            .flatMap((signature) => {
+              const parameters = signature.getParameters();
+              return parameters[idxOfCallParameter]
+                ?.getTypeAtLocation(firstChildren)
+                .getCallSignatures()
+                .map((s) => s.getParameters()[parametersIdx]?.getTypeAtLocation(firstChildren));
+            });
+        }
+      }
+
+      return [];
+    }
+    return [];
+  });
+}
+
+export function findTypeFromRefUsage(ref: Node): Type[] {
+  const parent = ref.getParent();
+  if (Node.isVariableDeclaration(parent)) {
+    const declarations = parent.getVariableStatement()?.getDeclarations();
+
+    return (declarations ?? [])?.map((d) => d.getType());
+  }
+  if (Node.isCallExpression(parent)) {
+    const children = parent.getChildren();
+    if (children.length > 0) {
+      const firstChildren = children[0];
+
+      const idxOfCallParameter = parent.getArguments().indexOf(ref);
+      if (firstChildren instanceof Identifier) {
+        return firstChildren
+          .getType()
+          .getCallSignatures()
+          .map((s) => s.getParameters()[idxOfCallParameter]?.getTypeAtLocation(firstChildren));
+      }
+      if (firstChildren instanceof PropertyAccessExpression) {
+        return firstChildren
+          .getType()
+          .getCallSignatures()
+          .flatMap((signature) => {
+            const parameters = signature.getParameters();
+
+            return parameters[idxOfCallParameter]?.getTypeAtLocation(firstChildren);
+          });
+      }
+    }
+  }
+  return [];
 }

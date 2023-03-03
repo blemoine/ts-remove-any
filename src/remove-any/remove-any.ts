@@ -1,8 +1,9 @@
-import { FunctionDeclaration, SourceFile, VariableDeclaration } from "ts-morph";
+import { ArrowFunction, FunctionDeclaration, SourceFile, VariableDeclaration } from "ts-morph";
 import { removeAnyInFunction } from "./remove-any-in-function-parameters";
 import { sum } from "../utils/array.utils";
 import { removeAnyInLetDeclaration } from "./remove-any-in-let-declaration";
 import { RevertableOperation } from "./revert-operation";
+import { removeAnyInArrowFunction } from "./remove-any-in-arrow-function-parameters";
 
 interface RemoveAnyOptions {
   noReverts: boolean;
@@ -18,11 +19,14 @@ export function removeAny(sourceFile: SourceFile, options?: Partial<RemoveAnyOpt
 
   const variableDeclarations: VariableDeclaration[] = [];
   const functions: FunctionDeclaration[] = [];
+  const arrowFunctions: ArrowFunction[] = [];
   sourceFile.forEachDescendant((d) => {
     if (d instanceof VariableDeclaration) {
       variableDeclarations.push(d);
     } else if (d instanceof FunctionDeclaration) {
       functions.push(d);
+    } else if (d instanceof ArrowFunction) {
+      arrowFunctions.push(d);
     }
   });
 
@@ -30,12 +34,15 @@ export function removeAny(sourceFile: SourceFile, options?: Partial<RemoveAnyOpt
   const resultsInFunctions = functions.map((sourceFn) =>
     revertableOperation(sourceFile, validatedOptions, () => removeAnyInFunction(sourceFn))
   );
+  const resultsInArrowFunctions = arrowFunctions.map((sourceFn) =>
+    revertableOperation(sourceFile, validatedOptions, () => removeAnyInArrowFunction(sourceFn))
+  );
 
   const resultsInLets = variableDeclarations.map((variableDeclaration) =>
     revertableOperation(sourceFile, validatedOptions, () => removeAnyInLetDeclaration(variableDeclaration))
   );
 
-  return sum(resultsInFunctions) + sum(resultsInLets);
+  return sum(resultsInFunctions) + sum(resultsInLets) + sum(resultsInArrowFunctions);
 }
 
 function revertableOperation(
