@@ -4,7 +4,6 @@ export interface RevertableOperation {
   countOfAnys: number;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-function
 const noop = () => {};
 export const noopRevertableOperation: RevertableOperation = {
   countChangesDone: 0,

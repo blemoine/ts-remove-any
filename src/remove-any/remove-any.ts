@@ -45,15 +45,11 @@ export function removeAny(
     revertableOperation(sourceFile, validatedOptions, () => removeAnyInLetDeclaration(variableDeclaration))
   );
 
+  const aggregatedResults = [...resultsInFunctions, ...resultsInLets, ...resultsInArrowFunctions];
+
   return {
-    countChangesDone:
-      sum(resultsInFunctions.map((r) => r.countChangesDone)) +
-      sum(resultsInLets.map((r) => r.countChangesDone)) +
-      sum(resultsInArrowFunctions.map((r) => r.countChangesDone)),
-    countOfAnys:
-      sum(resultsInFunctions.map((r) => r.countOfAnys)) +
-      sum(resultsInLets.map((r) => r.countOfAnys)) +
-      sum(resultsInArrowFunctions.map((r) => r.countOfAnys)),
+    countChangesDone: sum(aggregatedResults.map((r) => r.countChangesDone)),
+    countOfAnys: sum(aggregatedResults.map((r) => r.countOfAnys)),
   };
 }
 

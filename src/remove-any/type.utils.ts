@@ -22,7 +22,7 @@ export function filterUnusableTypes(types: (Type | null | undefined)[]): Type[] 
       !t.isAny() &&
       !text.includes("any[]") &&
       !text.includes(": any") &&
-      !text.startsWith("import(") &&
+      !text.includes("import(") &&
       !t.isNever() &&
       !text.includes("never[]") &&
       !text.includes(": never")

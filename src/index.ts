@@ -1,4 +1,4 @@
-import { Project } from "ts-morph";
+import { Project, SourceFile } from "ts-morph";
 import { removeAny } from "./remove-any/remove-any";
 import { sum } from "./utils/array.utils";
 import { parseCliArgs } from "./cli-parser";
@@ -19,23 +19,33 @@ async function main(args: string[]) {
     return sourceFile.getFilePath().includes(file);
   });
 
+  const filesWithNoAny = new Set<string>();
+
   let numberOfChanges = 1;
   let loopCount = 1;
   while (numberOfChanges !== 0) {
-    numberOfChanges = sum(
-      filteredSourceFiles.map((sourceFile, idx) => {
-        const changes = removeAny(sourceFile, { noReverts, verbosity });
-        if (verbosity > 0) {
-          console.log(
-            `Loop ${loopCount}, ${idx + 1}/ ${
-              allSourceFiles.length
-            }: file ${sourceFile.getBaseName()} , ${changes} change(s) done`
-          );
-        }
+    numberOfChanges = 0;
+    if (verbosity > 0) {
+      console.log(`${numberOfChanges} files are ignored, as they contains no 'any'`);
+    }
+    filteredSourceFiles.forEach((sourceFile, idx) => {
+      if (filesWithNoAny.has(sourceFile.getFilePath())) {
+        return;
+      }
+      const changes = removeAny(sourceFile, { noReverts, verbosity });
+      if (verbosity > 0) {
+        console.log(
+          `Loop ${loopCount}, ${idx + 1}/ ${allSourceFiles.length}: file ${sourceFile.getBaseName()} , ${
+            changes.countChangesDone
+          } change(s) done`
+        );
+      }
 
-        return changes.countChangesDone;
-      })
-    );
+      numberOfChanges += changes.countChangesDone;
+      if (changes.countOfAnys === 0) {
+        filesWithNoAny.add(sourceFile.getFilePath());
+      }
+    });
 
     ++loopCount;
   }
