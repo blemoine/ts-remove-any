@@ -12,3 +12,4 @@ coverage
 tsconfig.json
 jest.config.js
 test
+TODO.md

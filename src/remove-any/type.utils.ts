@@ -1,4 +1,12 @@
-import { Identifier, Node, PropertyAccessExpression, ReferenceFindableNode, Type, TypedNode } from "ts-morph";
+import {
+  Identifier,
+  Node,
+  ParameterDeclaration,
+  PropertyAccessExpression,
+  ReferenceFindableNode,
+  Type,
+  TypedNode,
+} from "ts-morph";
 import { isNotNil } from "../utils/is-not-nil";
 
 export function isImplicitAny(node: TypedNode & Node) {
@@ -128,4 +136,40 @@ export function findTypeFromRefUsage(ref: Node): Type[] {
     }
   }
   return [];
+}
+
+export function computeDestructuredTypes(parametersFn: ParameterDeclaration): string | null {
+  const parameterTypeProperties = parametersFn.getType().getProperties();
+  if (!parametersFn.getTypeNode() && parameterTypeProperties.some((p) => p.getTypeAtLocation(parametersFn).isAny())) {
+    const propertyTypePairs = parametersFn.getChildren().flatMap((child) => {
+      if (Node.isObjectBindingPattern(child)) {
+        return child
+          .getElements()
+          .map((element) => {
+            let type: string | null;
+            if (element.getType().isAny()) {
+              const typesFromUsage = element.findReferencesAsNodes().flatMap((ref) => {
+                return findTypeFromRefUsage(ref);
+              });
+              type = computeTypesFromList(filterUnusableTypes(typesFromUsage));
+            } else {
+              type = element.getType().getText();
+            }
+
+            return type ? ({ propertyName: element.getName(), type } as const) : null;
+          })
+          .filter(isNotNil);
+      }
+      return [];
+    });
+
+    if (propertyTypePairs.length > 0) {
+      return `{${propertyTypePairs
+        .map(({ propertyName, type }) => {
+          return `${propertyName}: ${type}`;
+        })
+        .join(",")}}`;
+    }
+  }
+  return null;
 }

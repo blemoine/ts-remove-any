@@ -1,6 +1,7 @@
 import { ArrowFunction, Node, ParameterDeclaration } from "ts-morph";
 import { concatRevertableOperation, noopRevertableOperation, RevertableOperation } from "./revert-operation";
 import {
+  computeDestructuredTypes,
   computeTypesFromList,
   filterUnusableTypes,
   findTypeFromRefUsage,
@@ -13,6 +14,11 @@ function getParameterComputedType(
   sourceFn: ArrowFunction,
   parametersIdx: number
 ): string | null {
+  const destructuredType = computeDestructuredTypes(parametersFn);
+  if (destructuredType) {
+    return destructuredType;
+  }
+
   if (!isImplicitAny(parametersFn)) {
     return null;
   }

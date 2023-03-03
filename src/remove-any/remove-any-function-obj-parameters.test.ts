@@ -13,6 +13,19 @@ describe("remove-any", () => {
 `
     );
   });
+
+  it("should find the type for react props in arrow components", () => {
+    const sourceFile = createSourceFile(`const MyComponent = ({ value }) => Number.parseInt(value);`);
+
+    removeAny(sourceFile);
+    expect(sourceFile.print()).toStrictEqual(
+        `const MyComponent = ({ value }: {
+    value: string;
+}) => Number.parseInt(value);
+`
+    );
+  });
+
 });
 
 function createSourceFile(code: string): SourceFile {

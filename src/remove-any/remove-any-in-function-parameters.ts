@@ -1,5 +1,6 @@
-import { FunctionDeclaration, Node, ParameterDeclaration } from "ts-morph";
+import { FunctionDeclaration, ParameterDeclaration } from "ts-morph";
 import {
+  computeDestructuredTypes,
   computeTypesFromList,
   filterUnusableTypes,
   findTypeFromRefUsage,
@@ -7,44 +8,15 @@ import {
   isImplicitAny,
 } from "./type.utils";
 import { concatRevertableOperation, noopRevertableOperation, RevertableOperation } from "./revert-operation";
-import { isNotNil } from "../utils/is-not-nil";
 
 function getParameterComputedType(
   parametersFn: ParameterDeclaration,
   sourceFn: FunctionDeclaration,
   parametersIdx: number
 ): string | null {
-  const parameterTypeProperties = parametersFn.getType().getProperties();
-  if (!parametersFn.getTypeNode() && parameterTypeProperties.some((p) => p.getTypeAtLocation(parametersFn).isAny())) {
-    const propertyTypePairs = parametersFn.getChildren().flatMap((child) => {
-      if (Node.isObjectBindingPattern(child)) {
-        return child
-          .getElements()
-          .map((element) => {
-            let type: string | null;
-            if (element.getType().isAny()) {
-              const typesFromUsage = element.findReferencesAsNodes().flatMap((ref) => {
-                return findTypeFromRefUsage(ref);
-              });
-              type = computeTypesFromList(filterUnusableTypes(typesFromUsage));
-            } else {
-              type = element.getType().getText();
-            }
-
-            return type ? ({ propertyName: element.getName(), type } as const) : null;
-          })
-          .filter(isNotNil);
-      }
-      return [];
-    });
-
-    if (propertyTypePairs.length > 0) {
-      return `{${propertyTypePairs
-        .map(({ propertyName, type }) => {
-          return `${propertyName}: ${type}`;
-        })
-        .join(",")}}`;
-    }
+  const destructuredType = computeDestructuredTypes(parametersFn);
+  if (destructuredType) {
+    return destructuredType;
   }
 
   if (!isImplicitAny(parametersFn)) {
