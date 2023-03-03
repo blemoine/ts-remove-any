@@ -51,16 +51,16 @@ export function removeAnyInArrowFunction(sourceFn: ArrowFunction): RevertableOpe
           parametersFn.setType(newType);
           return {
             countChangesDone: 1,
+            countOfAnys: 1,
             revert() {
               parametersFn.removeType();
             },
           };
         } catch (e) {
           console.error("Unexpected error, please notify ts-remove-any maintainer", e);
-          return noopRevertableOperation;
         }
       }
-      return noopRevertableOperation;
+      return { countChangesDone: 0, countOfAnys: 1, revert() {} };
     })
     .reduce((a, b) => concatRevertableOperation(a, b), noopRevertableOperation);
 }

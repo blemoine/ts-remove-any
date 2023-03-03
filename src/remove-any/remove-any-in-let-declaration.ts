@@ -26,10 +26,11 @@ export function removeAnyInLetDeclaration(variableDeclaration: VariableDeclarati
     variableDeclaration.setType(newType);
     return {
       countChangesDone: 1,
+      countOfAnys: 1,
       revert() {
         variableDeclaration.removeType();
       },
     };
   }
-  return noopRevertableOperation;
+  return { countChangesDone: 0, countOfAnys: 1, revert() {} };
 }

@@ -10,9 +10,12 @@ interface RemoveAnyOptions {
   verbosity: number;
 }
 
-export function removeAny(sourceFile: SourceFile, options?: Partial<RemoveAnyOptions>): number {
+export function removeAny(
+  sourceFile: SourceFile,
+  options?: Partial<RemoveAnyOptions>
+): { countOfAnys: number; countChangesDone: number } {
   if (sourceFile.getBaseName().endsWith("js")) {
-    return 0;
+    return { countOfAnys: 0, countChangesDone: 0 };
   }
   const noReverts = options?.noReverts ?? false;
   const verbosity = options?.verbosity ?? 0;
@@ -42,16 +45,26 @@ export function removeAny(sourceFile: SourceFile, options?: Partial<RemoveAnyOpt
     revertableOperation(sourceFile, validatedOptions, () => removeAnyInLetDeclaration(variableDeclaration))
   );
 
-  return sum(resultsInFunctions) + sum(resultsInLets) + sum(resultsInArrowFunctions);
+  return {
+    countChangesDone:
+      sum(resultsInFunctions.map((r) => r.countChangesDone)) +
+      sum(resultsInLets.map((r) => r.countChangesDone)) +
+      sum(resultsInArrowFunctions.map((r) => r.countChangesDone)),
+    countOfAnys:
+      sum(resultsInFunctions.map((r) => r.countOfAnys)) +
+      sum(resultsInLets.map((r) => r.countOfAnys)) +
+      sum(resultsInArrowFunctions.map((r) => r.countOfAnys)),
+  };
 }
 
 function revertableOperation(
   sourceFile: SourceFile,
   { verbosity, noReverts }: RemoveAnyOptions,
   revertableFn: () => RevertableOperation
-) {
+): { countOfAnys: number; countChangesDone: number } {
   if (noReverts) {
-    return revertableFn().countChangesDone;
+    const revertResult = revertableFn();
+    return { countOfAnys: revertResult.countOfAnys, countChangesDone: revertResult.countChangesDone };
   }
   const preChangeDiagnostic = sourceFile.getPreEmitDiagnostics();
   const result = revertableFn();
@@ -66,8 +79,8 @@ function revertableOperation(
       });
     }
     result.revert();
-    return 0;
+    return { countOfAnys: result.countOfAnys, countChangesDone: 0 };
   }
 
-  return result.countChangesDone;
+  return { countOfAnys: result.countOfAnys, countChangesDone: result.countChangesDone };
 }

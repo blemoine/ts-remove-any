@@ -33,7 +33,7 @@ async function main(args: string[]) {
           );
         }
 
-        return changes;
+        return changes.countChangesDone;
       })
     );
 

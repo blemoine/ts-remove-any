@@ -6,5 +6,7 @@ module.exports = {
     "plugin:@typescript-eslint/eslint-recommended",
   ],
   plugins: ["@typescript-eslint"],
-  rules: {},
+  rules: {
+    "@typescript-eslint/no-empty-function": 0,
+  },
 };
