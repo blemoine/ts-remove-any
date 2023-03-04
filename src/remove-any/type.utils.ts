@@ -167,6 +167,11 @@ export function findTypesOfVariableUsage(variableDeclaration: VariableDeclaratio
     .filter(isNotNil);
 }
 
+/**
+ * In expression `fn(x)` or `obj.fn(x)` type of the argument of `fn` 
+ *
+ * @param ref
+ */
 function findTypeOfVariableCall(ref: Node): Type[] | null {
   const parent = ref.getParent();
   if (!parent) {
@@ -197,6 +202,10 @@ function findTypeOfVariableCall(ref: Node): Type[] | null {
   return null;
 }
 
+/**
+ * In `x = y` expression, type of `y`
+ * @param ref
+ */
 function findTypeOfVariableAssignment(ref: Node): Type | null {
   const parent = ref.getParent();
   if (!parent) {
