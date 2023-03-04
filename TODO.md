@@ -6,3 +6,4 @@
 * Add test for wrapped usage 
 
 * seat-selector-with-gender.tsx , ligne 85, bus
+* handle Classes

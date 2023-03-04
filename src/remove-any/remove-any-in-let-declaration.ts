@@ -1,5 +1,5 @@
-import { Node, VariableDeclaration } from "ts-morph";
-import { computeTypesFromList, filterUnusableTypes, isImplicitAny } from "./type.utils";
+import { VariableDeclaration } from "ts-morph";
+import { computeTypesFromList, filterUnusableTypes, findTypesOfVariableUsage, isImplicitAny } from "./type.utils";
 import { noopRevertableOperation, RevertableOperation } from "./revert-operation";
 
 export function removeAnyInLetDeclaration(variableDeclaration: VariableDeclaration): RevertableOperation {
@@ -7,18 +7,7 @@ export function removeAnyInLetDeclaration(variableDeclaration: VariableDeclarati
     return noopRevertableOperation;
   }
 
-  const typesOfSets = variableDeclaration.findReferencesAsNodes().map((ref) => {
-    const parent = ref.getParent();
-    if (!parent || !Node.isBinaryExpression(parent)) {
-      return null;
-    }
-
-    if (parent.getOperatorToken().getText() !== "=") {
-      return null;
-    }
-
-    return parent.getRight().getType() ?? null;
-  });
+  const typesOfSets = findTypesOfVariableUsage(variableDeclaration);
 
   const newType = computeTypesFromList(filterUnusableTypes(typesOfSets));
 

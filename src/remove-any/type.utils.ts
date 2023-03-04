@@ -6,6 +6,7 @@ import {
   ReferenceFindableNode,
   Type,
   TypedNode,
+  VariableDeclaration,
 } from "ts-morph";
 import { isNotNil } from "../utils/is-not-nil";
 
@@ -111,31 +112,7 @@ export function findTypeFromRefUsage(ref: Node): Type[] {
 
     return (declarations ?? [])?.map((d) => d.getType());
   }
-  if (Node.isCallExpression(parent)) {
-    const children = parent.getChildren();
-    if (children.length > 0) {
-      const firstChildren = children[0];
-
-      const idxOfCallParameter = parent.getArguments().indexOf(ref);
-      if (firstChildren instanceof Identifier) {
-        return firstChildren
-          .getType()
-          .getCallSignatures()
-          .map((s) => s.getParameters()[idxOfCallParameter]?.getTypeAtLocation(firstChildren));
-      }
-      if (firstChildren instanceof PropertyAccessExpression) {
-        return firstChildren
-          .getType()
-          .getCallSignatures()
-          .flatMap((signature) => {
-            const parameters = signature.getParameters();
-
-            return parameters[idxOfCallParameter]?.getTypeAtLocation(firstChildren);
-          });
-      }
-    }
-  }
-  return [];
+  return findTypeOfVariableCall(ref) ?? [];
 }
 
 export function computeDestructuredTypes(parametersFn: ParameterDeclaration): string | null {
@@ -174,6 +151,65 @@ export function computeDestructuredTypes(parametersFn: ParameterDeclaration): st
     }
   }
   return null;
+}
+
+export function findTypesOfVariableUsage(variableDeclaration: VariableDeclaration): Type[] {
+  return variableDeclaration
+    .findReferencesAsNodes()
+    .flatMap((ref) => {
+      const variableAssignment = findTypeOfVariableAssignment(ref);
+      if (variableAssignment) {
+        return [variableAssignment];
+      }
+
+      return findTypeOfVariableCall(ref);
+    })
+    .filter(isNotNil);
+}
+
+function findTypeOfVariableCall(ref: Node): Type[] | null {
+  const parent = ref.getParent();
+  if (!parent) {
+    return null;
+  }
+  if (!Node.isCallExpression(parent)) {
+    return null;
+  }
+  const children = parent.getChildren();
+  if (children.length === 0) {
+    return null;
+  }
+
+  const firstChildren = children[0];
+  const idxOfCallParameter = parent.getArguments().indexOf(ref);
+
+  if (firstChildren instanceof Identifier || firstChildren instanceof PropertyAccessExpression) {
+    return firstChildren
+      .getType()
+      .getCallSignatures()
+      .map((signature) => {
+        const parameters = signature.getParameters();
+
+        return parameters[idxOfCallParameter]?.getTypeAtLocation(firstChildren);
+      });
+  }
+
+  return null;
+}
+
+function findTypeOfVariableAssignment(ref: Node): Type | null {
+  const parent = ref.getParent();
+  if (!parent) {
+    return null;
+  }
+  if (!Node.isBinaryExpression(parent)) {
+    return null;
+  }
+  if (parent.getOperatorToken().getText() !== "=") {
+    return null;
+  }
+
+  return parent.getRight().getType() ?? null;
 }
 
 export type ComputedType = { kind: "type_found"; type: string } | { kind: "no_any" } | { kind: "no_type_found" };
