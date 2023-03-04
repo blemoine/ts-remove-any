@@ -139,22 +139,24 @@ export function findTypeFromRefUsage(ref: Node): Type[] {
 }
 
 export function computeDestructuredTypes(parametersFn: ParameterDeclaration): string | null {
+  if (parametersFn.getTypeNode()) {
+    return null;
+  }
   const parameterTypeProperties = parametersFn.getType().getProperties();
-  if (!parametersFn.getTypeNode() && parameterTypeProperties.some((p) => p.getTypeAtLocation(parametersFn).isAny())) {
+  if (parameterTypeProperties.some((p) => p.getTypeAtLocation(parametersFn).isAny())) {
     const propertyTypePairs = parametersFn.getChildren().flatMap((child) => {
       if (Node.isObjectBindingPattern(child)) {
         return child
           .getElements()
           .map((element) => {
-            let type: string | null;
-            if (element.getType().isAny()) {
-              const typesFromUsage = element.findReferencesAsNodes().flatMap((ref) => {
-                return findTypeFromRefUsage(ref);
-              });
-              type = computeTypesFromList(filterUnusableTypes(typesFromUsage));
-            } else {
-              type = element.getType().getText();
+            if (!element.getType().isAny()) {
+              return null;
             }
+
+            const typesFromUsage = element.findReferencesAsNodes().flatMap((ref) => {
+              return findTypeFromRefUsage(ref);
+            });
+            const type = computeTypesFromList(filterUnusableTypes(typesFromUsage));
 
             return type ? ({ propertyName: element.getName(), type } as const) : null;
           })

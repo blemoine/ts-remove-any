@@ -44,6 +44,26 @@ arr.map(({ val }) => i);
     expect(numberOfChanges.countChangesDone).toBe(0);
     expect(numberOfChanges.countOfAnys).toBe(0);
   });
+
+    it("should not set the type if the type system is able to infer it even if there an any", () => {
+        const sourceFile = createSourceFile(`
+const arr: {val: number, x: any}[] = [];
+arr.map(({val}) => i);        
+`);
+
+        const numberOfChanges = removeAny(sourceFile);
+
+        expect(sourceFile.print()).toStrictEqual(
+            `const arr: {
+    val: number;
+    x: any;
+}[] = [];
+arr.map(({ val }) => i);
+`
+        );
+        expect(numberOfChanges.countChangesDone).toBe(0);
+        expect(numberOfChanges.countOfAnys).toBe(0);
+    });
 });
 
 function createSourceFile(code: string): SourceFile {

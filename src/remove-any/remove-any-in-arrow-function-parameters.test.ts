@@ -37,7 +37,7 @@ fnToIgnore(1234);
 `
     );
   });
-// TODO FROM THERE
+  // TODO FROM THERE
   it("should set the type to union type if called with 4 numbers", () => {
     const sourceFile = createSourceFile(`
 const fnToIgnore = (my_explicit_variable) => {
@@ -172,7 +172,8 @@ fnToIgnore('1');
 `);
 
     const numberOfChanges = removeAny(sourceFile);
-    expect(numberOfChanges).toBe(1);
+    expect(numberOfChanges.countChangesDone).toBe(1);
+    expect(numberOfChanges.countOfAnys).toBe(1);
     expect(sourceFile.print()).toStrictEqual(
       `const fnToIgnore = (my_explicit_variable: "1") => {
     return { value: my_explicit_variable };
@@ -196,7 +197,8 @@ function callsite(n: any) {
 `);
 
     const numberOfChanges = removeAny(sourceFile);
-    expect(numberOfChanges).toBe(0);
+    expect(numberOfChanges.countChangesDone).toBe(0);
+    expect(numberOfChanges.countOfAnys).toBe(1);
     expect(sourceFile.print()).toStrictEqual(
       `const fnToIgnore = (my_explicit_variable) => {
     return { value: my_explicit_variable };
@@ -208,8 +210,8 @@ function callsite(n: any) {
     );
   });
 
-    it("should use the usage type if possible", () => {
-        const sourceFile = createSourceFile(`
+  it("should use the usage type if possible", () => {
+    const sourceFile = createSourceFile(`
 const fnToIgnore = (my_explicit_variable) => {
   const a: number = my_explicit_variable;
   return a;
@@ -220,10 +222,11 @@ function callsite(n: any) {
 }
 `);
 
-        const numberOfChanges = removeAny(sourceFile);
-        expect(numberOfChanges).toBe(1);
-        expect(sourceFile.print()).toStrictEqual(
-            `const fnToIgnore = (my_explicit_variable: number) => {
+    const numberOfChanges = removeAny(sourceFile);
+    expect(numberOfChanges.countChangesDone).toBe(1);
+    expect(numberOfChanges.countOfAnys).toBe(1);
+    expect(sourceFile.print()).toStrictEqual(
+      `const fnToIgnore = (my_explicit_variable: number) => {
     const a: number = my_explicit_variable;
     return a;
 };
@@ -231,11 +234,11 @@ function callsite(n: any) {
     fnToIgnore(n);
 }
 `
-        );
-    });
+    );
+  });
 
-    it("should use the usage type in function call  if possible", () => {
-        const sourceFile = createSourceFile(`
+  it("should use the usage type in function call  if possible", () => {
+    const sourceFile = createSourceFile(`
 const fnToIgnore = (my_explicit_variable) => {
   wellDefinedFn(my_explicit_variable);
 }
@@ -247,10 +250,11 @@ function callsite(n: any) {
 }
 `);
 
-        const numberOfChanges = removeAny(sourceFile);
-        expect(numberOfChanges).toBe(1);
-        expect(sourceFile.print()).toStrictEqual(
-            `const fnToIgnore = (my_explicit_variable: string) => {
+    const numberOfChanges = removeAny(sourceFile);
+    expect(numberOfChanges.countChangesDone).toBe(1);
+    expect(numberOfChanges.countOfAnys).toBe(1);
+    expect(sourceFile.print()).toStrictEqual(
+      `const fnToIgnore = (my_explicit_variable: string) => {
     wellDefinedFn(my_explicit_variable);
 };
 function wellDefinedFn(x: string) { }
@@ -258,11 +262,11 @@ function callsite(n: any) {
     fnToIgnore(n);
 }
 `
-        );
-    })
+    );
+  });
 
-    it("should use the usage type in method call if possible", () => {
-        const sourceFile = createSourceFile(`
+  it("should use the usage type in method call if possible", () => {
+    const sourceFile = createSourceFile(`
 const fnToIgnore = (my_explicit_variable) => {
   const test = new Test();
   test.wellDefinedFn(1, my_explicit_variable);
@@ -277,10 +281,11 @@ function callsite(n: any) {
 }
 `);
 
-        const numberOfChanges = removeAny(sourceFile);
-        expect(numberOfChanges).toBe(1);
-        expect(sourceFile.print()).toStrictEqual(
-            `const fnToIgnore = (my_explicit_variable: string) => {
+    const numberOfChanges = removeAny(sourceFile);
+    expect(numberOfChanges.countChangesDone).toBe(1);
+    expect(numberOfChanges.countOfAnys).toBe(1);
+    expect(sourceFile.print()).toStrictEqual(
+      `const fnToIgnore = (my_explicit_variable: string) => {
     const test = new Test();
     test.wellDefinedFn(1, my_explicit_variable);
 };
@@ -291,11 +296,10 @@ function callsite(n: any) {
     fnToIgnore(n);
 }
 `
-        );
-    })
+    );
+  });
 
-
-    it("should not merge string and literal string", () => {
+  it("should not merge string and literal string", () => {
     const sourceFile = createSourceFile(`
 const fnToIgnore = (my_explicit_variable) => {
   return { value: my_explicit_variable };
@@ -310,7 +314,8 @@ function callsite2(n: 'test') {
 `);
 
     const numberOfChanges = removeAny(sourceFile);
-    expect(numberOfChanges).toBe(1);
+    expect(numberOfChanges.countChangesDone).toBe(1);
+    expect(numberOfChanges.countOfAnys).toBe(1);
     expect(sourceFile.print()).toStrictEqual(
       `const fnToIgnore = (my_explicit_variable: string) => {
     return { value: my_explicit_variable };
@@ -347,11 +352,12 @@ const arr: number[] = [];
 map(fnToIgnore);
 `
     );
-    expect(numberOfChanges).toBe(1);
+    expect(numberOfChanges.countChangesDone).toBe(1);
+    expect(numberOfChanges.countOfAnys).toBe(1);
   });
 
-    it("should set the type even in a beta reduction case with dotted property", () => {
-        const sourceFile = createSourceFile(`
+  it("should set the type even in a beta reduction case with dotted property", () => {
+    const sourceFile = createSourceFile(`
 const fnToIgnore = (my_explicit_variable) => {
   return { value: my_explicit_variable };
 }
@@ -360,21 +366,22 @@ const arr: number[] = [];
 arr.map(fnToIgnore);
 `);
 
-        const numberOfChanges = removeAny(sourceFile);
+    const numberOfChanges = removeAny(sourceFile);
 
-        expect(sourceFile.print()).toStrictEqual(
-            `const fnToIgnore = (my_explicit_variable: number) => {
+    expect(sourceFile.print()).toStrictEqual(
+      `const fnToIgnore = (my_explicit_variable: number) => {
     return { value: my_explicit_variable };
 };
 const arr: number[] = [];
 arr.map(fnToIgnore);
 `
-        );
-        expect(numberOfChanges).toBe(1);
-    })
+    );
+    expect(numberOfChanges.countChangesDone).toBe(1);
+    expect(numberOfChanges.countOfAnys).toBe(1);
+  });
 
-    it("should set the type even in a beta reduction case with dotted property and the callback is the 2nd parameter", () => {
-        const sourceFile = createSourceFile(`
+  it("should set the type even in a beta reduction case with dotted property and the callback is the 2nd parameter", () => {
+    const sourceFile = createSourceFile(`
 const fnToIgnore = (my_explicit_variable) => {
   return { value: my_explicit_variable };
 }
@@ -387,10 +394,10 @@ const test = new Test();
 test.highLevelMethod([], fnToIgnore);
 `);
 
-        const numberOfChanges = removeAny(sourceFile);
+    const numberOfChanges = removeAny(sourceFile);
 
-        expect(sourceFile.print()).toStrictEqual(
-            `const fnToIgnore = (my_explicit_variable: number) => {
+    expect(sourceFile.print()).toStrictEqual(
+      `const fnToIgnore = (my_explicit_variable: number) => {
     return { value: my_explicit_variable };
 };
 class Test {
@@ -400,9 +407,10 @@ class Test {
 const test = new Test();
 test.highLevelMethod([], fnToIgnore);
 `
-        );
-        expect(numberOfChanges).toBe(1);
-    })
+    );
+    expect(numberOfChanges.countChangesDone).toBe(1);
+    expect(numberOfChanges.countOfAnys).toBe(1);
+  });
 });
 
 function createSourceFile(code: string): SourceFile {

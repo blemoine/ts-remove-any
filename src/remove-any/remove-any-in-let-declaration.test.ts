@@ -9,7 +9,8 @@ x = 1;
 `);
 
     const numberOfChanges = removeAny(sourceFile);
-    expect(numberOfChanges).toBe(1);
+    expect(numberOfChanges.countChangesDone).toBe(1);
+    expect(numberOfChanges.countOfAnys).toBe(1);
     expect(sourceFile.print()).toStrictEqual(
       `let x: 1;
 x = 1;
@@ -17,27 +18,27 @@ x = 1;
     );
   });
 
-    it("should add a type in let declaration inside functions", () => {
-        const sourceFile = createSourceFile(`
+  it("should add a type in let declaration inside functions", () => {
+    const sourceFile = createSourceFile(`
 before(() => {        
     let x;
     it(() => { x = 'test' });
 });
 `);
 
-        const numberOfChanges = removeAny(sourceFile);
-        expect(numberOfChanges).toBe(1);
-        expect(sourceFile.print()).toStrictEqual(
-            `before(() => {
+    const numberOfChanges = removeAny(sourceFile);
+    expect(numberOfChanges.countChangesDone).toBe(1);
+    expect(numberOfChanges.countOfAnys).toBe(1);
+    expect(sourceFile.print()).toStrictEqual(
+      `before(() => {
     let x: "test";
     it(() => { x = 'test'; });
 });
 `
-        );
-    });
+    );
+  });
 
-
-    it("should not do a change if doesn't compile", () => {
+  it("should not do a change if doesn't compile", () => {
     const sourceFile = createSourceFile(`
 let x;
 x = {};
@@ -52,7 +53,8 @@ x = {};
 x.test = 2;
 `
     );
-    expect(numberOfChanges).toBe(0);
+    expect(numberOfChanges.countChangesDone).toBe(0);
+    expect(numberOfChanges.countOfAnys).toBe(1);
   });
 });
 
