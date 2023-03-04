@@ -17,6 +17,7 @@ function getParameterComputedType(
   parametersIdx: number
 ): ComputedType {
   const destructuredType = computeDestructuredTypes(parametersFn);
+
   if (destructuredType) {
     return { kind: "type_found", type: destructuredType };
   }
