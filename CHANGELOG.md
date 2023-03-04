@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.39](https://github.com/blemoine/ts-remove-any/compare/v0.1.38...v0.1.39) (2023-03-04)
+
+
+### Features
+
+* remove an exagerated case ([8002cb6](https://github.com/blemoine/ts-remove-any/commit/8002cb6aad307397b2539be3756273240ac24a72))
+
 ### [0.1.38](https://github.com/blemoine/ts-remove-any/compare/v0.1.37...v0.1.38) (2023-03-04)
 
 
