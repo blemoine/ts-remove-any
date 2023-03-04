@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.38](https://github.com/blemoine/ts-remove-any/compare/v0.1.37...v0.1.38) (2023-03-04)
+
+
+### Features
+
+* add countOfAnys ([e957293](https://github.com/blemoine/ts-remove-any/commit/e957293c4199d52de3decb88947391d189898dcd))
+* add support for arrows for React Component ([1e85180](https://github.com/blemoine/ts-remove-any/commit/1e85180291e948d3dc8a40a36576594731b09e0c))
+* try to filter files with no any ([83af2af](https://github.com/blemoine/ts-remove-any/commit/83af2af56aeb4935645a860d8fbd8d30ded65e12))
+* trying to optimize the run ([845aa08](https://github.com/blemoine/ts-remove-any/commit/845aa083660d2977c9967e687a2388ca387bc5cf))
+
 ### [0.1.37](https://github.com/blemoine/ts-remove-any/compare/v0.1.36...v0.1.37) (2023-03-03)
 
 
