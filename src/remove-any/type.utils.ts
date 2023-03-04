@@ -173,3 +173,5 @@ export function computeDestructuredTypes(parametersFn: ParameterDeclaration): st
   }
   return null;
 }
+
+export type ComputedType = { kind: "type_found"; type: string } | { kind: "no_any" } | { kind: "no_type_found" };

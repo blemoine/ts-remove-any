@@ -1,6 +1,7 @@
 import { FunctionDeclaration, ParameterDeclaration } from "ts-morph";
 import {
   computeDestructuredTypes,
+  ComputedType,
   computeTypesFromList,
   filterUnusableTypes,
   findTypeFromRefUsage,
@@ -8,31 +9,32 @@ import {
   isImplicitAny,
 } from "./type.utils";
 import { concatRevertableOperation, noopRevertableOperation, RevertableOperation } from "./revert-operation";
+import { cannotHappen } from "../utils/cannot-happen";
 
 function getParameterComputedType(
   parametersFn: ParameterDeclaration,
   sourceFn: FunctionDeclaration,
   parametersIdx: number
-): string | null {
+): ComputedType {
   const destructuredType = computeDestructuredTypes(parametersFn);
   if (destructuredType) {
-    return destructuredType;
+    return { kind: "type_found", type: destructuredType };
   }
 
   if (!isImplicitAny(parametersFn)) {
-    return null;
+    return { kind: "no_any" };
   }
   const callsiteTypes = findTypesFromCallSite(sourceFn, parametersIdx);
 
   const result = computeTypesFromList(filterUnusableTypes(callsiteTypes));
-  if (!result) {
-    const typesFromUsage = parametersFn.findReferencesAsNodes().flatMap((ref) => {
-      return findTypeFromRefUsage(ref);
-    });
-    return computeTypesFromList(filterUnusableTypes(typesFromUsage));
+  if (result) {
+    return { kind: "type_found", type: result };
   }
-
-  return result;
+  const typesFromUsage = parametersFn.findReferencesAsNodes().flatMap((ref) => {
+    return findTypeFromRefUsage(ref);
+  });
+  const computedType = computeTypesFromList(filterUnusableTypes(typesFromUsage));
+  return computedType ? { kind: "type_found", type: computedType } : { kind: "no_type_found" };
 }
 
 export function removeAnyInFunction(sourceFn: FunctionDeclaration): RevertableOperation {
@@ -41,9 +43,9 @@ export function removeAnyInFunction(sourceFn: FunctionDeclaration): RevertableOp
     .map((parametersFn, parametersIdx) => {
       const newType = getParameterComputedType(parametersFn, sourceFn, parametersIdx);
 
-      if (newType) {
+      if (newType.kind === "type_found") {
         try {
-          parametersFn.setType(newType);
+          parametersFn.setType(newType.type);
           return {
             countChangesDone: 1,
             countOfAnys: 1,
@@ -53,9 +55,15 @@ export function removeAnyInFunction(sourceFn: FunctionDeclaration): RevertableOp
           };
         } catch (e) {
           console.error("Unexpected error, please notify ts-remove-any maintainer", e);
+          return { countChangesDone: 0, countOfAnys: 1, revert() {} };
         }
+      } else if (newType.kind === "no_type_found") {
+        return { countChangesDone: 0, countOfAnys: 1, revert() {} };
+      } else if (newType.kind === "no_any") {
+        return noopRevertableOperation;
+      } else {
+        cannotHappen(newType);
       }
-      return { countChangesDone: 0, countOfAnys: 1, revert() {} };
     })
     .reduce((a, b) => concatRevertableOperation(a, b), noopRevertableOperation);
 }

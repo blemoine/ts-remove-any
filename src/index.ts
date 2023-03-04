@@ -1,6 +1,5 @@
-import { Project, SourceFile } from "ts-morph";
+import { Project } from "ts-morph";
 import { removeAny } from "./remove-any/remove-any";
-import { sum } from "./utils/array.utils";
 import { parseCliArgs } from "./cli-parser";
 
 async function main(args: string[]) {
@@ -26,7 +25,7 @@ async function main(args: string[]) {
   while (numberOfChanges !== 0) {
     numberOfChanges = 0;
     if (verbosity > 0) {
-      console.log(`${numberOfChanges} files are ignored, as they contains no 'any'`);
+      console.log(`${filesWithNoAny.size} files are ignored, as they contains no 'any'`);
     }
     filteredSourceFiles.forEach((sourceFile, idx) => {
       if (filesWithNoAny.has(sourceFile.getFilePath())) {
