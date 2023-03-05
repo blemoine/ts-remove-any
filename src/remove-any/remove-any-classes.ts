@@ -1,4 +1,4 @@
-import { ConstructorDeclaration, ParameterDeclaration } from "ts-morph";
+import { ConstructorDeclaration, MethodDeclaration, ParameterDeclaration } from "ts-morph";
 import {
   computeDestructuredTypes,
   ComputedType,
@@ -13,7 +13,7 @@ import { cannotHappen } from "../utils/cannot-happen";
 
 function getParameterComputedType(
   parametersFn: ParameterDeclaration,
-  sourceFn: ConstructorDeclaration,
+  sourceFn: ConstructorDeclaration | MethodDeclaration,
   parametersIdx: number
 ): ComputedType {
   const destructuredType = computeDestructuredTypes(parametersFn);
@@ -38,6 +38,37 @@ function getParameterComputedType(
 }
 
 export function removeAnyInClassesConstructor(sourceFn: ConstructorDeclaration): RevertableOperation {
+  return sourceFn
+    .getParameters()
+    .map((parametersFn, parametersIdx) => {
+      const newType = getParameterComputedType(parametersFn, sourceFn, parametersIdx);
+
+      if (newType.kind === "type_found") {
+        try {
+          parametersFn.setType(newType.type);
+          return {
+            countChangesDone: 1,
+            countOfAnys: 1,
+            revert() {
+              parametersFn.removeType();
+            },
+          };
+        } catch (e) {
+          console.error("Unexpected error, please notify ts-remove-any maintainer", e);
+          return { countChangesDone: 0, countOfAnys: 1, revert() {} };
+        }
+      } else if (newType.kind === "no_type_found") {
+        return { countChangesDone: 0, countOfAnys: 1, revert() {} };
+      } else if (newType.kind === "no_any") {
+        return noopRevertableOperation;
+      } else {
+        cannotHappen(newType);
+      }
+    })
+    .reduce((a, b) => concatRevertableOperation(a, b), noopRevertableOperation);
+}
+
+export function removeAnyInMethodDeclaration(sourceFn: MethodDeclaration): RevertableOperation {
   return sourceFn
     .getParameters()
     .map((parametersFn, parametersIdx) => {

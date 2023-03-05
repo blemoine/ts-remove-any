@@ -20,6 +20,26 @@ new A('test');
 `
     );
   });
+
+  it("should find remove any in method based on call", () => {
+    const sourceFile = createSourceFile(`
+class A {
+    myMethod(value){}
+}
+const a = new A();
+a.myMethod(12);
+    `);
+
+    removeAny(sourceFile);
+    expect(sourceFile.print()).toStrictEqual(
+        `class A {
+    myMethod(value: 12) { }
+}
+const a = new A();
+a.myMethod(12);
+`
+    );
+  })
 });
 
 function createSourceFile(code: string): SourceFile {

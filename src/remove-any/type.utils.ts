@@ -75,6 +75,13 @@ export function findTypesFromCallSite(
       const argument = parent.getArguments()[parametersIdx];
       return [argument?.getType()];
     }
+    if (Node.isPropertyAccessExpression(parent)) {
+      const greatParent = parent.getParent();
+      if (Node.isCallExpression(greatParent)) {
+        const argument = greatParent.getArguments()[parametersIdx];
+        return [argument?.getType()];
+      }
+    }
     if (Node.isCallExpression(parent)) {
       if (sourceName && parent.getText().startsWith(sourceName)) {
         const argument = parent.getArguments()[parametersIdx];

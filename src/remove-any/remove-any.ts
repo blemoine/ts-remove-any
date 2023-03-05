@@ -1,10 +1,17 @@
-import { ArrowFunction, ConstructorDeclaration, FunctionDeclaration, SourceFile, VariableDeclaration } from "ts-morph";
+import {
+  ArrowFunction,
+  ConstructorDeclaration,
+  FunctionDeclaration,
+  MethodDeclaration,
+  SourceFile,
+  VariableDeclaration,
+} from "ts-morph";
 import { removeAnyInFunction } from "./remove-any-in-function-parameters";
 import { sum } from "../utils/array.utils";
 import { removeAnyInLetDeclaration } from "./remove-any-in-let-declaration";
 import { RevertableOperation } from "./revert-operation";
 import { removeAnyInArrowFunction } from "./remove-any-in-arrow-function-parameters";
-import { removeAnyInClassesConstructor } from "./remove-any-classes";
+import { removeAnyInClassesConstructor, removeAnyInMethodDeclaration } from "./remove-any-classes";
 
 interface RemoveAnyOptions {
   noReverts: boolean;
@@ -23,6 +30,7 @@ export function removeAny(
 
   const variableDeclarations: VariableDeclaration[] = [];
   const functions: FunctionDeclaration[] = [];
+  const methodDeclarations: MethodDeclaration[] = [];
   const arrowFunctions: ArrowFunction[] = [];
   const constructorDeclarations: ConstructorDeclaration[] = [];
   sourceFile.forEachDescendant((node) => {
@@ -34,6 +42,8 @@ export function removeAny(
       arrowFunctions.push(node);
     } else if (node instanceof ConstructorDeclaration) {
       constructorDeclarations.push(node);
+    } else if (node instanceof MethodDeclaration) {
+      methodDeclarations.push(node);
     }
   });
 
@@ -53,11 +63,16 @@ export function removeAny(
     revertableOperation(sourceFile, validatedOptions, () => removeAnyInClassesConstructor(constructorDeclaration))
   );
 
+  const resultsInMethodDeclarations = methodDeclarations.map((sourceFn) =>
+    revertableOperation(sourceFile, validatedOptions, () => removeAnyInMethodDeclaration(sourceFn))
+  );
+
   const aggregatedResults = [
     ...resultsInFunctions,
     ...resultsInLets,
     ...resultsInArrowFunctions,
     ...resultsInConstructors,
+    ...resultsInMethodDeclarations,
   ];
 
   return {
