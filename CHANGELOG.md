@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.40](https://github.com/blemoine/ts-remove-any/compare/v0.1.39...v0.1.40) (2023-03-05)
+
+
+### Features
+
+* try to apply patckage on the fly ([44f70b6](https://github.com/blemoine/ts-remove-any/commit/44f70b6edf5f1b1039ab2089c93c9f906b146f74))
+
 ### [0.1.39](https://github.com/blemoine/ts-remove-any/compare/v0.1.38...v0.1.39) (2023-03-04)
 
 
