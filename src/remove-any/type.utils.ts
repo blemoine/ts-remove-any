@@ -168,7 +168,7 @@ export function findTypesOfVariableUsage(variableDeclaration: VariableDeclaratio
 }
 
 /**
- * In expression `fn(x)` or `obj.fn(x)` type of the argument of `fn` 
+ * In expression `fn(x)` or `obj.fn(x)` type of the argument of `fn`
  *
  * @param ref
  */
