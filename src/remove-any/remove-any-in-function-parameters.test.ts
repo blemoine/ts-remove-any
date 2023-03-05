@@ -172,8 +172,8 @@ fnToIgnore('1');
 `);
 
     const numberOfChanges = removeAny(sourceFile);
-      expect(numberOfChanges.countChangesDone).toBe(1);
-      expect(numberOfChanges.countOfAnys).toBe(1);
+    expect(numberOfChanges.countChangesDone).toBe(1);
+    expect(numberOfChanges.countOfAnys).toBe(1);
     expect(sourceFile.print()).toStrictEqual(
       `function fnToIgnore(my_explicit_variable: "1") {
     return { value: my_explicit_variable };

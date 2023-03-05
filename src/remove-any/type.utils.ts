@@ -1,4 +1,6 @@
 import {
+  ArrowFunction,
+  FunctionDeclaration,
   Identifier,
   Node,
   ParameterDeclaration,
@@ -107,6 +109,14 @@ export function findTypesFromCallSite(
 
 export function findTypeFromRefUsage(ref: Node): Type[] {
   const parent = ref.getParent();
+  if (Node.isReturnStatement(parent)) {
+    const closestFunctionDeclaration = parent
+      .getAncestors()
+      .find((a): a is ArrowFunction | FunctionDeclaration => Node.isArrowFunction(a) || Node.isFunctionDeclaration(a));
+    if (closestFunctionDeclaration) {
+      return [closestFunctionDeclaration.getReturnType()];
+    }
+  }
   if (Node.isVariableDeclaration(parent)) {
     const declarations = parent.getVariableStatement()?.getDeclarations();
 

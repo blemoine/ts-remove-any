@@ -49,7 +49,6 @@ Number.parseInt(myVariable);
 
     expect(typesOfUsage.map((s) => s.getText())).toStrictEqual(["string"]);
   });
-
 });
 
 function createSourceFile(code: string): SourceFile {
