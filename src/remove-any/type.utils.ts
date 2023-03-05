@@ -64,12 +64,17 @@ export function computeTypesFromList(callsiteTypes: Type[]): string | null {
 }
 
 export function findTypesFromCallSite(
-  node: { getName(): string | undefined } & ReferenceFindableNode,
+  node: { getName?: () => string | undefined } & ReferenceFindableNode,
   parametersIdx: number
 ): Type[] {
-  const sourceName = node.getName();
+  const sourceName = "getName" in node && node.getName ? node.getName() : undefined;
   return node.findReferencesAsNodes().flatMap((ref): Type[] => {
     const parent = ref.getParent();
+
+    if (Node.isNewExpression(parent)) {
+      const argument = parent.getArguments()[parametersIdx];
+      return [argument?.getType()];
+    }
     if (Node.isCallExpression(parent)) {
       if (sourceName && parent.getText().startsWith(sourceName)) {
         const argument = parent.getArguments()[parametersIdx];

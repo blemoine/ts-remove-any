@@ -1,9 +1,10 @@
-import { ArrowFunction, FunctionDeclaration, SourceFile, VariableDeclaration } from "ts-morph";
+import { ArrowFunction, ConstructorDeclaration, FunctionDeclaration, SourceFile, VariableDeclaration } from "ts-morph";
 import { removeAnyInFunction } from "./remove-any-in-function-parameters";
 import { sum } from "../utils/array.utils";
 import { removeAnyInLetDeclaration } from "./remove-any-in-let-declaration";
 import { RevertableOperation } from "./revert-operation";
 import { removeAnyInArrowFunction } from "./remove-any-in-arrow-function-parameters";
+import { removeAnyInClassesConstructor } from "./remove-any-classes";
 
 interface RemoveAnyOptions {
   noReverts: boolean;
@@ -23,13 +24,16 @@ export function removeAny(
   const variableDeclarations: VariableDeclaration[] = [];
   const functions: FunctionDeclaration[] = [];
   const arrowFunctions: ArrowFunction[] = [];
-  sourceFile.forEachDescendant((d) => {
-    if (d instanceof VariableDeclaration) {
-      variableDeclarations.push(d);
-    } else if (d instanceof FunctionDeclaration) {
-      functions.push(d);
-    } else if (d instanceof ArrowFunction) {
-      arrowFunctions.push(d);
+  const constructorDeclarations: ConstructorDeclaration[] = [];
+  sourceFile.forEachDescendant((node) => {
+    if (node instanceof VariableDeclaration) {
+      variableDeclarations.push(node);
+    } else if (node instanceof FunctionDeclaration) {
+      functions.push(node);
+    } else if (node instanceof ArrowFunction) {
+      arrowFunctions.push(node);
+    } else if (node instanceof ConstructorDeclaration) {
+      constructorDeclarations.push(node);
     }
   });
 
@@ -45,7 +49,16 @@ export function removeAny(
     revertableOperation(sourceFile, validatedOptions, () => removeAnyInLetDeclaration(variableDeclaration))
   );
 
-  const aggregatedResults = [...resultsInFunctions, ...resultsInLets, ...resultsInArrowFunctions];
+  const resultsInConstructors = constructorDeclarations.map((constructorDeclaration) =>
+    revertableOperation(sourceFile, validatedOptions, () => removeAnyInClassesConstructor(constructorDeclaration))
+  );
+
+  const aggregatedResults = [
+    ...resultsInFunctions,
+    ...resultsInLets,
+    ...resultsInArrowFunctions,
+    ...resultsInConstructors,
+  ];
 
   return {
     countChangesDone: sum(aggregatedResults.map((r) => r.countChangesDone)),
