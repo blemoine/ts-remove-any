@@ -62,6 +62,21 @@ function getArrowFunctionDeclaredParametersType(callExpression: CallExpression):
   return [];
 }
 
+function getMethodDeclaredParametersType(callExpression: CallExpression): Type[] {
+  const methodItself = callExpression.getChildren()[0];
+  if (Node.isPropertyAccessExpression(methodItself)) {
+    const methodDeclaration = methodItself
+      .findReferencesAsNodes()
+      .map((r) => r.getParent())
+      .find(Node.isMethodDeclaration);
+    const parameters = methodDeclaration?.getParameters() ?? [];
+
+    return parameters.map((p) => p.getType());
+  }
+
+  return [];
+}
+
 function allTypesOfRef(ref: Node): Type[] {
   const parent = ref.getParent();
   if (!parent) {
@@ -73,7 +88,7 @@ function allTypesOfRef(ref: Node): Type[] {
     return [parent.getLeft().getType(), parent.getRight().getType()];
   }
 
-  // fn(x) {} or (x) => {}
+  // fn(x)  where fn is either a function, an arrow function or a method (obj.fn(x))
   if (Node.isCallExpression(parent)) {
     const functionArguments = parent.getArguments();
     const parameterIdx = functionArguments.indexOf(ref);
@@ -86,6 +101,10 @@ function allTypesOfRef(ref: Node): Type[] {
       const declaredParametersTypeOfArrow = getArrowFunctionDeclaredParametersType(parent);
       if (parameterIdx >= 0 && declaredParametersTypeOfArrow[parameterIdx]) {
         return [argument.getType(), declaredParametersTypeOfArrow[parameterIdx]];
+      }
+      const declaredParametersTypeOfMethod = getMethodDeclaredParametersType(parent);
+      if (parameterIdx >= 0 && declaredParametersTypeOfMethod[parameterIdx]) {
+        return [argument.getType(), declaredParametersTypeOfMethod[parameterIdx]];
       }
     }
   }

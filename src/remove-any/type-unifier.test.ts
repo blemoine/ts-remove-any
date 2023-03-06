@@ -46,6 +46,22 @@ test(1, '', myVariable);
     expect(typesOfUsage.map((s) => s.getText())).toStrictEqual(["any", "boolean"]);
   });
 
+  it("should return argument and parameter types of method call", () => {
+    const sourceFile = createSourceFile(`
+let myVariable;
+class Test { myMethod(_a: number, _b: string, _c: string[]){} }
+const test = new Test();
+test.myMethod(1, '', myVariable);
+      `);
+
+    const variableDeclaration = sourceFile.getVariableDeclarations()[0];
+    expect(variableDeclaration.getName()).toBe("myVariable");
+
+    const typesOfUsage = allTypesOfRefs(variableDeclaration);
+
+    expect(typesOfUsage.map((s) => s.getText())).toStrictEqual(["any", "string[]"]);
+  });
+
   it("should return argument and parameter types of constructor", () => {
     const sourceFile = createSourceFile(`
 let myVariable;
@@ -59,7 +75,7 @@ const test = new Test(1, '', myVariable);
     const typesOfUsage = allTypesOfRefs(variableDeclaration);
 
     expect(typesOfUsage.map((s) => s.getText())).toStrictEqual(["any", "boolean"]);
-  })
+  });
 });
 
 function createSourceFile(code: string): SourceFile {
