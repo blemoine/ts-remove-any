@@ -1,4 +1,14 @@
-import { Type, Node, ReferenceFindableNode, BinaryExpression, CallExpression, NewExpression } from "ts-morph";
+import {
+  Type,
+  Node,
+  ReferenceFindableNode,
+  BinaryExpression,
+  CallExpression,
+  NewExpression,
+  ArrowFunction,
+  FunctionDeclaration,
+  MethodDeclaration,
+} from "ts-morph";
 
 export function allTypesOfRefs(node: ReferenceFindableNode): Type[] {
   return node.findReferencesAsNodes().flatMap((ref) => allTypesOfRef(ref));
@@ -118,6 +128,17 @@ function allTypesOfRef(ref: Node): Type[] {
       if (parameterIdx >= 0 && declaredParametersType[parameterIdx]) {
         return [argument.getType(), declaredParametersType[parameterIdx]];
       }
+    }
+  }
+  if (Node.isReturnStatement(parent)) {
+    const closestFunctionDeclaration = parent
+      .getAncestors()
+      .find(
+        (a): a is ArrowFunction | FunctionDeclaration | MethodDeclaration =>
+          Node.isArrowFunction(a) || Node.isFunctionDeclaration(a) || Node.isMethodDeclaration(a)
+      );
+    if (closestFunctionDeclaration) {
+      return [ref.getType(), closestFunctionDeclaration.getReturnType()];
     }
   }
 

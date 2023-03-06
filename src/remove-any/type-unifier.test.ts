@@ -62,6 +62,20 @@ test.myMethod(1, '', myVariable);
     expect(typesOfUsage.map((s) => s.getText())).toStrictEqual(["any", "string[]"]);
   });
 
+  it("should return the type of return if used in a return position", () => {
+    const sourceFile = createSourceFile(`
+    let myVariable;
+function test(): string { return myVariable; }
+      `);
+
+    const variableDeclaration = sourceFile.getVariableDeclarations()[0];
+    expect(variableDeclaration.getName()).toBe("myVariable");
+
+    const typesOfUsage = allTypesOfRefs(variableDeclaration);
+
+    expect(typesOfUsage.map((s) => s.getText())).toStrictEqual(["any", "string"]);
+  });
+
   it("should return argument and parameter types of constructor", () => {
     const sourceFile = createSourceFile(`
 let myVariable;
