@@ -1,4 +1,4 @@
-import { Project, SourceFile } from "ts-morph";
+import { ArrowFunction, Project, SourceFile } from "ts-morph";
 import { allTypesOfRefs } from "./type-unifier";
 
 describe("allTypesOfRefs", () => {
@@ -117,7 +117,7 @@ const myVariable2: Array<boolean> = [myVariable];
     const typesOfUsage = allTypesOfRefs(variableDeclaration);
 
     expect(typesOfUsage.map((s) => s.getText())).toStrictEqual(["any", "boolean"]);
-  })
+  });
 
   it("should return the type of variable assignment in object", () => {
     const sourceFile = createSourceFile(`
@@ -131,7 +131,51 @@ const myVariable2: {x: number, y: string} = {x: myVariable, y: ''};
     const typesOfUsage = allTypesOfRefs(variableDeclaration);
 
     expect(typesOfUsage.map((s) => s.getText())).toStrictEqual(["any", "number"]);
-  })
+  });
+
+  it("should return the type of arguments of function", () => {
+    const sourceFile = createSourceFile(`
+function (x) {
+  return Number.parseInt(x);
+}      
+      `);
+
+    const paramaterDeclaration = sourceFile.getFunctions()[0].getParameters()[0];
+    expect(paramaterDeclaration.getName()).toBe("x");
+
+    const typesOfUsage = allTypesOfRefs(paramaterDeclaration);
+
+    expect(typesOfUsage.map((s) => s.getText())).toStrictEqual(["any", "string"]);
+  });
+
+  it("should return the type of arguments of arrow function", () => {
+    const sourceFile = createSourceFile(`
+const arr = (x) => Number.parseInt(x)    
+      `);
+
+    const paramaterDeclaration = (
+      sourceFile.getVariableDeclaration("arr")?.getChildren()[2] as ArrowFunction
+    ).getParameters()[0];
+    expect(paramaterDeclaration.getName()).toBe("x");
+
+    const typesOfUsage = allTypesOfRefs(paramaterDeclaration);
+
+    expect(typesOfUsage.map((s) => s.getText())).toStrictEqual(["any", "string"]);
+  });
+
+  it("should return the type of arguments of function when called", () => {
+    const sourceFile = createSourceFile(`
+function test(x) {}
+test('value');
+      `);
+
+    const paramaterDeclaration = sourceFile.getFunctions()[0].getParameters()[0];
+    expect(paramaterDeclaration.getName()).toBe("x");
+
+    const typesOfUsage = allTypesOfRefs(paramaterDeclaration);
+
+    expect(typesOfUsage.map((s) => s.getText())).toStrictEqual(["any", '"value"']);
+  });
 });
 
 function createSourceFile(code: string): SourceFile {

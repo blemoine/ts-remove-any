@@ -8,11 +8,57 @@ import {
   ArrowFunction,
   FunctionDeclaration,
   MethodDeclaration,
+  ParameterDeclaration,
 } from "ts-morph";
 import { isNotNil } from "../utils/is-not-nil";
 
 export function allTypesOfRefs(node: ReferenceFindableNode): Type[] {
-  return node.findReferencesAsNodes().flatMap((ref) => allTypesOfRef(ref));
+  const referencesAsNodes = node.findReferencesAsNodes();
+  const typesFromReference = referencesAsNodes.flatMap((ref) => allTypesOfRef(ref));
+
+  const typesFromLambda = node instanceof ParameterDeclaration ? allTypesOfLambda(node) : [];
+
+  return deduplicateTypes([...typesFromReference, ...typesFromLambda]);
+}
+
+function deduplicateTypes(types: Type[]): Type[] {
+  return [
+    ...types
+      .reduce((map, type) => {
+        const typeText = type.getText();
+        if (!map.has(typeText)) {
+          map.set(typeText, type);
+        }
+        return map;
+      }, new Map<string, Type>())
+      .values(),
+  ];
+}
+
+function allTypesOfLambda(node: ParameterDeclaration): Type[] {
+  const parent = node.getParent();
+  if (Node.isFunctionDeclaration(parent)) {
+    const parameterIdx = node.getChildIndex();
+
+    return [
+      node.getType(),
+      ...parent
+        .findReferencesAsNodes()
+        .map((r) => {
+          const refParent = r.getParent();
+          if (Node.isCallExpression(refParent)) {
+            const parentArguments = refParent.getArguments();
+
+            if (parentArguments[parameterIdx]) {
+              return parentArguments[parameterIdx].getType();
+            }
+          }
+          return null;
+        })
+        .filter(isNotNil),
+    ];
+  }
+  return [];
 }
 
 function isAssignation(parent: Node): parent is BinaryExpression {
@@ -30,6 +76,13 @@ function getFunctionDeclaredParametersType(callExpression: CallExpression): Type
 
     return parameters.map((p) => p.getType());
   }
+  if (Node.isPropertyAccessExpression(functionItself)) {
+    const signatures = functionItself?.getType().getCallSignatures();
+    if (signatures?.length > 0) {
+      return signatures[0].getParameters().map((p) => p.getTypeAtLocation(functionItself));
+    }
+  }
+
   return [];
 }
 
