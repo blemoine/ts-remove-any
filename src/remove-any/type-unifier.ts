@@ -142,5 +142,9 @@ function allTypesOfRef(ref: Node): Type[] {
     }
   }
 
+  if (Node.isVariableDeclaration(parent)) {
+    return [ref.getType(), parent.getType()];
+  }
+
   return [];
 }

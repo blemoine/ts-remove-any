@@ -90,6 +90,20 @@ const test = new Test(1, '', myVariable);
 
     expect(typesOfUsage.map((s) => s.getText())).toStrictEqual(["any", "boolean"]);
   });
+
+  it("should return the type of variable assignment", () => {
+    const sourceFile = createSourceFile(`
+let myVariable;
+const myVariable2: Array<boolean> = myVariable;      
+      `);
+
+    const variableDeclaration = sourceFile.getVariableDeclarations()[0];
+    expect(variableDeclaration.getName()).toBe("myVariable");
+
+    const typesOfUsage = allTypesOfRefs(variableDeclaration);
+
+    expect(typesOfUsage.map((s) => s.getText())).toStrictEqual(["any", "boolean[]"]);
+  });
 });
 
 function createSourceFile(code: string): SourceFile {
