@@ -1,5 +1,5 @@
 import { VariableDeclaration } from "ts-morph";
-import { computeTypesFromList, filterUnusableTypes, isImplicitAny } from "./type.utils";
+import { computeTypesFromList, filterUnusableTypes, isImplicitAny, setTypeOnNode } from "./type.utils";
 import { noopRevertableOperation, RevertableOperation } from "./revert-operation";
 import { allTypesOfRefs } from "./type-unifier";
 
@@ -13,14 +13,7 @@ export function removeAnyInLetDeclaration(variableDeclaration: VariableDeclarati
   const newType = computeTypesFromList(filterUnusableTypes(typesOfSets));
 
   if (newType) {
-    variableDeclaration.setType(newType);
-    return {
-      countChangesDone: 1,
-      countOfAnys: 1,
-      revert() {
-        variableDeclaration.removeType();
-      },
-    };
+    return setTypeOnNode(variableDeclaration, newType);
   }
   return { countChangesDone: 0, countOfAnys: 1, revert() {} };
 }

@@ -10,6 +10,7 @@ import {
   TypedNode,
 } from "ts-morph";
 import { isNotNil } from "../utils/is-not-nil";
+import { RevertableOperation } from "./revert-operation";
 
 export function isImplicitAny(node: TypedNode & Node) {
   const isAny = node.getType().isAny();
@@ -210,3 +211,14 @@ function findTypeOfVariableCall(ref: Node): Type[] | null {
 }
 
 export type ComputedType = { kind: "type_found"; type: string } | { kind: "no_any" } | { kind: "no_type_found" };
+
+export function setTypeOnNode(node: TypedNode, newType: string): RevertableOperation {
+  node.setType(newType);
+  return {
+    countChangesDone: 1,
+    countOfAnys: 1,
+    revert() {
+      node.removeType();
+    },
+  };
+}

@@ -8,6 +8,7 @@ import {
   findTypeFromRefUsage,
   findTypesFromCallSite,
   isImplicitAny,
+  setTypeOnNode,
 } from "./type.utils";
 import { cannotHappen } from "../utils/cannot-happen";
 
@@ -53,14 +54,7 @@ export function removeAnyInArrowFunction(sourceFn: ArrowFunction): RevertableOpe
 
       if (newType.kind === "type_found") {
         try {
-          parametersFn.setType(newType.type);
-          return {
-            countChangesDone: 1,
-            countOfAnys: 1,
-            revert() {
-              parametersFn.removeType();
-            },
-          };
+          return setTypeOnNode(parametersFn, newType.type);
         } catch (e) {
           console.error("Unexpected error, please notify ts-remove-any maintainer", e);
           return { countChangesDone: 0, countOfAnys: 1, revert() {} };
