@@ -1,13 +1,14 @@
 import { VariableDeclaration } from "ts-morph";
-import { computeTypesFromList, filterUnusableTypes, findTypesOfVariableUsage, isImplicitAny } from "./type.utils";
+import { computeTypesFromList, filterUnusableTypes, isImplicitAny } from "./type.utils";
 import { noopRevertableOperation, RevertableOperation } from "./revert-operation";
+import { allTypesOfRefs } from "./type-unifier";
 
 export function removeAnyInLetDeclaration(variableDeclaration: VariableDeclaration): RevertableOperation {
   if (!isImplicitAny(variableDeclaration)) {
     return noopRevertableOperation;
   }
 
-  const typesOfSets = findTypesOfVariableUsage(variableDeclaration);
+  const typesOfSets = allTypesOfRefs(variableDeclaration);
 
   const newType = computeTypesFromList(filterUnusableTypes(typesOfSets));
 

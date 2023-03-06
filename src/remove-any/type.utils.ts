@@ -8,7 +8,6 @@ import {
   ReferenceFindableNode,
   Type,
   TypedNode,
-  VariableDeclaration,
 } from "ts-morph";
 import { isNotNil } from "../utils/is-not-nil";
 
@@ -175,20 +174,6 @@ export function computeDestructuredTypes(parametersFn: ParameterDeclaration): st
   return null;
 }
 
-export function findTypesOfVariableUsage(variableDeclaration: VariableDeclaration): Type[] {
-  return variableDeclaration
-    .findReferencesAsNodes()
-    .flatMap((ref) => {
-      const variableAssignment = findTypeOfVariableAssignment(ref);
-      if (variableAssignment) {
-        return [variableAssignment];
-      }
-
-      return findTypeOfVariableCall(ref);
-    })
-    .filter(isNotNil);
-}
-
 /**
  * In expression `fn(x)` or `obj.fn(x)` type of the argument of `fn`
  *
@@ -222,25 +207,6 @@ function findTypeOfVariableCall(ref: Node): Type[] | null {
   }
 
   return null;
-}
-
-/**
- * In `x = y` expression, type of `y`
- * @param ref
- */
-function findTypeOfVariableAssignment(ref: Node): Type | null {
-  const parent = ref.getParent();
-  if (!parent) {
-    return null;
-  }
-  if (!Node.isBinaryExpression(parent)) {
-    return null;
-  }
-  if (parent.getOperatorToken().getText() !== "=") {
-    return null;
-  }
-
-  return parent.getRight().getType() ?? null;
 }
 
 export type ComputedType = { kind: "type_found"; type: string } | { kind: "no_any" } | { kind: "no_type_found" };
