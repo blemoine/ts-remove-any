@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.41](https://github.com/blemoine/ts-remove-any/compare/v0.1.40...v0.1.41) (2023-03-06)
+
+
+### Features
+
+* add a type unifier test case ([49078f2](https://github.com/blemoine/ts-remove-any/commit/49078f28dfb4d9929937cc5967d18cbf35f99bb8))
+* add support for classes constructor ([f3067ed](https://github.com/blemoine/ts-remove-any/commit/f3067edfcca22ebaea0476317ec2dd4aeea27bf2))
+* add support for method call ([72e9cb1](https://github.com/blemoine/ts-remove-any/commit/72e9cb16b8d0c670f66ce199ea09d42fdc70f9e4))
+* add support for object determination ([37f6dd1](https://github.com/blemoine/ts-remove-any/commit/37f6dd15543a07f8edb1b623563754e012cbc5ca))
+* add support for return statement in unifier ([6aba6d6](https://github.com/blemoine/ts-remove-any/commit/6aba6d64476d9182546ed859920bdb42004315b6))
+* add support for simple variable declaration ([9db53aa](https://github.com/blemoine/ts-remove-any/commit/9db53aa2a033f2c5958d26a820ee977132d2d5ff))
+* init type-unifier ([fa4d185](https://github.com/blemoine/ts-remove-any/commit/fa4d185d5233be86aa46f543b12e88dbb3b7ffca))
+* support for returns type for function ([b099372](https://github.com/blemoine/ts-remove-any/commit/b099372bd146fee8ea02fbf0ddd85fc0bea5fd6f))
+* use allTypesOfRef ([6bfcc69](https://github.com/blemoine/ts-remove-any/commit/6bfcc698b0a9fbc8f2b6b937e9c16fd65ec462a9))
+
 ### [0.1.40](https://github.com/blemoine/ts-remove-any/compare/v0.1.39...v0.1.40) (2023-03-05)
 
 
