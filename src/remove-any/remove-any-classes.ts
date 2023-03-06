@@ -38,7 +38,9 @@ function getParameterComputedType(
   return computedType ? { kind: "type_found", type: computedType } : { kind: "no_type_found" };
 }
 
-export function removeAnyInClassesConstructor(sourceFn: ConstructorDeclaration): RevertableOperation {
+export function removeAnyInClassesConstructor(
+  sourceFn: ConstructorDeclaration | MethodDeclaration
+): RevertableOperation {
   return sourceFn
     .getParameters()
     .map((parametersFn, parametersIdx) => {
@@ -63,25 +65,5 @@ export function removeAnyInClassesConstructor(sourceFn: ConstructorDeclaration):
 }
 
 export function removeAnyInMethodDeclaration(sourceFn: MethodDeclaration): RevertableOperation {
-  return sourceFn
-    .getParameters()
-    .map((parametersFn, parametersIdx) => {
-      const newType = getParameterComputedType(parametersFn, sourceFn, parametersIdx);
-
-      if (newType.kind === "type_found") {
-        try {
-          return setTypeOnNode(parametersFn, newType.type);
-        } catch (e) {
-          console.error("Unexpected error, please notify ts-remove-any maintainer", e);
-          return { countChangesDone: 0, countOfAnys: 1, revert() {} };
-        }
-      } else if (newType.kind === "no_type_found") {
-        return { countChangesDone: 0, countOfAnys: 1, revert() {} };
-      } else if (newType.kind === "no_any") {
-        return noopRevertableOperation;
-      } else {
-        cannotHappen(newType);
-      }
-    })
-    .reduce((a, b) => concatRevertableOperation(a, b), noopRevertableOperation);
+  return removeAnyInClassesConstructor(sourceFn);
 }
