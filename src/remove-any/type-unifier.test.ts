@@ -104,6 +104,34 @@ const myVariable2: Array<boolean> = myVariable;
 
     expect(typesOfUsage.map((s) => s.getText())).toStrictEqual(["any", "boolean[]"]);
   });
+
+  it("should return the type of variable assignment in array", () => {
+    const sourceFile = createSourceFile(`
+let myVariable;
+const myVariable2: Array<boolean> = [myVariable];      
+      `);
+
+    const variableDeclaration = sourceFile.getVariableDeclarations()[0];
+    expect(variableDeclaration.getName()).toBe("myVariable");
+
+    const typesOfUsage = allTypesOfRefs(variableDeclaration);
+
+    expect(typesOfUsage.map((s) => s.getText())).toStrictEqual(["any", "boolean"]);
+  })
+
+  it("should return the type of variable assignment in object", () => {
+    const sourceFile = createSourceFile(`
+let myVariable;
+const myVariable2: {x: number, y: string} = {x: myVariable, y: ''};      
+      `);
+
+    const variableDeclaration = sourceFile.getVariableDeclarations()[0];
+    expect(variableDeclaration.getName()).toBe("myVariable");
+
+    const typesOfUsage = allTypesOfRefs(variableDeclaration);
+
+    expect(typesOfUsage.map((s) => s.getText())).toStrictEqual(["any", "number"]);
+  })
 });
 
 function createSourceFile(code: string): SourceFile {

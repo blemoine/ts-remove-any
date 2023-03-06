@@ -9,6 +9,7 @@ import {
   FunctionDeclaration,
   MethodDeclaration,
 } from "ts-morph";
+import { isNotNil } from "../utils/is-not-nil";
 
 export function allTypesOfRefs(node: ReferenceFindableNode): Type[] {
   return node.findReferencesAsNodes().flatMap((ref) => allTypesOfRef(ref));
@@ -144,6 +145,30 @@ function allTypesOfRef(ref: Node): Type[] {
 
   if (Node.isVariableDeclaration(parent)) {
     return [ref.getType(), parent.getType()];
+  }
+  if (Node.isArrayLiteralExpression(parent)) {
+    const typesOfRefInArray = allTypesOfRef(parent);
+    if (typesOfRefInArray.every((t) => t.isArray())) {
+      return typesOfRefInArray.map((t) => t.getTypeArguments()[0]);
+    }
+  }
+  if (Node.isPropertyAssignment(parent)) {
+    const children = parent.getChildren();
+
+    const propertyNameNode = children[0];
+    if (Node.isIdentifier(propertyNameNode)) {
+      const propertyName = propertyNameNode.getText();
+
+      const greatParent = parent.getParent();
+      if (Node.isObjectLiteralExpression(greatParent)) {
+        const greatGreatParent = greatParent.getParent();
+        if (Node.isVariableDeclaration(greatGreatParent)) {
+          return [greatParent.getType(), greatGreatParent.getType()]
+            .map((t) => t.getProperty(propertyName)?.getTypeAtLocation(greatParent))
+            .filter(isNotNil);
+        }
+      }
+    }
   }
 
   return [];
