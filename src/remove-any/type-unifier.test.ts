@@ -192,6 +192,23 @@ test('value3');
 
     expect(typesOfUsage.map((s) => s.getText())).toStrictEqual(["any", '"value"', '"value2"', '"value3"']);
   });
+
+  it("should set the type even in a beta reduction case", () => {
+    const sourceFile = createSourceFile(`
+function test(x) {
+  return { value: x };
+}
+function map(x: number) {}
+map(test);
+`);
+
+    const paramaterDeclaration = sourceFile.getFunctions()[0].getParameters()[0];
+    expect(paramaterDeclaration.getName()).toBe("x");
+
+    const typesOfUsage = allTypesOfRefs(paramaterDeclaration);
+
+    expect(typesOfUsage.map((s) => s.getText())).toStrictEqual(["any", "number"]);
+  });
 });
 
 function createSourceFile(code: string): SourceFile {

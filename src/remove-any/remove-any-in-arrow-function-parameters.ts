@@ -5,7 +5,6 @@ import {
   ComputedType,
   computeTypesFromList,
   filterUnusableTypes,
-  findTypeFromRefUsage,
   findTypesFromCallSite,
   isImplicitAny,
   setTypeOnNode,

@@ -1,14 +1,14 @@
 import {
-  Type,
-  Node,
-  ReferenceFindableNode,
+  ArrowFunction,
   BinaryExpression,
   CallExpression,
-  NewExpression,
-  ArrowFunction,
   FunctionDeclaration,
   MethodDeclaration,
+  NewExpression,
+  Node,
   ParameterDeclaration,
+  ReferenceFindableNode,
+  Type,
 } from "ts-morph";
 import { isNotNil } from "../utils/is-not-nil";
 
@@ -38,25 +38,30 @@ function deduplicateTypes(types: Type[]): Type[] {
 function allTypesOfLambda(node: ParameterDeclaration): Type[] {
   const parent = node.getParent();
   if (Node.isFunctionDeclaration(parent)) {
-    const parameterIdx = node.getChildIndex();
+    const typesOfReferences = parent
+      .findReferencesAsNodes()
+      .map((r) => {
+        const refParent = r.getParent();
+        if (Node.isCallExpression(refParent)) {
+          const parentArguments = refParent.getArguments();
 
-    return [
-      node.getType(),
-      ...parent
-        .findReferencesAsNodes()
-        .map((r) => {
-          const refParent = r.getParent();
-          if (Node.isCallExpression(refParent)) {
-            const parentArguments = refParent.getArguments();
-
+          const parameterIdx = parentArguments.indexOf(r);
+          if (parameterIdx >= 0) {
+            // the function is the argument of another function
+            return getFunctionDeclaredParametersType(refParent)[parameterIdx];
+          } else {
+            // the function is the called.
+            const parameterIdx = node.getChildIndex();
             if (parentArguments[parameterIdx]) {
               return parentArguments[parameterIdx].getType();
             }
           }
-          return null;
-        })
-        .filter(isNotNil),
-    ];
+        }
+        return null;
+      })
+      .filter(isNotNil);
+
+    return [node.getType(), ...typesOfReferences];
   }
   return [];
 }
