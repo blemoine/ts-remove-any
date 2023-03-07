@@ -335,7 +335,9 @@ function callsite2(n: 'test') {
 const fnToIgnore = (my_explicit_variable) => {
   return { value: my_explicit_variable };
 }
-function map(x: number) {}
+function map(x: (n: number) => {
+    value: number;
+}) { }
 
 const arr: number[] = [];
 map(fnToIgnore);
@@ -347,7 +349,9 @@ map(fnToIgnore);
       `const fnToIgnore = (my_explicit_variable: number) => {
     return { value: my_explicit_variable };
 };
-function map(x: number) { }
+function map(x: (n: number) => {
+    value: number;
+}) { }
 const arr: number[] = [];
 map(fnToIgnore);
 `

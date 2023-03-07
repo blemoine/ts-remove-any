@@ -5,7 +5,6 @@ import {
   Node,
   ParameterDeclaration,
   PropertyAccessExpression,
-  ReferenceFindableNode,
   Type,
   TypedNode,
 } from "ts-morph";
@@ -64,62 +63,6 @@ export function computeTypesFromList(callsiteTypes: Type[]): string | null {
     return "string";
   }
   return null;
-}
-
-export function findTypesFromCallSite(
-  node: { getName?: () => string | undefined } & ReferenceFindableNode,
-  parametersIdx: number
-): Type[] {
-  const sourceName = "getName" in node && node.getName ? node.getName() : undefined;
-  return node.findReferencesAsNodes().flatMap((ref): Type[] => {
-    const parent = ref.getParent();
-
-    if (Node.isNewExpression(parent)) {
-      const argument = parent.getArguments()[parametersIdx];
-      return [argument?.getType()];
-    }
-    if (Node.isPropertyAccessExpression(parent)) {
-      const greatParent = parent.getParent();
-      if (Node.isCallExpression(greatParent)) {
-        const argument = greatParent.getArguments()[parametersIdx];
-        return [argument?.getType()];
-      }
-    }
-    if (Node.isCallExpression(parent)) {
-      if (sourceName && parent.getText().startsWith(sourceName)) {
-        const argument = parent.getArguments()[parametersIdx];
-        return [argument?.getType()];
-      }
-      const children = parent.getChildren();
-      if (children.length > 0) {
-        const firstChildren = children[0];
-
-        if (firstChildren instanceof Identifier) {
-          return firstChildren
-            .getType()
-            .getCallSignatures()
-            .map((s) => s.getParameters()[parametersIdx]?.getTypeAtLocation(firstChildren));
-        }
-        if (firstChildren instanceof PropertyAccessExpression) {
-          const idxOfCallParameter = parent.getArguments().indexOf(ref);
-
-          return firstChildren
-            .getType()
-            .getCallSignatures()
-            .flatMap((signature) => {
-              const parameters = signature.getParameters();
-              return parameters[idxOfCallParameter]
-                ?.getTypeAtLocation(firstChildren)
-                .getCallSignatures()
-                .map((s) => s.getParameters()[parametersIdx]?.getTypeAtLocation(firstChildren));
-            });
-        }
-      }
-
-      return [];
-    }
-    return [];
-  });
 }
 
 export function findTypeFromRefUsage(ref: Node): Type[] {
