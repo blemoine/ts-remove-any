@@ -198,7 +198,7 @@ test('value3');
 function test(x) {
   return { value: x };
 }
-function map(x: number) {}
+function map(x: (n:number) => {value: number}) {}
 map(test);
 `);
 
@@ -208,6 +208,28 @@ map(test);
     const typesOfUsage = allTypesOfRefs(paramaterDeclaration);
 
     expect(typesOfUsage.map((s) => s.getText())).toStrictEqual(["any", "number"]);
+  });
+
+  it("should set the type even in a beta reduction case with dotted property and the callback is the 2nd parameter", () => {
+    const sourceFile = createSourceFile(`
+function fnToIgnore(x) {
+  return { value: x };
+}
+class Test {
+    highLevelMethod(arr: string[], fn: (n: string) => unknown) {
+    }
+}
+
+const test = new Test();
+test.highLevelMethod([], fnToIgnore);
+`);
+
+    const paramaterDeclaration = sourceFile.getFunctions()[0].getParameters()[0];
+    expect(paramaterDeclaration.getName()).toBe("x");
+
+    const typesOfUsage = allTypesOfRefs(paramaterDeclaration);
+
+    expect(typesOfUsage.map((s) => s.getText())).toStrictEqual(["any", "string"]);
   });
 });
 

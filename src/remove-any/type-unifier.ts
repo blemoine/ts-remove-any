@@ -38,20 +38,27 @@ function deduplicateTypes(types: Type[]): Type[] {
 function allTypesOfLambda(node: ParameterDeclaration): Type[] {
   const parent = node.getParent();
   if (Node.isFunctionDeclaration(parent)) {
+    const parameterIdx = node.getChildIndex();
+
     const typesOfReferences = parent
       .findReferencesAsNodes()
       .map((r) => {
         const refParent = r.getParent();
         if (Node.isCallExpression(refParent)) {
           const parentArguments = refParent.getArguments();
-
-          const parameterIdx = parentArguments.indexOf(r);
-          if (parameterIdx >= 0) {
+          const functionParameterIdx = parentArguments.indexOf(r);
+          if (functionParameterIdx >= 0) {
             // the function is the argument of another function
-            return getFunctionDeclaredParametersType(refParent)[parameterIdx];
+
+            const typeOfFunctionParameters = getFunctionDeclaredParametersType(refParent)[functionParameterIdx];
+
+            const callSignatures = typeOfFunctionParameters.getCallSignatures();
+            if (callSignatures.length > 0) {
+              return callSignatures[0].getParameters()[parameterIdx].getTypeAtLocation(refParent);
+            }
           } else {
             // the function is the called.
-            const parameterIdx = node.getChildIndex();
+
             if (parentArguments[parameterIdx]) {
               return parentArguments[parameterIdx].getType();
             }

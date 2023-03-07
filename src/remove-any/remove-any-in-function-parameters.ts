@@ -4,7 +4,6 @@ import {
   ComputedType,
   computeTypesFromList,
   filterUnusableTypes,
-  findTypesFromCallSite,
   isImplicitAny,
   setTypeOnNode,
 } from "./type.utils";
@@ -12,11 +11,7 @@ import { concatRevertableOperation, noopRevertableOperation, RevertableOperation
 import { cannotHappen } from "../utils/cannot-happen";
 import { allTypesOfRefs } from "./type-unifier";
 
-function getParameterComputedType(
-  parametersFn: ParameterDeclaration,
-  sourceFn: FunctionDeclaration,
-  parametersIdx: number
-): ComputedType {
+function getParameterComputedType(parametersFn: ParameterDeclaration): ComputedType {
   const destructuredType = computeDestructuredTypes(parametersFn);
   if (destructuredType) {
     return { kind: "type_found", type: destructuredType };
@@ -25,22 +20,20 @@ function getParameterComputedType(
   if (!isImplicitAny(parametersFn)) {
     return { kind: "no_any" };
   }
-  const callsiteTypes = findTypesFromCallSite(sourceFn, parametersIdx);
+  const callsiteTypes = allTypesOfRefs(parametersFn);
 
   const result = computeTypesFromList(filterUnusableTypes(callsiteTypes));
   if (result) {
     return { kind: "type_found", type: result };
   }
-  const typesFromUsage = allTypesOfRefs(parametersFn);
-  const computedType = computeTypesFromList(filterUnusableTypes(typesFromUsage));
-  return computedType ? { kind: "type_found", type: computedType } : { kind: "no_type_found" };
+  return { kind: "no_type_found" };
 }
 
 export function removeAnyInFunction(sourceFn: FunctionDeclaration): RevertableOperation {
   return sourceFn
     .getParameters()
-    .map((parametersFn, parametersIdx) => {
-      const newType = getParameterComputedType(parametersFn, sourceFn, parametersIdx);
+    .map((parametersFn) => {
+      const newType = getParameterComputedType(parametersFn);
 
       if (newType.kind === "type_found") {
         try {
