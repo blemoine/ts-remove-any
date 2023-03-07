@@ -11,6 +11,7 @@ import {
 } from "./type.utils";
 import { concatRevertableOperation, noopRevertableOperation, RevertableOperation } from "./revert-operation";
 import { cannotHappen } from "../utils/cannot-happen";
+import { allTypesOfRefs } from "./type-unifier";
 
 function getParameterComputedType(
   parametersFn: ParameterDeclaration,
@@ -31,9 +32,7 @@ function getParameterComputedType(
   if (result) {
     return { kind: "type_found", type: result };
   }
-  const typesFromUsage = parametersFn.findReferencesAsNodes().flatMap((ref) => {
-    return findTypeFromRefUsage(ref);
-  });
+  const typesFromUsage = allTypesOfRefs(parametersFn);
   const computedType = computeTypesFromList(filterUnusableTypes(typesFromUsage));
   return computedType ? { kind: "type_found", type: computedType } : { kind: "no_type_found" };
 }

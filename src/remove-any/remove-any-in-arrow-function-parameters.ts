@@ -11,6 +11,7 @@ import {
   setTypeOnNode,
 } from "./type.utils";
 import { cannotHappen } from "../utils/cannot-happen";
+import { allTypesOfRefs } from "./type-unifier";
 
 function getParameterComputedType(
   parametersFn: ParameterDeclaration,
@@ -39,9 +40,7 @@ function getParameterComputedType(
     return { kind: "type_found", type: result };
   }
 
-  const typesFromUsage = parametersFn.findReferencesAsNodes().flatMap((ref) => {
-    return findTypeFromRefUsage(ref);
-  });
+  const typesFromUsage = allTypesOfRefs(parametersFn);
   const typesFromList = computeTypesFromList(filterUnusableTypes(typesFromUsage));
   return typesFromList ? { kind: "type_found", type: typesFromList } : { kind: "no_type_found" };
 }
