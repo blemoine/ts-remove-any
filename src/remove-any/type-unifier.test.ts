@@ -177,6 +177,55 @@ test('value');
     expect(typesOfUsage.map((s) => s.getText())).toStrictEqual(["any", '"value"']);
   });
 
+  it("should return the type of arguments of arrow function when called", () => {
+    const sourceFile = createSourceFile(`
+const test = (x) => {}
+test('value');
+      `);
+
+    const paramaterDeclaration = (
+      sourceFile.getVariableDeclaration("test")?.getChildren()[2] as ArrowFunction
+    ).getParameters()[0];
+    expect(paramaterDeclaration.getName()).toBe("x");
+
+    const typesOfUsage = allTypesOfRefs(paramaterDeclaration);
+
+    expect(typesOfUsage.map((s) => s.getText())).toStrictEqual(["any", '"value"']);
+  });
+
+  it("should return the type of arguments of class constructor when called", () => {
+    const sourceFile = createSourceFile(`
+class A {
+   constructor(x) {} 
+}    
+new A('value');
+      `);
+
+    const paramaterDeclaration = sourceFile.getClasses()[0].getConstructors()[0].getParameters()[0];
+    expect(paramaterDeclaration?.getName()).toBe("x");
+
+    const typesOfUsage = allTypesOfRefs(paramaterDeclaration);
+
+    expect(typesOfUsage.map((s) => s.getText())).toStrictEqual(["any", '"value"']);
+  });
+
+  it("should return the type of arguments of methods when called", () => {
+    const sourceFile = createSourceFile(`
+class A {
+   myMethod(x) {} 
+}    
+const a = new A();
+a.myMethod('value');
+      `);
+
+    const paramaterDeclaration = sourceFile.getClasses()[0].getMethods()[0].getParameters()[0];
+    expect(paramaterDeclaration?.getName()).toBe("x");
+
+    const typesOfUsage = allTypesOfRefs(paramaterDeclaration);
+
+    expect(typesOfUsage.map((s) => s.getText())).toStrictEqual(["any", '"value"']);
+  });
+
   it("should return all the type of arguments of function when called", () => {
     const sourceFile = createSourceFile(`
 function test(x) {}

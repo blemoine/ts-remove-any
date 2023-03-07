@@ -35,40 +35,63 @@ function deduplicateTypes(types: Type[]): Type[] {
   ];
 }
 
+function getTypesOfReferencableAndCallableNode(referencableNode: ReferenceFindableNode): Type[][] {
+  return referencableNode
+    .findReferencesAsNodes()
+    .map((r) => {
+      let refParent = r.getParent();
+      if (Node.isPropertyAccessExpression(refParent)) {
+        refParent = refParent.getParent();
+      }
+
+      if (Node.isCallExpression(refParent) || Node.isNewExpression(refParent)) {
+        const parentArguments = refParent.getArguments();
+        const functionParameterIdx = parentArguments.indexOf(r);
+        if (functionParameterIdx >= 0) {
+          // the function is the argument of another function
+
+          const typeOfFunctionParameters = getFunctionDeclaredParametersType(refParent)[functionParameterIdx];
+
+          const callSignatures = typeOfFunctionParameters.getCallSignatures();
+          if (callSignatures.length > 0) {
+            return callSignatures[0].getParameters().map((p) => p.getTypeAtLocation(refParent as Node));
+          }
+        } else {
+          // the function is the called.
+
+          return parentArguments.map((p) => p.getType());
+        }
+      }
+      return null;
+    })
+    .filter(isNotNil);
+}
+
 function allTypesOfLambda(node: ParameterDeclaration): Type[] {
   const parent = node.getParent();
-  if (Node.isFunctionDeclaration(parent)) {
-    const parameterIdx = node.getChildIndex();
 
-    const typesOfReferences = parent
-      .findReferencesAsNodes()
-      .map((r) => {
-        const refParent = r.getParent();
-        if (Node.isCallExpression(refParent)) {
-          const parentArguments = refParent.getArguments();
-          const functionParameterIdx = parentArguments.indexOf(r);
-          if (functionParameterIdx >= 0) {
-            // the function is the argument of another function
+  const parameterIdx = node.getChildIndex();
+  const nodeType = node.getType();
 
-            const typeOfFunctionParameters = getFunctionDeclaredParametersType(refParent)[functionParameterIdx];
+  if (Node.isArrowFunction(parent)) {
+    const variableDeclaration = parent.getParent();
+    if (Node.isVariableDeclaration(variableDeclaration)) {
+      const typesOfReferencableDeclaration = getTypesOfReferencableAndCallableNode(variableDeclaration);
 
-            const callSignatures = typeOfFunctionParameters.getCallSignatures();
-            if (callSignatures.length > 0) {
-              return callSignatures[0].getParameters()[parameterIdx].getTypeAtLocation(refParent);
-            }
-          } else {
-            // the function is the called.
+      return typesOfReferencableDeclaration.length > 0
+        ? [nodeType, ...typesOfReferencableDeclaration.map((p) => p[parameterIdx])]
+        : [nodeType];
+    }
+  } else if (
+    Node.isFunctionDeclaration(parent) ||
+    Node.isConstructorDeclaration(parent) ||
+    Node.isMethodDeclaration(parent)
+  ) {
+    const typesOfReferencableDeclaration = getTypesOfReferencableAndCallableNode(parent);
 
-            if (parentArguments[parameterIdx]) {
-              return parentArguments[parameterIdx].getType();
-            }
-          }
-        }
-        return null;
-      })
-      .filter(isNotNil);
-
-    return [node.getType(), ...typesOfReferences];
+    return typesOfReferencableDeclaration.length > 0
+      ? [nodeType, ...typesOfReferencableDeclaration.map((p) => p[parameterIdx])]
+      : [nodeType];
   }
   return [];
 }
@@ -77,7 +100,7 @@ function isAssignation(parent: Node): parent is BinaryExpression {
   return Node.isBinaryExpression(parent) && parent.getOperatorToken().getText() === "=";
 }
 
-function getFunctionDeclaredParametersType(callExpression: CallExpression): Type[] {
+function getFunctionDeclaredParametersType(callExpression: CallExpression | NewExpression): Type[] {
   const functionItself = callExpression.getChildren()[0];
   if (Node.isIdentifier(functionItself)) {
     const functionDeclaration = functionItself
