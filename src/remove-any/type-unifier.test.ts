@@ -176,6 +176,22 @@ test('value');
 
     expect(typesOfUsage.map((s) => s.getText())).toStrictEqual(["any", '"value"']);
   });
+
+  it("should return all the type of arguments of function when called", () => {
+    const sourceFile = createSourceFile(`
+function test(x) {}
+test('value');
+test('value2');
+test('value3');
+      `);
+
+    const paramaterDeclaration = sourceFile.getFunctions()[0].getParameters()[0];
+    expect(paramaterDeclaration.getName()).toBe("x");
+
+    const typesOfUsage = allTypesOfRefs(paramaterDeclaration);
+
+    expect(typesOfUsage.map((s) => s.getText())).toStrictEqual(["any", '"value"', '"value2"', '"value3"']);
+  });
 });
 
 function createSourceFile(code: string): SourceFile {

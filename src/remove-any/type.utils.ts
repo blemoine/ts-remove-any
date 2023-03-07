@@ -24,6 +24,9 @@ export function filterUnusableTypes(types: (Type | null | undefined)[]): Type[] 
     return (
       !t.isAny() &&
       !text.includes("any[]") &&
+      !text.includes("<any") &&
+      !text.includes("any>") &&
+      !text.includes(" any,") &&
       !text.includes(": any") &&
       !text.includes("import(") &&
       !t.isNever() &&
