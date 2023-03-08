@@ -17,6 +17,17 @@ export function isImplicitAny(node: TypedNode & Node) {
   return isAny && !declaredType;
 }
 
+export function isImplicitAnyArray(node: TypedNode & Node) {
+  const isAnyArray =
+    node.getType().isArray() &&
+    node
+      .getType()
+      .getTypeArguments()
+      .some((t) => t.getText() === "any");
+  const declaredType = node.getTypeNode();
+  return isAnyArray && !declaredType;
+}
+
 export function filterUnusableTypes(types: (Type | null | undefined)[]): Type[] {
   return types.filter(isNotNil).filter((t) => {
     const text = t.getText();

@@ -382,6 +382,25 @@ arr.map(fnToIgnore);
     expect(numberOfChanges.countOfAnys).toBe(1);
   });
 
+  it("should set the type from anys array", () => {
+    const sourceFile = createSourceFile(`
+function fn(arr: number[]){}      
+const operators = [];
+fn(operators);      
+      `);
+
+    const numberOfChanges = removeAny(sourceFile);
+
+    expect(sourceFile.print()).toStrictEqual(
+      `function fn(arr: number[]) { }
+const operators: number[] = [];
+fn(operators);
+`
+    );
+    expect(numberOfChanges.countChangesDone).toBe(1);
+    expect(numberOfChanges.countOfAnys).toBe(1);
+  });
+
   it("should set the type even in a beta reduction case with dotted property and the callback is the 2nd parameter", () => {
     const sourceFile = createSourceFile(`
 function fnToIgnore(my_explicit_variable) {

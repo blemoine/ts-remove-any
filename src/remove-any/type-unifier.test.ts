@@ -294,6 +294,21 @@ test.highLevelMethod([], fnToIgnore);
 
     expect(typesOfUsage.map((s) => s.getText())).toStrictEqual(["any", "string"]);
   });
+
+  it("should find the types of an empty array used in a function", () => {
+    const sourceFile = createSourceFile(`
+function fn(arr: number[]){}      
+const x = [];
+fn(x);      
+`);
+
+    const paramaterDeclaration = sourceFile.getVariableDeclarations()[0];
+    expect(paramaterDeclaration.getName()).toBe("x");
+
+    const typesOfUsage = allTypesOfRefs(paramaterDeclaration);
+
+    expect(typesOfUsage.map((s) => s.getText())).toStrictEqual(["any[]", "number[]"]);
+  });
 });
 
 function createSourceFile(code: string): SourceFile {
