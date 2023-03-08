@@ -21,9 +21,10 @@ export function allTypesOfRefs(node: ReferenceFindableNode): Type[] {
   return deduplicateTypes([...typesFromReference, ...typesFromLambda]);
 }
 
-function deduplicateTypes(types: Type[]): Type[] {
+function deduplicateTypes(types: (Type | null | undefined)[]): Type[] {
   return [
     ...types
+      .filter(isNotNil)
       .reduce((map, type) => {
         const typeText = type.getText();
         if (!map.has(typeText)) {
@@ -52,7 +53,7 @@ function getTypesOfReferencableAndCallableNode(referencableNode: ReferenceFindab
 
           const typeOfFunctionParameters = getFunctionDeclaredParametersType(refParent)[functionParameterIdx];
 
-          const callSignatures = typeOfFunctionParameters.getCallSignatures();
+          const callSignatures = typeOfFunctionParameters?.getCallSignatures() ?? [];
           if (callSignatures.length > 0) {
             return callSignatures[0].getParameters().map((p) => p.getTypeAtLocation(refParent as Node));
           }

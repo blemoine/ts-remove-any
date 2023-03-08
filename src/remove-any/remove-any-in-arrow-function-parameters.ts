@@ -21,7 +21,6 @@ function getParameterComputedType(parametersFn: ParameterDeclaration): ComputedT
   if (!isImplicitAny(parametersFn)) {
     return { kind: "no_any" };
   }
-
   const typesFromUsage = allTypesOfRefs(parametersFn);
   const typesFromList = computeTypesFromList(filterUnusableTypes(typesFromUsage));
   return typesFromList ? { kind: "type_found", type: typesFromList } : { kind: "no_type_found" };
