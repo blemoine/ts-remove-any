@@ -18,7 +18,7 @@ export function parseCliArgs(args: string[]): CliArgs {
   );
   program.option("-p, --project <value>", "path of the tsconfig file", "./tsconfig.json");
   program.option("-f, --file <value>", "remove any only int the specified file");
-  program.option("-r, --no-reverts", "don't revert files in case of errors");
+  program.option("-r, --prevent-reverts", "don't revert files in case of errors");
   program.parse(args);
 
   const opts = program.opts();
@@ -27,6 +27,6 @@ export function parseCliArgs(args: string[]): CliArgs {
     verbosity: opts.verbose || 0,
     project: opts.project,
     file: opts.file || null,
-    noReverts: opts.noReverts || false,
+    noReverts: opts.preventReverts || false,
   };
 }
