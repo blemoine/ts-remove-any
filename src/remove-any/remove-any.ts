@@ -1,17 +1,8 @@
-import {
-  ArrowFunction,
-  ConstructorDeclaration,
-  FunctionDeclaration,
-  MethodDeclaration,
-  SourceFile,
-  VariableDeclaration,
-} from "ts-morph";
-import { removeAnyInFunction } from "./remove-any-in-function-parameters";
+import { ParameterDeclaration, SourceFile, VariableDeclaration } from "ts-morph";
 import { sum } from "../utils/array.utils";
 import { removeAnyInLetDeclaration } from "./remove-any-in-let-declaration";
 import { RevertableOperation } from "./revert-operation";
-import { removeAnyInArrowFunction } from "./remove-any-in-arrow-function-parameters";
-import { removeAnyInClassesConstructor, removeAnyInMethodDeclaration } from "./remove-any-classes";
+import { removeAnyInParametersFn } from "./remove-any-in-parameters-declaration";
 
 interface RemoveAnyOptions {
   noReverts: boolean;
@@ -29,51 +20,26 @@ export function removeAny(
   const verbosity = options?.verbosity ?? 0;
 
   const variableDeclarations: VariableDeclaration[] = [];
-  const functions: FunctionDeclaration[] = [];
-  const methodDeclarations: MethodDeclaration[] = [];
-  const arrowFunctions: ArrowFunction[] = [];
-  const constructorDeclarations: ConstructorDeclaration[] = [];
+  const parametersDeclaration: ParameterDeclaration[] = [];
+
   sourceFile.forEachDescendant((node) => {
-    if (node instanceof VariableDeclaration) {
+    if (node instanceof ParameterDeclaration) {
+      parametersDeclaration.push(node);
+    } else if (node instanceof VariableDeclaration) {
       variableDeclarations.push(node);
-    } else if (node instanceof FunctionDeclaration) {
-      functions.push(node);
-    } else if (node instanceof ArrowFunction) {
-      arrowFunctions.push(node);
-    } else if (node instanceof ConstructorDeclaration) {
-      constructorDeclarations.push(node);
-    } else if (node instanceof MethodDeclaration) {
-      methodDeclarations.push(node);
     }
   });
 
   const validatedOptions = { noReverts, verbosity };
-  const resultsInFunctions = functions.map((sourceFn) =>
-    revertableOperation(sourceFile, validatedOptions, () => removeAnyInFunction(sourceFn))
-  );
-  const resultsInArrowFunctions = arrowFunctions.map((sourceFn) =>
-    revertableOperation(sourceFile, validatedOptions, () => removeAnyInArrowFunction(sourceFn))
-  );
+  const resultsInParameters = parametersDeclaration.map((parameters) => {
+    return revertableOperation(sourceFile, validatedOptions, () => removeAnyInParametersFn(parameters));
+  });
 
   const resultsInLets = variableDeclarations.map((variableDeclaration) =>
     revertableOperation(sourceFile, validatedOptions, () => removeAnyInLetDeclaration(variableDeclaration))
   );
 
-  const resultsInConstructors = constructorDeclarations.map((constructorDeclaration) =>
-    revertableOperation(sourceFile, validatedOptions, () => removeAnyInClassesConstructor(constructorDeclaration))
-  );
-
-  const resultsInMethodDeclarations = methodDeclarations.map((sourceFn) =>
-    revertableOperation(sourceFile, validatedOptions, () => removeAnyInMethodDeclaration(sourceFn))
-  );
-
-  const aggregatedResults = [
-    ...resultsInFunctions,
-    ...resultsInLets,
-    ...resultsInArrowFunctions,
-    ...resultsInConstructors,
-    ...resultsInMethodDeclarations,
-  ];
+  const aggregatedResults = [...resultsInLets, ...resultsInParameters];
 
   return {
     countChangesDone: sum(aggregatedResults.map((r) => r.countChangesDone)),
