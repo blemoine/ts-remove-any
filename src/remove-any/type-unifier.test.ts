@@ -193,6 +193,20 @@ test('value');
     expect(typesOfUsage.map((s) => s.getText())).toStrictEqual(["any", '"value"']);
   });
 
+  it("should return the type of arguments of JSX when called", () => {
+    const sourceFile = createSourceFile(`
+const Test = ({bus}:{bus:string}) => <div>{bus}</div>
+function (bus) {return <Test bus={bus} /> }    
+      `);
+
+    const paramaterDeclaration = sourceFile.getFunctions()[0].getParameters()[0];
+    expect(paramaterDeclaration.getName()).toBe("bus");
+
+    const typesOfUsage = allTypesOfRefs(paramaterDeclaration);
+
+    expect(typesOfUsage.map((s) => s.getText())).toStrictEqual(["any", "string"]);
+  });
+
   it("should return the type of arguments of class constructor when called", () => {
     const sourceFile = createSourceFile(`
 class A {
@@ -284,5 +298,5 @@ test.highLevelMethod([], fnToIgnore);
 
 function createSourceFile(code: string): SourceFile {
   const project = new Project();
-  return project.createSourceFile("/tmp/not_used.ts", code);
+  return project.createSourceFile("/tmp/not_used.tsx", code);
 }

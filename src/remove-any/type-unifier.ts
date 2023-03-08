@@ -188,6 +188,13 @@ function allTypesOfRef(ref: Node): Type[] {
     return [parent.getLeft().getType(), parent.getRight().getType()];
   }
 
+  if (Node.isJsxExpression(parent)) {
+    const contextualType = parent.getContextualType();
+    if (contextualType) {
+      return [ref.getType(), contextualType];
+    }
+  }
+
   // fn(x)  where fn is either a function, an arrow function or a method (obj.fn(x))
   if (Node.isCallExpression(parent)) {
     const functionArguments = parent.getArguments();
