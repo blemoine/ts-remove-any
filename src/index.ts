@@ -20,37 +20,34 @@ async function main(args: string[]) {
 
   const filesWithNoAny = new Set<string>();
 
-  let numberOfChanges = 1;
-  let loopCount = 1;
-  while (numberOfChanges !== 0) {
-    numberOfChanges = 0;
-    if (verbosity > 0) {
-      console.log(`${filesWithNoAny.size} files are ignored, as they contains no 'any'`);
-    }
-    filteredSourceFiles.forEach((sourceFile, idx) => {
-      if (filesWithNoAny.has(sourceFile.getFilePath())) {
-        return;
-      }
-      const changes = removeAny(sourceFile, { noReverts, verbosity });
-      if (verbosity > 0) {
-        console.log(
-          `Loop ${loopCount}, ${idx + 1}/ ${allSourceFiles.length}: file ${sourceFile.getBaseName()} , ${
-            changes.countChangesDone
-          } change(s) done`
-        );
-      }
-
-      numberOfChanges += changes.countChangesDone;
-      if (changes.countOfAnys === 0) {
-        filesWithNoAny.add(sourceFile.getFilePath());
-      }
-    });
-
-    ++loopCount;
+  let numberOfChanges = 0;
+  if (verbosity > 0) {
+    console.log(`${filesWithNoAny.size} files are ignored, as they contains no 'any'`);
   }
+  filteredSourceFiles.forEach((sourceFile, idx) => {
+    if (filesWithNoAny.has(sourceFile.getFilePath())) {
+      return;
+    }
+    const changes = removeAny(sourceFile, { noReverts, verbosity });
+    if (verbosity > 0) {
+      console.log(
+        `${idx + 1}/ ${allSourceFiles.length}: file ${sourceFile.getBaseName()} , ${
+          changes.countChangesDone
+        } change(s) done`
+      );
+    }
+
+    numberOfChanges += changes.countChangesDone;
+    if (changes.countOfAnys === 0) {
+      filesWithNoAny.add(sourceFile.getFilePath());
+    }
+  });
+
   await tsMorphProject.save();
+
+  return numberOfChanges;
 }
 
 main(process.argv)
-  .then((s) => console.log("success", s))
+  .then((s) => console.log("Succeeded with ", s, " change(s)"))
   .catch((e) => console.error("error", e));
