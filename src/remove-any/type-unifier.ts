@@ -223,25 +223,23 @@ function allTypesOfRef(ref: Node): Type[] {
         });
       }
     }
-  } else if (Node.isArrowFunction(parent)) {
-    const parameterIdx = ref.getChildIndex();
-    const nodeType = ref.getType();
-    const variableDeclaration = parent.getParent();
-    if (Node.isVariableDeclaration(variableDeclaration)) {
-      const typesOfReferencableDeclaration = getTypesOfReferencableAndCallableNode(variableDeclaration);
-
-      return typesOfReferencableDeclaration.length > 0
-        ? [nodeType, ...typesOfReferencableDeclaration.map((p) => p[parameterIdx])]
-        : [nodeType];
-    }
   } else if (
     Node.isFunctionDeclaration(parent) ||
     Node.isConstructorDeclaration(parent) ||
-    Node.isMethodDeclaration(parent)
+    Node.isMethodDeclaration(parent) ||
+    Node.isArrowFunction(parent)
   ) {
     const parameterIdx = ref.getChildIndex();
     const nodeType = ref.getType();
-    const typesOfReferencableDeclaration = getTypesOfReferencableAndCallableNode(parent);
+    const greatParent = parent.getParent();
+    const referencableNode = Node.isArrowFunction(parent)
+      ? Node.isVariableDeclaration(greatParent)
+        ? greatParent
+        : undefined
+      : parent;
+    const typesOfReferencableDeclaration = referencableNode
+      ? getTypesOfReferencableAndCallableNode(referencableNode)
+      : [];
 
     return typesOfReferencableDeclaration.length > 0
       ? [nodeType, ...typesOfReferencableDeclaration.map((p) => p[parameterIdx])]
