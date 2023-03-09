@@ -154,7 +154,7 @@ const arr = (x) => Number.parseInt(x)
       `);
 
     const paramaterDeclaration = (
-      sourceFile.getVariableDeclaration("arr")?.getChildren()[2] as ArrowFunction
+      sourceFile.getVariableDeclaration("arr")?.getInitializer() as ArrowFunction
     ).getParameters()[0];
     expect(paramaterDeclaration.getName()).toBe("x");
 
@@ -184,7 +184,7 @@ test('value');
       `);
 
     const paramaterDeclaration = (
-      sourceFile.getVariableDeclaration("test")?.getChildren()[2] as ArrowFunction
+      sourceFile.getVariableDeclaration("test")?.getInitializer() as ArrowFunction
     ).getParameters()[0];
     expect(paramaterDeclaration.getName()).toBe("x");
 

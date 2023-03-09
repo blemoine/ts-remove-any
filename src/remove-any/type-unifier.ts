@@ -184,13 +184,12 @@ function getConstructorDeclaredParametersType(newExpression: NewExpression): Typ
       .map((r) => r.getParent())
       .find(Node.isClassDeclaration);
 
-    const constructorDeclaration = (classDeclaration?.getChildren() ?? [])
-      .flatMap((c) => [c, ...c.getChildren()])
-      .find(Node.isConstructorDeclaration);
+    const constructors = classDeclaration?.getConstructors();
+    if (constructors && constructors.length > 0) {
+      const parameters = constructors[0].getParameters() ?? [];
 
-    const parameters = constructorDeclaration?.getParameters() ?? [];
-
-    return parameters.map((p) => p.getType());
+      return parameters.map((p) => p.getType());
+    }
   }
   return [];
 }
