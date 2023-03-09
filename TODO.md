@@ -6,4 +6,14 @@
   }
   da('value') // x is a subtype of 'value'
 
-* get directly the parameters instead of the function then looking for parameters...
+* support explicit any
+
+* bus-tickets/index.tsx
+
+* ```
+  type MyType = { fn: (aParam) => void }
+  function usingFn(t:MyType, v: number) {
+      t.fn(v)
+  } 
+  
+  ```

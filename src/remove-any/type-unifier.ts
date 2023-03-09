@@ -73,7 +73,37 @@ function allTypesOfLambda(node: ParameterDeclaration): Type[] {
 
   const parameterIdx = node.getChildIndex();
   const nodeType = node.getType();
-
+  if (Node.isFunctionTypeNode(parent)) {
+    const propertySignature = parent.getParent();
+    if (Node.isPropertySignature(propertySignature)) {
+      const interfaceDeclaration = propertySignature.getParent();
+      if (Node.isInterfaceDeclaration(interfaceDeclaration)) {
+        return interfaceDeclaration.findReferencesAsNodes().flatMap((t): Type[] => {
+          const typeReference = t.getParent();
+          if (Node.isTypeReference(typeReference)) {
+            const parameterDeclaration = typeReference.getParent();
+            if (Node.isParameterDeclaration(parameterDeclaration)) {
+              return parameterDeclaration.findReferencesAsNodes().flatMap((p): Type[] => {
+                const propertyName = propertySignature.getName();
+                const parameterRef = p.getParent();
+                if (Node.isPropertyAccessExpression(parameterRef) && parameterRef.getName() === propertyName) {
+                  const callExpression = parameterRef.getParent();
+                  if (Node.isCallExpression(callExpression)) {
+                    return [
+                      getFunctionDeclaredParametersType(callExpression)[parameterIdx],
+                      callExpression.getArguments()[parameterIdx].getType(),
+                    ];
+                  }
+                }
+                return [];
+              });
+            }
+          }
+          return [];
+        });
+      }
+    }
+  }
   if (Node.isArrowFunction(parent)) {
     const variableDeclaration = parent.getParent();
     if (Node.isVariableDeclaration(variableDeclaration)) {
