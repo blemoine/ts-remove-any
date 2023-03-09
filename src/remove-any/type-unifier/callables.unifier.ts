@@ -6,14 +6,36 @@ interface CallableType {
   argumentsTypes: Type[][];
 }
 
-// TODO check CallLikeExpression ?
 export function getCallablesTypes(functionDeclaration: FunctionDeclaration): CallableType {
   const argumentsTypes = functionDeclaration
     .findReferencesAsNodes()
     .map((ref) => {
       const parent = ref.getParent();
+
       if (Node.isCallExpression(parent)) {
-        return parent.getArguments().map((argument) => argument.getType());
+        // the function is called
+        const functionCalled = parent.getExpression();
+        if (functionCalled === ref) {
+          return parent.getArguments().map((argument) => argument.getType());
+        } else {
+          // the function is passed as an argument to another function
+
+          if (Node.isIdentifier(functionCalled) || Node.isPropertyAccessExpression(functionCalled)) {
+            const idxOfDeclaration = parent.getArguments().findIndex((s) => s === ref);
+
+            const callerCallSignatures = functionCalled.getType().getCallSignatures();
+            if (callerCallSignatures.length > 0) {
+              const callerFirstCallSignature = callerCallSignatures[0];
+              const higherLevelFnTypeOfCaller = callerFirstCallSignature
+                .getParameters()
+                [idxOfDeclaration].getTypeAtLocation(functionCalled);
+              return higherLevelFnTypeOfCaller
+                .getCallSignatures()[0]
+                .getParameters()
+                .map((p) => p.getTypeAtLocation(functionCalled));
+            }
+          }
+        }
       }
       return null;
     })
@@ -21,5 +43,5 @@ export function getCallablesTypes(functionDeclaration: FunctionDeclaration): Cal
 
   const parameterTypes = functionDeclaration.getParameters().map((p) => p.getType());
 
-  return { parameterTypes, argumentsTypes };
+  return { parameterTypes, argumentsTypes: argumentsTypes.map((a) => a.slice(0, parameterTypes.length)) };
 }

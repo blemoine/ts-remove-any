@@ -2,6 +2,7 @@ import { BinaryExpression, NewExpression, Node, ParameterDeclaration, ReferenceF
 import { isNotNil } from "../utils/is-not-nil";
 import { getCallExpressionDeclaredParametersType } from "./type.utils";
 import { combineGuards } from "../utils/type-guard.utils";
+import { getCallablesTypes } from "./type-unifier/callables.unifier";
 
 export function allTypesOfRefs(node: ReferenceFindableNode): Type[] {
   const referencesAsNodes = node.findReferencesAsNodes();
@@ -209,6 +210,9 @@ function allTypesOfRef(ref: Node): Type[] {
         });
       }
     }
+  } else if (Node.isFunctionDeclaration(parent)) {
+    const callablesTypes = getCallablesTypes(parent);
+    return [...callablesTypes.parameterTypes, ...callablesTypes.argumentsTypes.flat()];
   } else if (isFunctionLike(parent) || Node.isConstructorDeclaration(parent)) {
     const parameterIdx = ref.getChildIndex();
     const nodeType = ref.getType();
