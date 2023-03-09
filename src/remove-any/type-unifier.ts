@@ -156,17 +156,9 @@ function isAssignation(parent: Node): parent is BinaryExpression {
 }
 
 function getFunctionDeclaredParametersType(callExpression: CallExpression | NewExpression): Type[] {
-  const functionItself = callExpression.getChildren()[0];
-  if (Node.isIdentifier(functionItself)) {
-    const parameterDeclaration = functionItself
-      .findReferencesAsNodes()
-      .map((p) => p.getParent())
-      .find((p) => Node.isParameterDeclaration(p) || Node.isFunctionDeclaration(p));
-    if (parameterDeclaration) {
-      return getParametersOfCallSignature(parameterDeclaration);
-    }
-  }
-  if (Node.isPropertyAccessExpression(functionItself)) {
+  const functionItself = callExpression.getExpression();
+
+  if (Node.isIdentifier(functionItself) || Node.isPropertyAccessExpression(functionItself)) {
     return getParametersOfCallSignature(functionItself);
   }
 
