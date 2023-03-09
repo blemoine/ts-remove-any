@@ -144,13 +144,13 @@ function findTypeOfVariableCall(ref: Node): Type | null {
     return null;
   }
   const idxOfCallParameter = parent.getArguments().indexOf(ref);
-  const functionDeclaredParametersTypes = getFunctionDeclaredParametersType(parent);
+  const functionDeclaredParametersTypes = getCallExpressionDeclaredParametersType(parent);
   return functionDeclaredParametersTypes && functionDeclaredParametersTypes[idxOfCallParameter]
     ? functionDeclaredParametersTypes[idxOfCallParameter]
     : null;
 }
 
-export function getFunctionDeclaredParametersType(callExpression: CallExpression | NewExpression): Type[] {
+export function getCallExpressionDeclaredParametersType(callExpression: CallExpression | NewExpression): Type[] {
   const functionItself = callExpression.getExpression();
 
   if (Node.isIdentifier(functionItself) || Node.isPropertyAccessExpression(functionItself)) {

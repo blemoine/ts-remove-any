@@ -1,16 +1,7 @@
-import {
-  ArrowFunction,
-  BinaryExpression,
-  FunctionDeclaration,
-  MethodDeclaration,
-  NewExpression,
-  Node,
-  ParameterDeclaration,
-  ReferenceFindableNode,
-  Type,
-} from "ts-morph";
+import { BinaryExpression, NewExpression, Node, ParameterDeclaration, ReferenceFindableNode, Type } from "ts-morph";
 import { isNotNil } from "../utils/is-not-nil";
-import { getFunctionDeclaredParametersType } from "./type.utils";
+import { getCallExpressionDeclaredParametersType } from "./type.utils";
+import { combineGuards } from "../utils/type-guard.utils";
 
 export function allTypesOfRefs(node: ReferenceFindableNode): Type[] {
   const referencesAsNodes = node.findReferencesAsNodes();
@@ -51,7 +42,7 @@ function getTypesOfReferencableAndCallableNode(referencableNode: ReferenceFindab
         if (functionParameterIdx >= 0) {
           // the function is the argument of another function
 
-          const typeOfFunctionParameters = getFunctionDeclaredParametersType(refParent)[functionParameterIdx];
+          const typeOfFunctionParameters = getCallExpressionDeclaredParametersType(refParent)[functionParameterIdx];
 
           const callSignatures = typeOfFunctionParameters?.getCallSignatures() ?? [];
           if (callSignatures.length > 0) {
@@ -114,7 +105,7 @@ function allTypesOfRef(ref: Node): Type[] {
     const parameterIdx = functionArguments.indexOf(ref);
     const argument = functionArguments[parameterIdx];
     if (argument) {
-      const declaredParametersType = getFunctionDeclaredParametersType(parent);
+      const declaredParametersType = getCallExpressionDeclaredParametersType(parent);
       if (parameterIdx >= 0 && declaredParametersType[parameterIdx]) {
         return [argument.getType(), declaredParametersType[parameterIdx]];
       }
@@ -133,12 +124,8 @@ function allTypesOfRef(ref: Node): Type[] {
     }
   }
   if (Node.isReturnStatement(parent)) {
-    const closestFunctionDeclaration = parent
-      .getAncestors()
-      .find(
-        (a): a is ArrowFunction | FunctionDeclaration | MethodDeclaration =>
-          Node.isArrowFunction(a) || Node.isFunctionDeclaration(a) || Node.isMethodDeclaration(a)
-      );
+    const closestFunctionDeclaration = parent.getAncestors().find(isFunctionLike);
+
     if (closestFunctionDeclaration) {
       return [ref.getType(), closestFunctionDeclaration.getReturnType()];
     }
@@ -184,7 +171,7 @@ function allTypesOfRef(ref: Node): Type[] {
               const callExpression = p.getParent();
               if (Node.isCallExpression(callExpression)) {
                 return [
-                  getFunctionDeclaredParametersType(callExpression)[parameterIdx],
+                  getCallExpressionDeclaredParametersType(callExpression)[parameterIdx],
                   callExpression.getArguments()[parameterIdx].getType(),
                 ];
               }
@@ -210,7 +197,7 @@ function allTypesOfRef(ref: Node): Type[] {
                   const callExpression = parameterRef.getParent();
                   if (Node.isCallExpression(callExpression)) {
                     return [
-                      getFunctionDeclaredParametersType(callExpression)[parameterIdx],
+                      getCallExpressionDeclaredParametersType(callExpression)[parameterIdx],
                       callExpression.getArguments()[parameterIdx].getType(),
                     ];
                   }
@@ -223,12 +210,7 @@ function allTypesOfRef(ref: Node): Type[] {
         });
       }
     }
-  } else if (
-    Node.isFunctionDeclaration(parent) ||
-    Node.isConstructorDeclaration(parent) ||
-    Node.isMethodDeclaration(parent) ||
-    Node.isArrowFunction(parent)
-  ) {
+  } else if (isFunctionLike(parent) || Node.isConstructorDeclaration(parent)) {
     const parameterIdx = ref.getChildIndex();
     const nodeType = ref.getType();
     const greatParent = parent.getParent();
@@ -248,3 +230,8 @@ function allTypesOfRef(ref: Node): Type[] {
 
   return [];
 }
+
+const isFunctionLike = combineGuards(
+  combineGuards(Node.isFunctionDeclaration, Node.isMethodDeclaration),
+  Node.isArrowFunction
+);
