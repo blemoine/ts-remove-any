@@ -171,9 +171,9 @@ function getFunctionDeclaredParametersType(callExpression: CallExpression | NewE
       .map((r) => r.getParent())
       .find(Node.isFunctionDeclaration);
 
-    const parameters = functionDeclaration?.getParameters() ?? [];
-
-    return parameters.map((p) => p.getType());
+    if (functionDeclaration) {
+      return getParametersOfCallSignature(functionDeclaration);
+    }
   }
   if (Node.isPropertyAccessExpression(functionItself)) {
     return getParametersOfCallSignature(functionItself);
@@ -182,6 +182,8 @@ function getFunctionDeclaredParametersType(callExpression: CallExpression | NewE
   return [];
 }
 
+// if node has a type of something callable, get the parameters of the type associaed
+// eg. `n: (a: string, b:number) => void`  => [string, number]
 function getParametersOfCallSignature(node: Node): Type[] {
   const signatures = node?.getType().getCallSignatures();
   if (signatures?.length > 0) {
