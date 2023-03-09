@@ -1,7 +1,6 @@
 import {
   ArrowFunction,
   BinaryExpression,
-  CallExpression,
   FunctionDeclaration,
   MethodDeclaration,
   NewExpression,
@@ -11,6 +10,7 @@ import {
   Type,
 } from "ts-morph";
 import { isNotNil } from "../utils/is-not-nil";
+import { getFunctionDeclaredParametersType } from "./type.utils";
 
 export function allTypesOfRefs(node: ReferenceFindableNode): Type[] {
   const referencesAsNodes = node.findReferencesAsNodes();
@@ -153,27 +153,6 @@ function allTypesOfLambda(node: ParameterDeclaration): Type[] {
 
 function isAssignation(parent: Node): parent is BinaryExpression {
   return Node.isBinaryExpression(parent) && parent.getOperatorToken().getText() === "=";
-}
-
-function getFunctionDeclaredParametersType(callExpression: CallExpression | NewExpression): Type[] {
-  const functionItself = callExpression.getExpression();
-
-  if (Node.isIdentifier(functionItself) || Node.isPropertyAccessExpression(functionItself)) {
-    return getParametersOfCallSignature(functionItself);
-  }
-
-  return [];
-}
-
-// if node has a type of something callable, get the parameters of the type associated
-// could be a function, an arrow function, a method
-// eg. `n: (a: string, b:number) => void`  => [string, number]
-function getParametersOfCallSignature(node: Node): Type[] {
-  const signatures = node?.getType().getCallSignatures();
-  if (signatures?.length > 0) {
-    return signatures[0].getParameters().map((p) => p.getTypeAtLocation(node));
-  }
-  return [];
 }
 
 function getConstructorDeclaredParametersType(newExpression: NewExpression): Type[] {

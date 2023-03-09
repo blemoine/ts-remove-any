@@ -1,10 +1,10 @@
 import {
   ArrowFunction,
+  CallExpression,
   FunctionDeclaration,
-  Identifier,
+  NewExpression,
   Node,
   ParameterDeclaration,
-  PropertyAccessExpression,
   Type,
   TypedNode,
 } from "ts-morph";
@@ -91,7 +91,8 @@ export function findTypeFromRefUsage(ref: Node): Type[] {
 
     return (declarations ?? [])?.map((d) => d.getType());
   }
-  return findTypeOfVariableCall(ref) ?? [];
+  const typeOfVariableCall = findTypeOfVariableCall(ref);
+  return typeOfVariableCall ? [typeOfVariableCall] : [];
 }
 
 export function computeDestructuredTypes(parametersFn: ParameterDeclaration): string | null {
@@ -137,34 +138,37 @@ export function computeDestructuredTypes(parametersFn: ParameterDeclaration): st
  *
  * @param ref
  */
-function findTypeOfVariableCall(ref: Node): Type[] | null {
+function findTypeOfVariableCall(ref: Node): Type | null {
   const parent = ref.getParent();
-  if (!parent) {
-    return null;
-  }
   if (!Node.isCallExpression(parent)) {
     return null;
   }
-  const children = parent.getChildren();
-  if (children.length === 0) {
-    return null;
-  }
-
-  const firstChildren = children[0];
   const idxOfCallParameter = parent.getArguments().indexOf(ref);
+  const functionDeclaredParametersTypes = getFunctionDeclaredParametersType(parent);
+  return functionDeclaredParametersTypes && functionDeclaredParametersTypes[idxOfCallParameter]
+    ? functionDeclaredParametersTypes[idxOfCallParameter]
+    : null;
+}
 
-  if (firstChildren instanceof Identifier || firstChildren instanceof PropertyAccessExpression) {
-    return firstChildren
-      .getType()
-      .getCallSignatures()
-      .map((signature) => {
-        const parameters = signature.getParameters();
+export function getFunctionDeclaredParametersType(callExpression: CallExpression | NewExpression): Type[] {
+  const functionItself = callExpression.getExpression();
 
-        return parameters[idxOfCallParameter]?.getTypeAtLocation(firstChildren);
-      });
+  if (Node.isIdentifier(functionItself) || Node.isPropertyAccessExpression(functionItself)) {
+    return getParametersOfCallSignature(functionItself);
   }
 
-  return null;
+  return [];
+}
+
+// if node has a type of something callable, get the parameters of the type associated
+// could be a function, an arrow function, a method
+// eg. `n: (a: string, b:number) => void`  => [string, number]
+function getParametersOfCallSignature(node: Node): Type[] {
+  const signatures = node?.getType().getCallSignatures();
+  if (signatures?.length > 0) {
+    return signatures[0].getParameters().map((p) => p.getTypeAtLocation(node));
+  }
+  return [];
 }
 
 export type ComputedType = { kind: "type_found"; type: string } | { kind: "no_any" } | { kind: "no_type_found" };
