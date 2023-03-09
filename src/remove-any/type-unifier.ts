@@ -163,10 +163,7 @@ function getFunctionDeclaredParametersType(callExpression: CallExpression | NewE
       .map((p) => p.getParent())
       .find(Node.isParameterDeclaration);
     if (parameterDeclaration) {
-      const callSignatures = parameterDeclaration.getType().getCallSignatures();
-      if (callSignatures) {
-        return callSignatures[0].getParameters().map((p) => p.getTypeAtLocation(functionItself));
-      }
+      return getParametersOfCallSignature(parameterDeclaration);
     }
 
     const functionDeclaration = functionItself
@@ -179,12 +176,17 @@ function getFunctionDeclaredParametersType(callExpression: CallExpression | NewE
     return parameters.map((p) => p.getType());
   }
   if (Node.isPropertyAccessExpression(functionItself)) {
-    const signatures = functionItself?.getType().getCallSignatures();
-    if (signatures?.length > 0) {
-      return signatures[0].getParameters().map((p) => p.getTypeAtLocation(functionItself));
-    }
+    return getParametersOfCallSignature(functionItself);
   }
 
+  return [];
+}
+
+function getParametersOfCallSignature(node: Node): Type[] {
+  const signatures = node?.getType().getCallSignatures();
+  if (signatures?.length > 0) {
+    return signatures[0].getParameters().map((p) => p.getTypeAtLocation(node));
+  }
   return [];
 }
 
