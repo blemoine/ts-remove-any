@@ -16,7 +16,7 @@ export function allTypesOfRefs(node: ReferenceFindableNode): Type[] {
   const referencesAsNodes = node.findReferencesAsNodes();
   const typesFromReference = referencesAsNodes.flatMap((ref) => allTypesOfRef(ref));
 
-  const typesFromLambda = node instanceof ParameterDeclaration ? allTypesOfLambda(node) : [];
+  const typesFromLambda = node instanceof ParameterDeclaration ? allTypesOfRef(node) : [];
 
   return deduplicateTypes([...typesFromReference, ...typesFromLambda]);
 }
@@ -66,89 +66,6 @@ function getTypesOfReferencableAndCallableNode(referencableNode: ReferenceFindab
       return null;
     })
     .filter(isNotNil);
-}
-
-function allTypesOfLambda(node: ParameterDeclaration): Type[] {
-  const parent = node.getParent();
-
-  const parameterIdx = node.getChildIndex();
-  const nodeType = node.getType();
-
-  // TODO most probably this horrible pyramid can be flattened
-
-  if (Node.isFunctionTypeNode(parent)) {
-    const propertySignature = parent.getParent();
-    if (Node.isTypeAliasDeclaration(propertySignature)) {
-      return propertySignature.findReferencesAsNodes().flatMap((t): Type[] => {
-        const typeReference = t.getParent();
-        if (Node.isTypeReference(typeReference)) {
-          const parameterDeclaration = typeReference.getParent();
-          if (Node.isParameterDeclaration(parameterDeclaration)) {
-            return parameterDeclaration.findReferencesAsNodes().flatMap((p): Type[] => {
-              const callExpression = p.getParent();
-              if (Node.isCallExpression(callExpression)) {
-                return [
-                  getFunctionDeclaredParametersType(callExpression)[parameterIdx],
-                  callExpression.getArguments()[parameterIdx].getType(),
-                ];
-              }
-              return [];
-            });
-          }
-        }
-        return [];
-      });
-    }
-    if (Node.isPropertySignature(propertySignature)) {
-      const interfaceDeclaration = propertySignature.getParent();
-      if (Node.isInterfaceDeclaration(interfaceDeclaration)) {
-        return interfaceDeclaration.findReferencesAsNodes().flatMap((t): Type[] => {
-          const typeReference = t.getParent();
-          if (Node.isTypeReference(typeReference)) {
-            const parameterDeclaration = typeReference.getParent();
-            if (Node.isParameterDeclaration(parameterDeclaration)) {
-              return parameterDeclaration.findReferencesAsNodes().flatMap((p): Type[] => {
-                const propertyName = propertySignature.getName();
-                const parameterRef = p.getParent();
-                if (Node.isPropertyAccessExpression(parameterRef) && parameterRef.getName() === propertyName) {
-                  const callExpression = parameterRef.getParent();
-                  if (Node.isCallExpression(callExpression)) {
-                    return [
-                      getFunctionDeclaredParametersType(callExpression)[parameterIdx],
-                      callExpression.getArguments()[parameterIdx].getType(),
-                    ];
-                  }
-                }
-                return [];
-              });
-            }
-          }
-          return [];
-        });
-      }
-    }
-  }
-  if (Node.isArrowFunction(parent)) {
-    const variableDeclaration = parent.getParent();
-    if (Node.isVariableDeclaration(variableDeclaration)) {
-      const typesOfReferencableDeclaration = getTypesOfReferencableAndCallableNode(variableDeclaration);
-
-      return typesOfReferencableDeclaration.length > 0
-        ? [nodeType, ...typesOfReferencableDeclaration.map((p) => p[parameterIdx])]
-        : [nodeType];
-    }
-  } else if (
-    Node.isFunctionDeclaration(parent) ||
-    Node.isConstructorDeclaration(parent) ||
-    Node.isMethodDeclaration(parent)
-  ) {
-    const typesOfReferencableDeclaration = getTypesOfReferencableAndCallableNode(parent);
-
-    return typesOfReferencableDeclaration.length > 0
-      ? [nodeType, ...typesOfReferencableDeclaration.map((p) => p[parameterIdx])]
-      : [nodeType];
-  }
-  return [];
 }
 
 function isAssignation(parent: Node): parent is BinaryExpression {
@@ -251,6 +168,84 @@ function allTypesOfRef(ref: Node): Type[] {
         }
       }
     }
+  }
+
+  if (Node.isFunctionTypeNode(parent)) {
+    const parameterIdx = ref.getChildIndex();
+
+    const propertySignature = parent.getParent();
+    if (Node.isTypeAliasDeclaration(propertySignature)) {
+      return propertySignature.findReferencesAsNodes().flatMap((t): Type[] => {
+        const typeReference = t.getParent();
+        if (Node.isTypeReference(typeReference)) {
+          const parameterDeclaration = typeReference.getParent();
+          if (Node.isParameterDeclaration(parameterDeclaration)) {
+            return parameterDeclaration.findReferencesAsNodes().flatMap((p): Type[] => {
+              const callExpression = p.getParent();
+              if (Node.isCallExpression(callExpression)) {
+                return [
+                  getFunctionDeclaredParametersType(callExpression)[parameterIdx],
+                  callExpression.getArguments()[parameterIdx].getType(),
+                ];
+              }
+              return [];
+            });
+          }
+        }
+        return [];
+      });
+    }
+    if (Node.isPropertySignature(propertySignature)) {
+      const interfaceDeclaration = propertySignature.getParent();
+      if (Node.isInterfaceDeclaration(interfaceDeclaration)) {
+        return interfaceDeclaration.findReferencesAsNodes().flatMap((t): Type[] => {
+          const typeReference = t.getParent();
+          if (Node.isTypeReference(typeReference)) {
+            const parameterDeclaration = typeReference.getParent();
+            if (Node.isParameterDeclaration(parameterDeclaration)) {
+              return parameterDeclaration.findReferencesAsNodes().flatMap((p): Type[] => {
+                const propertyName = propertySignature.getName();
+                const parameterRef = p.getParent();
+                if (Node.isPropertyAccessExpression(parameterRef) && parameterRef.getName() === propertyName) {
+                  const callExpression = parameterRef.getParent();
+                  if (Node.isCallExpression(callExpression)) {
+                    return [
+                      getFunctionDeclaredParametersType(callExpression)[parameterIdx],
+                      callExpression.getArguments()[parameterIdx].getType(),
+                    ];
+                  }
+                }
+                return [];
+              });
+            }
+          }
+          return [];
+        });
+      }
+    }
+  } else if (Node.isArrowFunction(parent)) {
+    const parameterIdx = ref.getChildIndex();
+    const nodeType = ref.getType();
+    const variableDeclaration = parent.getParent();
+    if (Node.isVariableDeclaration(variableDeclaration)) {
+      const typesOfReferencableDeclaration = getTypesOfReferencableAndCallableNode(variableDeclaration);
+
+      return typesOfReferencableDeclaration.length > 0
+        ? [nodeType, ...typesOfReferencableDeclaration.map((p) => p[parameterIdx])]
+        : [nodeType];
+    }
+  } else if (
+    Node.isFunctionDeclaration(parent) ||
+    Node.isConstructorDeclaration(parent) ||
+    Node.isMethodDeclaration(parent)
+  ) {
+    const parameterIdx = ref.getChildIndex();
+    const nodeType = ref.getType();
+    const typesOfReferencableDeclaration = getTypesOfReferencableAndCallableNode(parent);
+
+    return typesOfReferencableDeclaration.length > 0
+      ? [nodeType, ...typesOfReferencableDeclaration.map((p) => p[parameterIdx])]
+      : [nodeType];
   }
 
   return [];
