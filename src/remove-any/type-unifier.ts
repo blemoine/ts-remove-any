@@ -161,18 +161,9 @@ function getFunctionDeclaredParametersType(callExpression: CallExpression | NewE
     const parameterDeclaration = functionItself
       .findReferencesAsNodes()
       .map((p) => p.getParent())
-      .find(Node.isParameterDeclaration);
+      .find((p) => Node.isParameterDeclaration(p) || Node.isFunctionDeclaration(p));
     if (parameterDeclaration) {
       return getParametersOfCallSignature(parameterDeclaration);
-    }
-
-    const functionDeclaration = functionItself
-      .findReferencesAsNodes()
-      .map((r) => r.getParent())
-      .find(Node.isFunctionDeclaration);
-
-    if (functionDeclaration) {
-      return getParametersOfCallSignature(functionDeclaration);
     }
   }
   if (Node.isPropertyAccessExpression(functionItself)) {
