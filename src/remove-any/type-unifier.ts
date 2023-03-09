@@ -176,7 +176,7 @@ function getParametersOfCallSignature(node: Node): Type[] {
 }
 
 function getConstructorDeclaredParametersType(newExpression: NewExpression): Type[] {
-  const constructorItself = newExpression.getChildren()[1];
+  const constructorItself = newExpression.getExpression();
   if (Node.isIdentifier(constructorItself)) {
     const classDeclaration = constructorItself
       .findReferencesAsNodes()
@@ -195,7 +195,7 @@ function getConstructorDeclaredParametersType(newExpression: NewExpression): Typ
 }
 
 function getArrowFunctionDeclaredParametersType(callExpression: CallExpression): Type[] {
-  const functionItself = callExpression.getChildren()[0];
+  const functionItself = callExpression.getExpression();
   if (Node.isIdentifier(functionItself)) {
     const arrowFunctionDeclaration = functionItself
       .findReferencesAsNodes()
@@ -216,7 +216,7 @@ function getArrowFunctionDeclaredParametersType(callExpression: CallExpression):
 }
 
 function getMethodDeclaredParametersType(callExpression: CallExpression): Type[] {
-  const methodItself = callExpression.getChildren()[0];
+  const methodItself = callExpression.getExpression();
   if (Node.isPropertyAccessExpression(methodItself)) {
     const methodDeclaration = methodItself
       .findReferencesAsNodes()
