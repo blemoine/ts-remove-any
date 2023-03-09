@@ -302,9 +302,7 @@ function allTypesOfRef(ref: Node): Type[] {
     }
   }
   if (Node.isPropertyAssignment(parent)) {
-    const children = parent.getChildren();
-
-    const propertyNameNode = children[0];
+    const propertyNameNode = parent.getNameNode();
     if (Node.isIdentifier(propertyNameNode)) {
       const propertyName = propertyNameNode.getText();
 
