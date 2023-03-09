@@ -99,7 +99,6 @@ function allTypesOfRef(ref: Node): Type[] {
     }
   }
 
-  // fn(x)  where fn is either a function, an arrow function or a method (obj.fn(x))
   if (Node.isCallExpression(parent)) {
     const functionArguments = parent.getArguments();
     const parameterIdx = functionArguments.indexOf(ref);
