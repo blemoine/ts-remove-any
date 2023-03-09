@@ -194,42 +194,6 @@ function getConstructorDeclaredParametersType(newExpression: NewExpression): Typ
   return [];
 }
 
-function getArrowFunctionDeclaredParametersType(callExpression: CallExpression): Type[] {
-  const functionItself = callExpression.getExpression();
-  if (Node.isIdentifier(functionItself)) {
-    const arrowFunctionDeclaration = functionItself
-      .findReferencesAsNodes()
-      .map((r) => r.getParent())
-      .find(Node.isVariableDeclaration);
-    const children = arrowFunctionDeclaration?.getChildren();
-    if (!children) {
-      return [];
-    }
-    const arrowFn = children[2];
-    if (Node.isArrowFunction(arrowFn)) {
-      const parameters = arrowFn?.getParameters() ?? [];
-
-      return parameters.map((p) => p.getType());
-    }
-  }
-  return [];
-}
-
-function getMethodDeclaredParametersType(callExpression: CallExpression): Type[] {
-  const methodItself = callExpression.getExpression();
-  if (Node.isPropertyAccessExpression(methodItself)) {
-    const methodDeclaration = methodItself
-      .findReferencesAsNodes()
-      .map((r) => r.getParent())
-      .find(Node.isMethodDeclaration);
-    const parameters = methodDeclaration?.getParameters() ?? [];
-
-    return parameters.map((p) => p.getType());
-  }
-
-  return [];
-}
-
 function allTypesOfRef(ref: Node): Type[] {
   const parent = ref.getParent();
   if (!parent) {
@@ -257,14 +221,6 @@ function allTypesOfRef(ref: Node): Type[] {
       const declaredParametersType = getFunctionDeclaredParametersType(parent);
       if (parameterIdx >= 0 && declaredParametersType[parameterIdx]) {
         return [argument.getType(), declaredParametersType[parameterIdx]];
-      }
-      const declaredParametersTypeOfArrow = getArrowFunctionDeclaredParametersType(parent);
-      if (parameterIdx >= 0 && declaredParametersTypeOfArrow[parameterIdx]) {
-        return [argument.getType(), declaredParametersTypeOfArrow[parameterIdx]];
-      }
-      const declaredParametersTypeOfMethod = getMethodDeclaredParametersType(parent);
-      if (parameterIdx >= 0 && declaredParametersTypeOfMethod[parameterIdx]) {
-        return [argument.getType(), declaredParametersTypeOfMethod[parameterIdx]];
       }
     }
   }
