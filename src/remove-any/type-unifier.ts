@@ -165,7 +165,8 @@ function getFunctionDeclaredParametersType(callExpression: CallExpression | NewE
   return [];
 }
 
-// if node has a type of something callable, get the parameters of the type associaed
+// if node has a type of something callable, get the parameters of the type associated
+// could be a function, an arrow function, a method
 // eg. `n: (a: string, b:number) => void`  => [string, number]
 function getParametersOfCallSignature(node: Node): Type[] {
   const signatures = node?.getType().getCallSignatures();
