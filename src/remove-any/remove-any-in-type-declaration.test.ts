@@ -2,7 +2,7 @@ import { removeAny } from "./remove-any";
 import { Project, SourceFile } from "ts-morph";
 
 describe("remove-any", () => {
-  it("should remove `any` in type declaration", () => {
+  it("should remove `any` in inteface declaration", () => {
     const sourceFile = createSourceFile(`
   interface MyType { fn: (aParam) => void }
   function usingFn(t:MyType, v: number) {
@@ -16,6 +16,23 @@ describe("remove-any", () => {
 }
 function usingFn(t: MyType, v: number) {
     t.fn(v);
+}
+`
+    );
+  });
+
+  it("should remove `any` in function type declaration", () => {
+    const sourceFile = createSourceFile(`
+  type MyFn = (aParam) => void;
+  function usingFn(t:MyFn, v: number) {
+      t(v)
+  } `);
+
+    removeAny(sourceFile);
+    expect(sourceFile.print()).toStrictEqual(
+      `type MyFn = (aParam: number) => void;
+function usingFn(t: MyFn, v: number) {
+    t(v);
 }
 `
     );

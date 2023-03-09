@@ -73,8 +73,32 @@ function allTypesOfLambda(node: ParameterDeclaration): Type[] {
 
   const parameterIdx = node.getChildIndex();
   const nodeType = node.getType();
+
+  // TODO most probably this horrible pyramid can be flattened
+
   if (Node.isFunctionTypeNode(parent)) {
     const propertySignature = parent.getParent();
+    if (Node.isTypeAliasDeclaration(propertySignature)) {
+      return propertySignature.findReferencesAsNodes().flatMap((t): Type[] => {
+        const typeReference = t.getParent();
+        if (Node.isTypeReference(typeReference)) {
+          const parameterDeclaration = typeReference.getParent();
+          if (Node.isParameterDeclaration(parameterDeclaration)) {
+            return parameterDeclaration.findReferencesAsNodes().flatMap((p): Type[] => {
+              const callExpression = p.getParent();
+              if (Node.isCallExpression(callExpression)) {
+                return [
+                  getFunctionDeclaredParametersType(callExpression)[parameterIdx],
+                  callExpression.getArguments()[parameterIdx].getType(),
+                ];
+              }
+              return [];
+            });
+          }
+        }
+        return [];
+      });
+    }
     if (Node.isPropertySignature(propertySignature)) {
       const interfaceDeclaration = propertySignature.getParent();
       if (Node.isInterfaceDeclaration(interfaceDeclaration)) {
@@ -134,10 +158,22 @@ function isAssignation(parent: Node): parent is BinaryExpression {
 function getFunctionDeclaredParametersType(callExpression: CallExpression | NewExpression): Type[] {
   const functionItself = callExpression.getChildren()[0];
   if (Node.isIdentifier(functionItself)) {
+    const parameterDeclaration = functionItself
+      .findReferencesAsNodes()
+      .map((p) => p.getParent())
+      .find(Node.isParameterDeclaration);
+    if (parameterDeclaration) {
+      const callSignatures = parameterDeclaration.getType().getCallSignatures();
+      if (callSignatures) {
+        return callSignatures[0].getParameters().map((p) => p.getTypeAtLocation(functionItself));
+      }
+    }
+
     const functionDeclaration = functionItself
       .findReferencesAsNodes()
       .map((r) => r.getParent())
       .find(Node.isFunctionDeclaration);
+
     const parameters = functionDeclaration?.getParameters() ?? [];
 
     return parameters.map((p) => p.getType());
