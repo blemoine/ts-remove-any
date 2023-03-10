@@ -26,13 +26,15 @@ export function getCallablesTypes(functionDeclaration: FunctionDeclaration): Cal
             const callerCallSignatures = functionCalled.getType().getCallSignatures();
             if (callerCallSignatures.length > 0) {
               const callerFirstCallSignature = callerCallSignatures[0];
-              const higherLevelFnTypeOfCaller = callerFirstCallSignature
-                .getParameters()
-                [idxOfDeclaration].getTypeAtLocation(functionCalled);
-              return higherLevelFnTypeOfCaller
-                .getCallSignatures()[0]
-                .getParameters()
-                .map((p) => p.getTypeAtLocation(functionCalled));
+              const parameterPosition = callerFirstCallSignature.getParameters()[idxOfDeclaration];
+              if (parameterPosition) {
+                const higherLevelFnTypeOfCaller = parameterPosition.getTypeAtLocation(functionCalled);
+
+                const callSignatures = higherLevelFnTypeOfCaller.getCallSignatures();
+                if (callSignatures.length > 0) {
+                  return callSignatures[0].getParameters().map((p) => p.getTypeAtLocation(functionCalled));
+                }
+              }
             }
           }
         }
