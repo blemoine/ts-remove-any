@@ -10,10 +10,3 @@
 
 * bus-tickets/index.tsx
 
-* ```
-  type MyType = { fn: (aParam) => void }
-  function usingFn(t:MyType, v: number) {
-      t.fn(v)
-  } 
-  
-  ```

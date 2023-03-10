@@ -180,6 +180,7 @@ function allTypesOfRef(ref: Node): Type[] {
     const parameterIdx = ref.getChildIndex();
 
     const propertySignature = parent.getParent();
+
     if (Node.isTypeAliasDeclaration(propertySignature)) {
       return propertySignature.findReferencesAsNodes().flatMap((t): Type[] => {
         const typeReference = t.getParent();
@@ -203,6 +204,34 @@ function allTypesOfRef(ref: Node): Type[] {
     }
     if (Node.isPropertySignature(propertySignature)) {
       const interfaceDeclaration = propertySignature.getParent();
+      if (Node.isTypeLiteral(interfaceDeclaration)) {
+        const typeAliasDeclaration = interfaceDeclaration.getParent();
+        if (Node.isTypeAliasDeclaration(typeAliasDeclaration)) {
+          return typeAliasDeclaration.findReferencesAsNodes().flatMap((t): Type[] => {
+            const typeReference = t.getParent();
+            if (Node.isTypeReference(typeReference)) {
+              const parameterDeclaration = typeReference.getParent();
+              if (Node.isParameterDeclaration(parameterDeclaration)) {
+                return parameterDeclaration.findReferencesAsNodes().flatMap((p): Type[] => {
+                  const propertyName = propertySignature.getName();
+                  const parameterRef = p.getParent();
+                  if (Node.isPropertyAccessExpression(parameterRef) && parameterRef.getName() === propertyName) {
+                    const callExpression = parameterRef.getParent();
+                    if (Node.isCallExpression(callExpression)) {
+                      return [
+                        getParameterTypesFromCallerSignature(callExpression)[parameterIdx],
+                        callExpression.getArguments()[parameterIdx].getType(),
+                      ];
+                    }
+                  }
+                  return [];
+                });
+              }
+            }
+            return [];
+          });
+        }
+      }
       if (Node.isInterfaceDeclaration(interfaceDeclaration)) {
         return interfaceDeclaration.findReferencesAsNodes().flatMap((t): Type[] => {
           const typeReference = t.getParent();
