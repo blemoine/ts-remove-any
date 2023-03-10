@@ -28,38 +28,6 @@ function deduplicateTypes(types: (Type | null | undefined)[]): Type[] {
   ];
 }
 
-function getTypesOfReferencableAndCallableNode(referencableNode: ReferenceFindableNode): Type[][] {
-  return referencableNode
-    .findReferencesAsNodes()
-    .map((r) => {
-      let refParent = r.getParent();
-      if (Node.isPropertyAccessExpression(refParent)) {
-        refParent = refParent.getParent();
-      }
-
-      if (Node.isCallExpression(refParent) || Node.isNewExpression(refParent)) {
-        const parentArguments = refParent.getArguments();
-        const functionParameterIdx = parentArguments.indexOf(r);
-        if (functionParameterIdx >= 0) {
-          // the function is the argument of another function
-
-          const typeOfFunctionParameters = getParameterTypesFromCallerSignature(refParent)[functionParameterIdx];
-
-          const callSignatures = typeOfFunctionParameters?.getCallSignatures() ?? [];
-          if (callSignatures.length > 0) {
-            return callSignatures[0].getParameters().map((p) => p.getTypeAtLocation(refParent as Node));
-          }
-        } else {
-          // the function is the called.
-
-          return parentArguments.map((p) => p.getType());
-        }
-      }
-      return null;
-    })
-    .filter(isNotNil);
-}
-
 function isAssignation(parent: Node): parent is BinaryExpression {
   return Node.isBinaryExpression(parent) && parent.getOperatorToken().getText() === "=";
 }
@@ -262,7 +230,7 @@ function allTypesOfRef(ref: Node): Type[] {
         });
       }
     }
-  } else if (isFunctionLike(parent)) {
+  } else if (isFunctionLike(parent) || Node.isConstructorDeclaration(parent)) {
     const parameterIdx = ref.getChildIndex();
 
     const callablesTypes = getCallablesTypes(parent);
@@ -272,22 +240,6 @@ function allTypesOfRef(ref: Node): Type[] {
       ...callablesTypes.argumentsTypes.map((p) => p[parameterIdx]),
       ...(callablesTypes.usageInFunction[parameterIdx] ?? []),
     ].filter(isNotNil);
-  } else if (Node.isConstructorDeclaration(parent)) {
-    const parameterIdx = ref.getChildIndex();
-    const nodeType = ref.getType();
-    const greatParent = parent.getParent();
-    const referencableNode = Node.isArrowFunction(parent)
-      ? Node.isVariableDeclaration(greatParent)
-        ? greatParent
-        : undefined
-      : parent;
-    const typesOfReferencableDeclaration = referencableNode
-      ? getTypesOfReferencableAndCallableNode(referencableNode)
-      : [];
-
-    return typesOfReferencableDeclaration.length > 0
-      ? [nodeType, ...typesOfReferencableDeclaration.map((p) => p[parameterIdx])]
-      : [nodeType];
   }
 
   return [];

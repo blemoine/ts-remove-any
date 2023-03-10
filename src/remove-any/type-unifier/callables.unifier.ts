@@ -1,4 +1,12 @@
-import { ArrowFunction, FunctionDeclaration, MethodDeclaration, Node, ReferenceFindableNode, Type } from "ts-morph";
+import {
+  ArrowFunction,
+  ConstructorDeclaration,
+  FunctionDeclaration,
+  MethodDeclaration,
+  Node,
+  ReferenceFindableNode,
+  Type,
+} from "ts-morph";
 import { cannotHappen } from "../../utils/cannot-happen";
 import { getParameterTypesFromCallerSignature } from "../type.utils";
 
@@ -9,7 +17,7 @@ interface CallableType {
 }
 
 export function getCallablesTypes(
-  functionDeclaration: FunctionDeclaration | ArrowFunction | MethodDeclaration
+  functionDeclaration: FunctionDeclaration | ArrowFunction | MethodDeclaration | ConstructorDeclaration
 ): CallableType {
   const referencableNode = getReferencableNodeFromCallableType(functionDeclaration);
 
@@ -57,7 +65,7 @@ function getArgumentTypesFromRef(ref: Node): Type[] {
   if (Node.isPropertyAccessExpression(parent)) {
     return getArgumentTypesFromRef(parent);
   }
-  if (Node.isCallExpression(parent)) {
+  if (Node.isCallExpression(parent) || Node.isNewExpression(parent)) {
     const functionCalled = parent.getExpression();
     if (functionCalled === ref) {
       return parent.getArguments().map((argument) => argument.getType());
@@ -78,9 +86,13 @@ function getArgumentTypesFromRef(ref: Node): Type[] {
 }
 
 function getReferencableNodeFromCallableType(
-  functionDeclaration: FunctionDeclaration | ArrowFunction | MethodDeclaration
+  functionDeclaration: FunctionDeclaration | ArrowFunction | MethodDeclaration | ConstructorDeclaration
 ): ReferenceFindableNode | null {
-  if (Node.isFunctionDeclaration(functionDeclaration) || Node.isMethodDeclaration(functionDeclaration)) {
+  if (
+    Node.isFunctionDeclaration(functionDeclaration) ||
+    Node.isMethodDeclaration(functionDeclaration) ||
+    Node.isConstructorDeclaration(functionDeclaration)
+  ) {
     return functionDeclaration;
   } else if (Node.isArrowFunction(functionDeclaration)) {
     const variableDeclaration = functionDeclaration.getParent();
