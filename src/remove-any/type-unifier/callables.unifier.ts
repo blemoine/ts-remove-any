@@ -1,7 +1,7 @@
 import { ArrowFunction, FunctionDeclaration, MethodDeclaration, Node, Type, VariableDeclaration } from "ts-morph";
 import { isNotNil } from "../../utils/is-not-nil";
 import { cannotHappen } from "../../utils/cannot-happen";
-import { getCallExpressionDeclaredParametersType } from "../type.utils";
+import { getParameterTypesFromCallerSignature } from "../type.utils";
 
 interface CallableType {
   parameterTypes: Type[];
@@ -36,21 +36,14 @@ export function getCallablesTypes(
             return greatParent.getArguments().map((argument) => argument.getType());
           } else {
             // the function is passed as an argument to another function
-            if (Node.isIdentifier(functionCalled) || Node.isPropertyAccessExpression(functionCalled)) {
-              const idxOfDeclaration = greatParent.getArguments().findIndex((s) => s === parent);
+            const idxOfDeclaration = greatParent.getArguments().findIndex((s) => s === parent);
 
-              const callerCallSignatures = functionCalled.getType().getCallSignatures();
-              if (callerCallSignatures.length > 0) {
-                const callerFirstCallSignature = callerCallSignatures[0];
-                const parameterPosition = callerFirstCallSignature.getParameters()[idxOfDeclaration];
-                if (parameterPosition) {
-                  const higherLevelFnTypeOfCaller = parameterPosition.getTypeAtLocation(functionCalled);
+            const higherLevelFnTypeOfCaller = getParameterTypesFromCallerSignature(greatParent)[idxOfDeclaration];
 
-                  const callSignatures = higherLevelFnTypeOfCaller.getCallSignatures();
-                  if (callSignatures.length > 0) {
-                    return callSignatures[0].getParameters().map((p) => p.getTypeAtLocation(functionCalled));
-                  }
-                }
+            if (higherLevelFnTypeOfCaller) {
+              const callSignatures = higherLevelFnTypeOfCaller.getCallSignatures();
+              if (callSignatures.length > 0) {
+                return callSignatures[0].getParameters().map((p) => p.getTypeAtLocation(functionCalled));
               }
             }
           }
@@ -63,22 +56,13 @@ export function getCallablesTypes(
           return parent.getArguments().map((argument) => argument.getType());
         } else {
           // the function is passed as an argument to another function
+          const idxOfDeclaration = parent.getArguments().findIndex((s) => s === ref);
 
-          if (Node.isIdentifier(functionCalled) || Node.isPropertyAccessExpression(functionCalled)) {
-            const idxOfDeclaration = parent.getArguments().findIndex((s) => s === ref);
-
-            const callerCallSignatures = functionCalled.getType().getCallSignatures();
-            if (callerCallSignatures.length > 0) {
-              const callerFirstCallSignature = callerCallSignatures[0];
-              const parameterPosition = callerFirstCallSignature.getParameters()[idxOfDeclaration];
-              if (parameterPosition) {
-                const higherLevelFnTypeOfCaller = parameterPosition.getTypeAtLocation(functionCalled);
-
-                const callSignatures = higherLevelFnTypeOfCaller.getCallSignatures();
-                if (callSignatures.length > 0) {
-                  return callSignatures[0].getParameters().map((p) => p.getTypeAtLocation(functionCalled));
-                }
-              }
+          const higherLevelFnTypeOfCaller = getParameterTypesFromCallerSignature(parent)[idxOfDeclaration];
+          if (higherLevelFnTypeOfCaller) {
+            const callSignatures = higherLevelFnTypeOfCaller.getCallSignatures();
+            if (callSignatures.length > 0) {
+              return callSignatures[0].getParameters().map((p) => p.getTypeAtLocation(functionCalled));
             }
           }
         }
@@ -102,8 +86,7 @@ export function getCallablesTypes(
               if (Node.isCallExpression(parent)) {
                 const argIdx = parent.getArguments().findIndex((a) => a === ref);
 
-                // TODO factor that with the callsignature above
-                return [ref.getType(), getCallExpressionDeclaredParametersType(parent)[argIdx]];
+                return [ref.getType(), getParameterTypesFromCallerSignature(parent)[argIdx]];
               }
 
               return [ref.getType()];

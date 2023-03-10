@@ -1,6 +1,6 @@
 import { BinaryExpression, NewExpression, Node, ParameterDeclaration, ReferenceFindableNode, Type } from "ts-morph";
 import { isNotNil } from "../utils/is-not-nil";
-import { getCallExpressionDeclaredParametersType } from "./type.utils";
+import { getParameterTypesFromCallerSignature } from "./type.utils";
 import { combineGuards } from "../utils/type-guard.utils";
 import { getCallablesTypes } from "./type-unifier/callables.unifier";
 
@@ -43,7 +43,7 @@ function getTypesOfReferencableAndCallableNode(referencableNode: ReferenceFindab
         if (functionParameterIdx >= 0) {
           // the function is the argument of another function
 
-          const typeOfFunctionParameters = getCallExpressionDeclaredParametersType(refParent)[functionParameterIdx];
+          const typeOfFunctionParameters = getParameterTypesFromCallerSignature(refParent)[functionParameterIdx];
 
           const callSignatures = typeOfFunctionParameters?.getCallSignatures() ?? [];
           if (callSignatures.length > 0) {
@@ -190,7 +190,7 @@ function allTypesOfRef(ref: Node): Type[] {
               const callExpression = p.getParent();
               if (Node.isCallExpression(callExpression)) {
                 return [
-                  getCallExpressionDeclaredParametersType(callExpression)[parameterIdx],
+                  getParameterTypesFromCallerSignature(callExpression)[parameterIdx],
                   callExpression.getArguments()[parameterIdx].getType(),
                 ];
               }
@@ -216,7 +216,7 @@ function allTypesOfRef(ref: Node): Type[] {
                   const callExpression = parameterRef.getParent();
                   if (Node.isCallExpression(callExpression)) {
                     return [
-                      getCallExpressionDeclaredParametersType(callExpression)[parameterIdx],
+                      getParameterTypesFromCallerSignature(callExpression)[parameterIdx],
                       callExpression.getArguments()[parameterIdx].getType(),
                     ];
                   }
