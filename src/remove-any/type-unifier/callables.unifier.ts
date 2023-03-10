@@ -1,14 +1,28 @@
-import { FunctionDeclaration, Node, Type } from "ts-morph";
+import { ArrowFunction, FunctionDeclaration, Node, Type, VariableDeclaration } from "ts-morph";
 import { isNotNil } from "../../utils/is-not-nil";
+import { cannotHappen } from "../../utils/cannot-happen";
 
 interface CallableType {
   parameterTypes: Type[];
   argumentsTypes: Type[][];
 }
 
-export function getCallablesTypes(functionDeclaration: FunctionDeclaration): CallableType {
-  const argumentsTypes = functionDeclaration
-    .findReferencesAsNodes()
+export function getCallablesTypes(functionDeclaration: FunctionDeclaration | ArrowFunction): CallableType {
+  let referencableNode: FunctionDeclaration | VariableDeclaration | null;
+  if (Node.isFunctionDeclaration(functionDeclaration)) {
+    referencableNode = functionDeclaration;
+  } else if (Node.isArrowFunction(functionDeclaration)) {
+    const variableDeclaration = functionDeclaration.getParent();
+    if (Node.isVariableDeclaration(variableDeclaration)) {
+      referencableNode = variableDeclaration;
+    } else {
+      referencableNode = null;
+    }
+  } else {
+    cannotHappen(functionDeclaration);
+  }
+
+  const argumentsTypes = (referencableNode?.findReferencesAsNodes() ?? [])
     .map((ref) => {
       const parent = ref.getParent();
 

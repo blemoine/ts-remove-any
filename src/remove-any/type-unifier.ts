@@ -108,7 +108,7 @@ function allTypesOfRef(ref: Node): Type[] {
       const functionDeclaration = callable
         .findReferencesAsNodes()
         .map((r) => r.getParent())
-        .find(Node.isFunctionDeclaration);
+        .find(combineGuards(Node.isFunctionDeclaration, Node.isArrowFunction));
       if (functionDeclaration) {
         const callablesTypes = getCallablesTypes(functionDeclaration);
         return [
@@ -225,10 +225,10 @@ function allTypesOfRef(ref: Node): Type[] {
         });
       }
     }
-  } else if (Node.isFunctionDeclaration(parent)) {
+  } else if (Node.isFunctionDeclaration(parent) || Node.isArrowFunction(parent)) {
     const callablesTypes = getCallablesTypes(parent);
     return [...callablesTypes.parameterTypes, ...callablesTypes.argumentsTypes.flat()];
-  } else if (isFunctionLike(parent) || Node.isConstructorDeclaration(parent)) {
+  } else if (Node.isMethodDeclaration(parent) || Node.isConstructorDeclaration(parent)) {
     const parameterIdx = ref.getChildIndex();
     const nodeType = ref.getType();
     const greatParent = parent.getParent();
