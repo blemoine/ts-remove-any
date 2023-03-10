@@ -1,5 +1,4 @@
 import { ArrowFunction, FunctionDeclaration, MethodDeclaration, Node, ReferenceFindableNode, Type } from "ts-morph";
-import { isNotNil } from "../../utils/is-not-nil";
 import { cannotHappen } from "../../utils/cannot-happen";
 import { getParameterTypesFromCallerSignature } from "../type.utils";
 
@@ -16,49 +15,9 @@ export function getCallablesTypes(
 
   const argumentsTypes = (referencableNode?.findReferencesAsNodes() ?? [])
     .map((ref) => {
-      const parent = ref.getParent();
-      if (Node.isPropertyAccessExpression(parent)) {
-        const greatParent = parent.getParent();
-        if (Node.isCallExpression(greatParent)) {
-          const functionCalled = greatParent.getExpression();
-          if (functionCalled === parent) {
-            return greatParent.getArguments().map((argument) => argument.getType());
-          } else {
-            // the function is passed as an argument to another function
-            const idxOfDeclaration = greatParent.getArguments().findIndex((s) => s === parent);
-
-            const higherLevelFnTypeOfCaller = getParameterTypesFromCallerSignature(greatParent)[idxOfDeclaration];
-
-            if (higherLevelFnTypeOfCaller) {
-              const callSignatures = higherLevelFnTypeOfCaller.getCallSignatures();
-              if (callSignatures.length > 0) {
-                return callSignatures[0].getParameters().map((p) => p.getTypeAtLocation(functionCalled));
-              }
-            }
-          }
-        }
-      } else if (Node.isCallExpression(parent)) {
-        // the function is called
-
-        const functionCalled = parent.getExpression();
-        if (functionCalled === ref) {
-          return parent.getArguments().map((argument) => argument.getType());
-        } else {
-          // the function is passed as an argument to another function
-          const idxOfDeclaration = parent.getArguments().findIndex((s) => s === ref);
-
-          const higherLevelFnTypeOfCaller = getParameterTypesFromCallerSignature(parent)[idxOfDeclaration];
-          if (higherLevelFnTypeOfCaller) {
-            const callSignatures = higherLevelFnTypeOfCaller.getCallSignatures();
-            if (callSignatures.length > 0) {
-              return callSignatures[0].getParameters().map((p) => p.getTypeAtLocation(functionCalled));
-            }
-          }
-        }
-      }
-      return null;
+      return getArgumentTypesFromRef(ref);
     })
-    .filter(isNotNil);
+    .filter((l) => l.length > 0);
 
   const parameterTypes = functionDeclaration.getParameters().map((p) => p.getType());
   const usageInFunction = Object.fromEntries(
@@ -70,15 +29,16 @@ export function getCallablesTypes(
           p
             .findReferencesAsNodes()
             .filter((ref) => ref !== p)
-            .flatMap((ref) => {
+            .flatMap((ref): Type[] => {
               const parent = ref.getParent();
+              const refType = ref.getType();
               if (Node.isCallExpression(parent)) {
                 const argIdx = parent.getArguments().findIndex((a) => a === ref);
 
-                return [ref.getType(), getParameterTypesFromCallerSignature(parent)[argIdx]];
+                return [refType, getParameterTypesFromCallerSignature(parent)[argIdx]];
               }
 
-              return [ref.getType()];
+              return [refType];
             }),
         ] as const;
       })
@@ -90,6 +50,33 @@ export function getCallablesTypes(
     argumentsTypes: argumentsTypes.map((a) => a.slice(0, parameterTypes.length)),
     usageInFunction,
   };
+}
+
+// If ref is a parameter used in a call expression, get the type of the parameter
+function getArgumentTypesFromRef(ref: Node): Type[] {
+  // the function is called
+  const parent = ref.getParent();
+  if (Node.isPropertyAccessExpression(parent)) {
+    return getArgumentTypesFromRef(parent);
+  }
+  if (Node.isCallExpression(parent)) {
+    const functionCalled = parent.getExpression();
+    if (functionCalled === ref) {
+      return parent.getArguments().map((argument) => argument.getType());
+    } else {
+      // the function is passed as an argument to another function
+      const idxOfDeclaration = parent.getArguments().findIndex((s) => s === ref);
+
+      const higherLevelFnTypeOfCaller = getParameterTypesFromCallerSignature(parent)[idxOfDeclaration];
+      if (higherLevelFnTypeOfCaller) {
+        const callSignatures = higherLevelFnTypeOfCaller.getCallSignatures();
+        if (callSignatures.length > 0) {
+          return callSignatures[0].getParameters().map((p) => p.getTypeAtLocation(functionCalled));
+        }
+      }
+    }
+  }
+  return [];
 }
 
 function getReferencableNodeFromCallableType(
