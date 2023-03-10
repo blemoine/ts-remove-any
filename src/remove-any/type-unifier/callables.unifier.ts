@@ -14,9 +14,7 @@ export function getCallablesTypes(
   const referencableNode = getReferencableNodeFromCallableType(functionDeclaration);
 
   const argumentsTypes = (referencableNode?.findReferencesAsNodes() ?? [])
-    .map((ref) => {
-      return getArgumentTypesFromRef(ref);
-    })
+    .map((ref) => getArgumentTypesFromRef(ref))
     .filter((l) => l.length > 0);
 
   const parameterTypes = functionDeclaration.getParameters().map((p) => p.getType());

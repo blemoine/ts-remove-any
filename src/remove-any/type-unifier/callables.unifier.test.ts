@@ -1,4 +1,4 @@
-import { ArrowFunction, MethodDeclaration, Project, SourceFile } from "ts-morph";
+import { ArrowFunction, ConstructorDeclaration, MethodDeclaration, Project, SourceFile } from "ts-morph";
 import { getCallablesTypes } from "./callables.unifier";
 
 describe("getCallablesTypes", () => {
@@ -87,6 +87,31 @@ test('a', 123)
 
       expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => p.getText()))).toStrictEqual([
         ["string", "number"],
+        ['"a"', "123"],
+      ]);
+      expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["any", "any"]);
+      expect(
+        Object.entries(typesOfFunction.usageInFunction).map(([idx, types]) => [idx, types.map((t) => t.getText())])
+      ).toStrictEqual([["1", ["any"]]]);
+    });
+
+    it("should return arguments and parameters types of plain function used as references in multiple dotted parameters", () => {
+      const sourceFile = createSourceFile(`
+function test(c, x) {
+  return { value: x };
+}
+const obj: {arr: boolean[]} = {arr:[]};
+obj.arr.map(test);
+test('a', 123)
+      `);
+
+      const functionDeclaration = sourceFile.getFunctions()[0];
+      expect(functionDeclaration.getName()).toBe("test");
+
+      const typesOfFunction = getCallablesTypes(functionDeclaration);
+
+      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => p.getText()))).toStrictEqual([
+        ["boolean", "number"],
         ['"a"', "123"],
       ]);
       expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["any", "any"]);
@@ -300,6 +325,53 @@ test.method('a', 123)
       expect(
         Object.entries(typesOfFunction.usageInFunction).map(([idx, types]) => [idx, types.map((t) => t.getText())])
       ).toStrictEqual([["1", ["any"]]]);
+    });
+  });
+
+  describe("for constructors", () => {
+    it("should return arguments and parameters types of constructor", () => {
+      const sourceFile = createSourceFile(`
+let myVariable;
+class Test { constructor(_a: number, _b: string) { } }
+new Test(1, myVariable);
+new Test(3, 'test');
+      `);
+
+      const functionDeclaration = sourceFile.getClass("Test")?.getConstructors()[0];
+      if (!functionDeclaration || !(functionDeclaration instanceof ConstructorDeclaration)) {
+        throw new Error("test should be defined");
+      }
+
+      const typesOfFunction = getCallablesTypes(functionDeclaration);
+
+      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => p.getText()))).toStrictEqual([
+        ["1", "any"],
+        ["3", '"test"'],
+      ]);
+      expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["number", "string"]);
+      expect(typesOfFunction.usageInFunction).toStrictEqual({});
+    });
+
+    it("should return arguments and parameters types of constructor if there's any in the parameters", () => {
+      const sourceFile = createSourceFile(`
+let myVariable = 'value';
+class Test { constructor(_a, _b) { } }
+new Test(1, myVariable);
+new Test(2, 'test');
+      `);
+
+      const functionDeclaration = sourceFile.getClass("Test")?.getConstructors()[0];
+      if (!functionDeclaration || !(functionDeclaration instanceof ConstructorDeclaration)) {
+        throw new Error("test should be defined");
+      }
+      const typesOfFunction = getCallablesTypes(functionDeclaration);
+
+      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => p.getText()))).toStrictEqual([
+        ["1", "string"],
+        ["2", '"test"'],
+      ]);
+      expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["any", "any"]);
+      expect(typesOfFunction.usageInFunction).toStrictEqual({});
     });
   });
 });

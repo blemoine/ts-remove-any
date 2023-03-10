@@ -10,3 +10,4 @@
 
 * bus-tickets/index.tsx
 
+* recursive structure like `a.b.c.fn()`
