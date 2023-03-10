@@ -22,7 +22,7 @@ async function main(args: string[]) {
 
   let numberOfChanges = 0;
   if (verbosity > 0) {
-    console.log(`${filesWithNoAny.size} files are ignored, as they contains no 'any'`);
+    console.info(`${filesWithNoAny.size} files are ignored, as they contains no 'any'`);
   }
   filteredSourceFiles.forEach((sourceFile, idx) => {
     if (filesWithNoAny.has(sourceFile.getFilePath())) {
@@ -30,7 +30,7 @@ async function main(args: string[]) {
     }
     const changes = removeAny(sourceFile, { noReverts, verbosity });
     if (verbosity > 0) {
-      console.log(
+      console.info(
         `${idx + 1}/ ${allSourceFiles.length}: file ${sourceFile.getBaseName()} , ${
           changes.countChangesDone
         } change(s) done`
@@ -49,5 +49,5 @@ async function main(args: string[]) {
 }
 
 main(process.argv)
-  .then((s) => console.log("Succeeded with ", s, " change(s)"))
+  .then((s) => console.info("Succeeded with ", s, " change(s)"))
   .catch((e) => console.error("error", e));

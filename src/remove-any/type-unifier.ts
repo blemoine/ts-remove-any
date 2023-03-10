@@ -104,25 +104,29 @@ function allTypesOfRef(ref: Node): Type[] {
     const functionArguments = parent.getArguments();
     const parameterIdx = functionArguments.indexOf(ref);
     const callable = parent.getExpression();
-    if (Node.isIdentifier(callable)) {
+
+    if (Node.isIdentifier(callable) || Node.isPropertyAccessExpression(callable)) {
       const functionDeclaration = callable
         .findReferencesAsNodes()
-        .map((r) => r.getParent())
-        .find(combineGuards(Node.isFunctionDeclaration, Node.isArrowFunction));
+        .map((r) => {
+          const parent = r.getParent();
+
+          if (Node.isVariableDeclaration(parent)) {
+            return parent.getInitializer();
+          } else {
+            return parent;
+          }
+        })
+        .find(isFunctionLike);
+
       if (functionDeclaration) {
         const callablesTypes = getCallablesTypes(functionDeclaration);
+
         return [
           callablesTypes.parameterTypes[parameterIdx],
           ...callablesTypes.argumentsTypes.map((p) => p[parameterIdx]),
+          ...(callablesTypes.usageInFunction[parameterIdx] ?? []),
         ].filter(isNotNil);
-      }
-    }
-
-    const argument = functionArguments[parameterIdx];
-    if (argument) {
-      const declaredParametersType = getCallExpressionDeclaredParametersType(parent);
-      if (parameterIdx >= 0 && declaredParametersType[parameterIdx]) {
-        return [argument.getType(), declaredParametersType[parameterIdx]];
       }
     }
   }
@@ -225,10 +229,17 @@ function allTypesOfRef(ref: Node): Type[] {
         });
       }
     }
-  } else if (Node.isFunctionDeclaration(parent) || Node.isArrowFunction(parent)) {
+  } else if (isFunctionLike(parent)) {
+    const parameterIdx = ref.getChildIndex();
+
     const callablesTypes = getCallablesTypes(parent);
-    return [...callablesTypes.parameterTypes, ...callablesTypes.argumentsTypes.flat()];
-  } else if (Node.isMethodDeclaration(parent) || Node.isConstructorDeclaration(parent)) {
+
+    return [
+      callablesTypes.parameterTypes[parameterIdx],
+      ...callablesTypes.argumentsTypes.map((p) => p[parameterIdx]),
+      ...(callablesTypes.usageInFunction[parameterIdx] ?? []),
+    ].filter(isNotNil);
+  } else if (Node.isConstructorDeclaration(parent)) {
     const parameterIdx = ref.getChildIndex();
     const nodeType = ref.getType();
     const greatParent = parent.getParent();
