@@ -1,4 +1,4 @@
-import { BinaryExpression, NewExpression, Node, ParameterDeclaration, ReferenceFindableNode, Type } from "ts-morph";
+import { BinaryExpression, Node, ParameterDeclaration, ReferenceFindableNode, Type } from "ts-morph";
 import { isNotNil } from "../utils/is-not-nil";
 import { getParameterTypesFromCallerSignature } from "./type.utils";
 import { combineGuards } from "../utils/type-guard.utils";
@@ -30,24 +30,6 @@ function deduplicateTypes(types: (Type | null | undefined)[]): Type[] {
 
 function isAssignation(parent: Node): parent is BinaryExpression {
   return Node.isBinaryExpression(parent) && parent.getOperatorToken().getText() === "=";
-}
-
-function getConstructorDeclaredParametersType(newExpression: NewExpression): Type[] {
-  const constructorItself = newExpression.getExpression();
-  if (Node.isIdentifier(constructorItself)) {
-    const classDeclaration = constructorItself
-      .findReferencesAsNodes()
-      .map((r) => r.getParent())
-      .find(Node.isClassDeclaration);
-
-    const constructors = classDeclaration?.getConstructors();
-    if (constructors && constructors.length > 0) {
-      const parameters = constructors[0].getParameters() ?? [];
-
-      return parameters.map((p) => p.getType());
-    }
-  }
-  return [];
 }
 
 function allTypesOfRef(ref: Node): Type[] {
@@ -102,11 +84,23 @@ function allTypesOfRef(ref: Node): Type[] {
   if (Node.isNewExpression(parent)) {
     const constructorArguments = parent.getArguments();
     const parameterIdx = constructorArguments.indexOf(ref);
-    const argument = constructorArguments[parameterIdx];
-    if (argument) {
-      const declaredParametersType = getConstructorDeclaredParametersType(parent);
-      if (parameterIdx >= 0 && declaredParametersType[parameterIdx]) {
-        return [argument.getType(), declaredParametersType[parameterIdx]];
+    const expression = parent.getExpression();
+    if (Node.isIdentifier(expression)) {
+      const classDeclaration = expression
+        .findReferencesAsNodes()
+        .map((ref) => ref.getParent())
+        .find(Node.isClassDeclaration);
+      if (classDeclaration) {
+        const constructors = classDeclaration.getConstructors();
+        if (constructors.length > 0) {
+          const callablesTypes = getCallablesTypes(constructors[0]);
+
+          return [
+            callablesTypes.parameterTypes[parameterIdx],
+            ...callablesTypes.argumentsTypes.map((p) => p[parameterIdx]),
+            ...(callablesTypes.usageInFunction[parameterIdx] ?? []),
+          ].filter(isNotNil);
+        }
       }
     }
   }

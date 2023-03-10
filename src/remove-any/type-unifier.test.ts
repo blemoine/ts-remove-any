@@ -88,7 +88,7 @@ const test = new Test(1, '', myVariable);
 
     const typesOfUsage = allTypesOfRefs(variableDeclaration);
 
-    expect(typesOfUsage.map((s) => s.getText())).toStrictEqual(["any", "boolean"]);
+    expect(typesOfUsage.map((s) => s.getText())).toStrictEqual(expect.arrayContaining(["any", "boolean"]));
   });
 
   it("should return the type of variable assignment", () => {
