@@ -124,16 +124,16 @@ function allTypesOfRef(ref: Node): Type[] {
   if (Node.isPropertyAssignment(parent)) {
     const propertyNameNode = parent.getNameNode();
     if (Node.isIdentifier(propertyNameNode)) {
-      const propertyName = propertyNameNode.getText();
-
       const greatParent = parent.getParent();
       if (Node.isObjectLiteralExpression(greatParent)) {
-        const greatGreatParent = greatParent.getParent();
-        if (Node.isVariableDeclaration(greatGreatParent)) {
-          return [greatParent.getType(), greatGreatParent.getType()]
-            .map((t) => t.getProperty(propertyName)?.getTypeAtLocation(greatParent))
-            .filter(isNotNil);
-        }
+        const wrapperTypes = allTypesOfRef(greatParent);
+        const propertyName = propertyNameNode.getText();
+
+        return wrapperTypes
+          .map((t) => {
+            return t.getProperty(propertyName)?.getTypeAtLocation(greatParent);
+          })
+          .filter(isNotNil);
       }
     }
   }

@@ -133,7 +133,21 @@ const myVariable2: {x: number, y: string} = {x: myVariable, y: ''};
     expect(typesOfUsage.map((s) => s.getText())).toStrictEqual(["any", "number"]);
   });
 
-  fit("should return the type of arguments of function", () => {
+  it("should return the type of variable assignment in nested object", () => {
+    const sourceFile = createSourceFile(`
+let myVariable;
+const myVariable2: {z:{x: number, y: string}} = {z:{x: myVariable, y: ''}};      
+      `);
+
+    const variableDeclaration = sourceFile.getVariableDeclarations()[0];
+    expect(variableDeclaration.getName()).toBe("myVariable");
+
+    const typesOfUsage = allTypesOfRefs(variableDeclaration);
+
+    expect(typesOfUsage.map((s) => s.getText())).toStrictEqual(["any", "number"]);
+  });
+
+  it("should return the type of arguments of function", () => {
     const sourceFile = createSourceFile(`
 function (x) {
   return Number.parseInt(x);
