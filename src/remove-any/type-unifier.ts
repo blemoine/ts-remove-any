@@ -103,6 +103,21 @@ function allTypesOfRef(ref: Node): Type[] {
   if (Node.isCallExpression(parent)) {
     const functionArguments = parent.getArguments();
     const parameterIdx = functionArguments.indexOf(ref);
+    const callable = parent.getExpression();
+    if (Node.isIdentifier(callable)) {
+      const functionDeclaration = callable
+        .findReferencesAsNodes()
+        .map((r) => r.getParent())
+        .find(Node.isFunctionDeclaration);
+      if (functionDeclaration) {
+        const callablesTypes = getCallablesTypes(functionDeclaration);
+        return [
+          callablesTypes.parameterTypes[parameterIdx],
+          ...callablesTypes.argumentsTypes.map((p) => p[parameterIdx]),
+        ].filter(isNotNil);
+      }
+    }
+
     const argument = functionArguments[parameterIdx];
     if (argument) {
       const declaredParametersType = getCallExpressionDeclaredParametersType(parent);

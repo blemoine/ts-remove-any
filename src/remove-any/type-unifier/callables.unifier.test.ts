@@ -84,7 +84,7 @@ test('a', 123)
       ['"a"', "123"],
     ]);
     expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["any", "any"]);
-  })
+  });
 });
 
 function createSourceFile(code: string): SourceFile {

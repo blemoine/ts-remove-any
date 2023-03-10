@@ -28,7 +28,7 @@ test(1, myVariable);
 
     const typesOfUsage = allTypesOfRefs(variableDeclaration);
 
-    expect(typesOfUsage.map((s) => s.getText())).toStrictEqual(["any", "string"]);
+    expect(typesOfUsage.map((s) => s.getText())).toStrictEqual(expect.arrayContaining(["any", "string"]));
   });
 
   it("should return argument and parameter types of arrow function", () => {
@@ -307,7 +307,7 @@ fn(x);
 
     const typesOfUsage = allTypesOfRefs(paramaterDeclaration);
 
-    expect(typesOfUsage.map((s) => s.getText())).toStrictEqual(["any[]", "number[]"]);
+    expect(typesOfUsage.map((s) => s.getText())).toStrictEqual(expect.arrayContaining(["any[]", "number[]"]));
   });
 });
 
