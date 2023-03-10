@@ -1,4 +1,4 @@
-import { ArrowFunction, FunctionDeclaration, MethodDeclaration, Node, Type, VariableDeclaration } from "ts-morph";
+import { ArrowFunction, FunctionDeclaration, MethodDeclaration, Node, ReferenceFindableNode, Type } from "ts-morph";
 import { isNotNil } from "../../utils/is-not-nil";
 import { cannotHappen } from "../../utils/cannot-happen";
 import { getParameterTypesFromCallerSignature } from "../type.utils";
@@ -12,19 +12,8 @@ interface CallableType {
 export function getCallablesTypes(
   functionDeclaration: FunctionDeclaration | ArrowFunction | MethodDeclaration
 ): CallableType {
-  let referencableNode: FunctionDeclaration | VariableDeclaration | MethodDeclaration | null;
-  if (Node.isFunctionDeclaration(functionDeclaration) || Node.isMethodDeclaration(functionDeclaration)) {
-    referencableNode = functionDeclaration;
-  } else if (Node.isArrowFunction(functionDeclaration)) {
-    const variableDeclaration = functionDeclaration.getParent();
-    if (Node.isVariableDeclaration(variableDeclaration)) {
-      referencableNode = variableDeclaration;
-    } else {
-      referencableNode = null;
-    }
-  } else {
-    cannotHappen(functionDeclaration);
-  }
+  const referencableNode = getReferencableNodeFromCallableType(functionDeclaration);
+
   const argumentsTypes = (referencableNode?.findReferencesAsNodes() ?? [])
     .map((ref) => {
       const parent = ref.getParent();
@@ -101,4 +90,21 @@ export function getCallablesTypes(
     argumentsTypes: argumentsTypes.map((a) => a.slice(0, parameterTypes.length)),
     usageInFunction,
   };
+}
+
+function getReferencableNodeFromCallableType(
+  functionDeclaration: FunctionDeclaration | ArrowFunction | MethodDeclaration
+): ReferenceFindableNode | null {
+  if (Node.isFunctionDeclaration(functionDeclaration) || Node.isMethodDeclaration(functionDeclaration)) {
+    return functionDeclaration;
+  } else if (Node.isArrowFunction(functionDeclaration)) {
+    const variableDeclaration = functionDeclaration.getParent();
+    if (Node.isVariableDeclaration(variableDeclaration)) {
+      return variableDeclaration;
+    } else {
+      return null;
+    }
+  } else {
+    cannotHappen(functionDeclaration);
+  }
 }
