@@ -186,7 +186,7 @@ function allTypesOfRef(ref: Node): Type[] {
         const typeReference = t.getParent();
         if (Node.isTypeReference(typeReference)) {
           const parameterDeclaration = typeReference.getParent();
-          if (Node.isParameterDeclaration(parameterDeclaration)) {
+          if (Node.isParameterDeclaration(parameterDeclaration) || Node.isVariableDeclaration(parameterDeclaration)) {
             return parameterDeclaration.findReferencesAsNodes().flatMap((p): Type[] => {
               const callExpression = p.getParent();
               if (Node.isCallExpression(callExpression)) {
@@ -211,7 +211,10 @@ function allTypesOfRef(ref: Node): Type[] {
             const typeReference = t.getParent();
             if (Node.isTypeReference(typeReference)) {
               const parameterDeclaration = typeReference.getParent();
-              if (Node.isParameterDeclaration(parameterDeclaration)) {
+              if (
+                Node.isParameterDeclaration(parameterDeclaration) ||
+                Node.isVariableDeclaration(parameterDeclaration)
+              ) {
                 return parameterDeclaration.findReferencesAsNodes().flatMap((p): Type[] => {
                   const propertyName = propertySignature.getName();
                   const parameterRef = p.getParent();
@@ -237,7 +240,8 @@ function allTypesOfRef(ref: Node): Type[] {
           const typeReference = t.getParent();
           if (Node.isTypeReference(typeReference)) {
             const parameterDeclaration = typeReference.getParent();
-            if (Node.isParameterDeclaration(parameterDeclaration)) {
+
+            if (Node.isParameterDeclaration(parameterDeclaration) || Node.isVariableDeclaration(parameterDeclaration)) {
               return parameterDeclaration.findReferencesAsNodes().flatMap((p): Type[] => {
                 const propertyName = propertySignature.getName();
                 const parameterRef = p.getParent();

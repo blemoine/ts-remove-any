@@ -21,6 +21,24 @@ function usingFn(t: MyType, v: number) {
     );
   });
 
+  it("should remove `any` in interface declaration if used in a variable", () => {
+    const sourceFile = createSourceFile(`
+  interface MyType { fn: (aParam) => void }
+  let t: MyType = { fn: () => {} };
+  t.fn('123')
+  `);
+
+    removeAny(sourceFile);
+    expect(sourceFile.print()).toStrictEqual(
+      `interface MyType {
+    fn: (aParam: "123") => void;
+}
+let t: MyType = { fn: () => { } };
+t.fn('123');
+`
+    );
+  });
+
   it("should remove `any` in type declaration", () => {
     const sourceFile = createSourceFile(`
   type MyType = { fn: (aParam) => void }
