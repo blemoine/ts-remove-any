@@ -18,16 +18,8 @@ async function main(args: string[]) {
     return sourceFile.getFilePath().includes(file);
   });
 
-  const filesWithNoAny = new Set<string>();
-
   let numberOfChanges = 0;
-  if (verbosity > 0) {
-    console.info(`${filesWithNoAny.size} files are ignored, as they contains no 'any'`);
-  }
   filteredSourceFiles.forEach((sourceFile, idx) => {
-    if (filesWithNoAny.has(sourceFile.getFilePath())) {
-      return;
-    }
     const changes = removeAny(sourceFile, { noReverts, verbosity });
     if (verbosity > 0) {
       console.info(
@@ -38,9 +30,6 @@ async function main(args: string[]) {
     }
 
     numberOfChanges += changes.countChangesDone;
-    if (changes.countOfAnys === 0) {
-      filesWithNoAny.add(sourceFile.getFilePath());
-    }
   });
 
   await tsMorphProject.save();
