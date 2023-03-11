@@ -31,7 +31,7 @@ async function main(args: string[]) {
     const changes = removeAny(sourceFile, { noReverts, verbosity });
     if (verbosity > 0) {
       console.info(
-        `${idx + 1}/ ${allSourceFiles.length}: file ${sourceFile.getBaseName()} , ${
+        `${idx + 1}/ ${allSourceFiles.length}: file ${sourceFile.getFilePath()} , ${
           changes.countChangesDone
         } change(s) done`
       );

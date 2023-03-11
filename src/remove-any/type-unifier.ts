@@ -152,10 +152,13 @@ function allTypesOfRef(ref: Node): Type[] {
             return parameterDeclaration.findReferencesAsNodes().flatMap((p): Type[] => {
               const callExpression = p.getParent();
               if (Node.isCallExpression(callExpression)) {
-                return [
-                  getParameterTypesFromCallerSignature(callExpression)[parameterIdx],
-                  callExpression.getArguments()[parameterIdx].getType(),
-                ];
+                const callExpressionArguments = callExpression.getArguments();
+                if (callExpressionArguments[parameterIdx]) {
+                  return [
+                    getParameterTypesFromCallerSignature(callExpression)[parameterIdx],
+                    callExpressionArguments[parameterIdx].getType(),
+                  ];
+                }
               }
               return [];
             });
@@ -183,10 +186,13 @@ function allTypesOfRef(ref: Node): Type[] {
                   if (Node.isPropertyAccessExpression(parameterRef) && parameterRef.getName() === propertyName) {
                     const callExpression = parameterRef.getParent();
                     if (Node.isCallExpression(callExpression)) {
-                      return [
-                        getParameterTypesFromCallerSignature(callExpression)[parameterIdx],
-                        callExpression.getArguments()[parameterIdx].getType(),
-                      ];
+                      const callExpressionArguments = callExpression.getArguments();
+                      if (callExpressionArguments[parameterIdx]) {
+                        return [
+                          getParameterTypesFromCallerSignature(callExpression)[parameterIdx],
+                          callExpressionArguments[parameterIdx].getType(),
+                        ];
+                      }
                     }
                   }
                   return [];
@@ -210,10 +216,13 @@ function allTypesOfRef(ref: Node): Type[] {
                 if (Node.isPropertyAccessExpression(parameterRef) && parameterRef.getName() === propertyName) {
                   const callExpression = parameterRef.getParent();
                   if (Node.isCallExpression(callExpression)) {
-                    return [
-                      getParameterTypesFromCallerSignature(callExpression)[parameterIdx],
-                      callExpression.getArguments()[parameterIdx].getType(),
-                    ];
+                    const callExpressionArguments = callExpression.getArguments();
+                    if (callExpressionArguments[parameterIdx]) {
+                      return [
+                        getParameterTypesFromCallerSignature(callExpression)[parameterIdx],
+                        callExpressionArguments[parameterIdx].getType(),
+                      ];
+                    }
                   }
                 }
                 return [];
