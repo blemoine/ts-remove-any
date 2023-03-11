@@ -50,52 +50,41 @@ export function filterUnusableTypes(typesFromRefs: TypesFromRefs[]): TypesFromRe
   return { types, nullable };
 }
 
-export function computeTypesFromList({ nullable: isNullable, types: callsiteTypes }: TypesFromRefs): string | null {
+function computeTypesFromList(callsiteTypes: Type[]): string | null {
   if (callsiteTypes.length === 0) {
     return null;
   }
   if (callsiteTypes.every((s) => s.isBooleanLiteral() || s.isBoolean())) {
-    if (isNullable) {
-      return "boolean | null | undefined";
-    }
     return "boolean";
   }
 
   if (callsiteTypes.length <= 4) {
     if (callsiteTypes.every((t) => t.isNumber() || t.isNumberLiteral()) && callsiteTypes.some((t) => t.isNumber())) {
-      if (isNullable) {
-        return "number | null | undefined";
-      }
       return "number";
     }
     if (callsiteTypes.every((t) => t.isString() || t.isStringLiteral()) && callsiteTypes.some((t) => t.isString())) {
-      if (isNullable) {
-        return "string | null | undefined";
-      }
       return "string";
     }
 
     const newTypes = [...new Set(callsiteTypes.map((t) => t.getText()))];
-    const result = newTypes.join(" | ");
-
-    if (isNullable) {
-      return result + " | null | undefined";
-    }
-    return result;
+    return newTypes.join(" | ");
   }
 
   if (callsiteTypes.every((t) => t.isNumber() || t.isNumberLiteral())) {
-    if (isNullable) {
-      return "number | null | undefined";
-    }
     return "number";
   } else if (callsiteTypes.every((t) => t.isString() || t.isStringLiteral())) {
-    if (isNullable) {
-      return "string | null | undefined";
-    }
     return "string";
   }
   return null;
+}
+
+export function computeTypesFromRefs({ nullable: isNullable, types: callsiteTypes }: TypesFromRefs): string | null {
+  const resultTypes = computeTypesFromList(callsiteTypes);
+
+  if (isNullable && resultTypes) {
+    return resultTypes + " | null | undefined";
+  }
+  return resultTypes;
 }
 
 interface TypesFromRefs {
@@ -166,7 +155,7 @@ export function computeDestructuredTypes(parametersFn: ParameterDeclaration): st
 
             const typesFromUsage = element.findReferencesAsNodes().flatMap((ref) => findTypeFromRefUsage(ref));
 
-            const type = computeTypesFromList(filterUnusableTypes(typesFromUsage));
+            const type = computeTypesFromRefs(filterUnusableTypes(typesFromUsage));
 
             const propertyName = element.getPropertyNameNode()?.getText() ?? element.getName();
 

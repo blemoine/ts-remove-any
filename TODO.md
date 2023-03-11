@@ -8,4 +8,4 @@
 
 * support explicit any
 
-* bus-tickets/index.tsx
+

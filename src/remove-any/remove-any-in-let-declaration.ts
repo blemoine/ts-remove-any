@@ -1,6 +1,6 @@
 import { VariableDeclaration } from "ts-morph";
 import {
-  computeTypesFromList,
+  computeTypesFromRefs,
   filterUnusableTypes,
   isImplicitAny,
   isImplicitAnyArray,
@@ -16,7 +16,7 @@ export function removeAnyInLetDeclaration(variableDeclaration: VariableDeclarati
 
   const typesOfSets = allTypesOfRefs(variableDeclaration);
 
-  const newType = computeTypesFromList(filterUnusableTypes([{ types: typesOfSets, nullable: false }]));
+  const newType = computeTypesFromRefs(filterUnusableTypes([{ types: typesOfSets, nullable: false }]));
 
   if (newType) {
     return setTypeOnNode(variableDeclaration, newType);

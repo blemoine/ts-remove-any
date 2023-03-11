@@ -2,7 +2,7 @@ import { ParameterDeclaration } from "ts-morph";
 import {
   computeDestructuredTypes,
   ComputedType,
-  computeTypesFromList,
+  computeTypesFromRefs,
   filterUnusableTypes,
   isImplicitAny,
   setTypeOnNode,
@@ -22,7 +22,7 @@ function getParameterComputedType(parametersFn: ParameterDeclaration): ComputedT
   }
   const callsiteTypes = allTypesOfRefs(parametersFn);
 
-  const result = computeTypesFromList(filterUnusableTypes([{ types: callsiteTypes, nullable: false }]));
+  const result = computeTypesFromRefs(filterUnusableTypes([{ types: callsiteTypes, nullable: false }]));
   if (result) {
     return { kind: "type_found", type: result };
   }
