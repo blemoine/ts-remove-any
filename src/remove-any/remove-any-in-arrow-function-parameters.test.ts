@@ -419,31 +419,35 @@ test.highLevelMethod([], fnToIgnore);
   it("should find the type of child component calls in JSX", () => {
     const sourceFile = createSourceFile(`
 interface User { name: string }
-const ChildComponent =  ({childTitle, childUser}: {childTitle: string, childUser: User}) => {
+const ChildComponent =  ({childTitle, childUser, childName}: {childTitle: string, childUser: User, childName: string}) => {
   return <div>{childTitle} / {childUser.name}</div>
 }
      
-const ParentComponent = ({title:page_title, user}) => {
-  return <ChildComponent childTitle={page_title} childUser={user} />
+const ParentComponent = ({title:page_title, user, name}) => {
+    const childName = name ?? 'defaultValue';
+  return <ChildComponent childTitle={page_title} childUser={user} childName={childName}/>
 }
 `);
-    const numberOfChanges = removeAny(sourceFile);
+    const numberOfChanges = removeAny(sourceFile, { verbosity: 2 });
 
     expect(sourceFile.print()).toStrictEqual(
       `interface User {
     name: string;
 }
-const ChildComponent = ({ childTitle, childUser }: {
+const ChildComponent = ({ childTitle, childUser, childName }: {
     childTitle: string;
     childUser: User;
+    childName: string;
 }) => {
     return <div>{childTitle} / {childUser.name}</div>;
 };
-const ParentComponent = ({ title: page_title, user }: {
+const ParentComponent = ({ title: page_title, user, name }: {
     title: string;
     user: User;
+    name: string | null | undefined;
 }) => {
-    return <ChildComponent childTitle={page_title} childUser={user}/>;
+    const childName = name ?? 'defaultValue';
+    return <ChildComponent childTitle={page_title} childUser={user} childName={childName}/>;
 };
 `
     );

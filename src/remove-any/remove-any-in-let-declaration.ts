@@ -16,7 +16,7 @@ export function removeAnyInLetDeclaration(variableDeclaration: VariableDeclarati
 
   const typesOfSets = allTypesOfRefs(variableDeclaration);
 
-  const newType = computeTypesFromList(filterUnusableTypes(typesOfSets));
+  const newType = computeTypesFromList(filterUnusableTypes([{ types: typesOfSets, nullable: false }]));
 
   if (newType) {
     return setTypeOnNode(variableDeclaration, newType);

@@ -28,69 +28,108 @@ export function isImplicitAnyArray(node: TypedNode & Node) {
   return isAnyArray && !declaredType;
 }
 
-export function filterUnusableTypes(types: (Type | null | undefined)[]): Type[] {
-  return types.filter(isNotNil).filter((t) => {
-    const text = t.getText();
-    return (
-      !t.isAny() &&
-      !text.includes("any[]") &&
-      !text.includes("<any") &&
-      !text.includes("any>") &&
-      !text.includes(" any,") &&
-      !text.includes(": any") &&
-      !text.includes("import(") &&
-      !t.isNever() &&
-      !text.includes("never[]") &&
-      !text.includes(": never")
-    );
-  });
+export function filterUnusableTypes(typesFromRefs: TypesFromRefs[]): TypesFromRefs {
+  const types = typesFromRefs.flatMap(({ types }) =>
+    types.filter(isNotNil).filter((t) => {
+      const text = t.getText();
+      return (
+        !t.isAny() &&
+        !text.includes("any[]") &&
+        !text.includes("<any") &&
+        !text.includes("any>") &&
+        !text.includes(" any,") &&
+        !text.includes(": any") &&
+        !text.includes("import(") &&
+        !t.isNever() &&
+        !text.includes("never[]") &&
+        !text.includes(": never")
+      );
+    })
+  );
+  const nullable = typesFromRefs.some((t) => t.nullable);
+  return { types, nullable };
 }
 
-export function computeTypesFromList(callsiteTypes: Type[]): string | null {
+export function computeTypesFromList({ nullable: isNullable, types: callsiteTypes }: TypesFromRefs): string | null {
   if (callsiteTypes.length === 0) {
     return null;
   }
   if (callsiteTypes.every((s) => s.isBooleanLiteral() || s.isBoolean())) {
+    if (isNullable) {
+      return "boolean | null | undefined";
+    }
     return "boolean";
   }
-  if (callsiteTypes.length === 1) {
-    return callsiteTypes[0].getText();
-  }
+
   if (callsiteTypes.length <= 4) {
     if (callsiteTypes.every((t) => t.isNumber() || t.isNumberLiteral()) && callsiteTypes.some((t) => t.isNumber())) {
+      if (isNullable) {
+        return "number | null | undefined";
+      }
       return "number";
     }
     if (callsiteTypes.every((t) => t.isString() || t.isStringLiteral()) && callsiteTypes.some((t) => t.isString())) {
+      if (isNullable) {
+        return "string | null | undefined";
+      }
       return "string";
     }
 
     const newTypes = [...new Set(callsiteTypes.map((t) => t.getText()))];
-    return newTypes.join(" | ");
+    const result = newTypes.join(" | ");
+
+    if (isNullable) {
+      return result + " | null | undefined";
+    }
+    return result;
   }
 
   if (callsiteTypes.every((t) => t.isNumber() || t.isNumberLiteral())) {
+    if (isNullable) {
+      return "number | null | undefined";
+    }
     return "number";
   } else if (callsiteTypes.every((t) => t.isString() || t.isStringLiteral())) {
+    if (isNullable) {
+      return "string | null | undefined";
+    }
     return "string";
   }
   return null;
 }
 
-export function findTypeFromRefUsage(ref: Node): Type[] {
+interface TypesFromRefs {
+  types: Type[];
+  nullable: boolean;
+}
+
+export function findTypeFromRefUsage(ref: Node): TypesFromRefs {
   const parent = ref.getParent();
+  if (Node.isBinaryExpression(parent)) {
+    const operator = parent.getOperatorToken().getText();
+    if (operator === "??" || operator === "||") {
+      const left = parent.getLeft();
+      const right = parent.getRight();
+
+      return { types: [left.getType(), right.getType()].map((t) => t.getBaseTypeOfLiteralType()), nullable: true };
+    }
+  }
   if (Node.isJsxExpression(parent)) {
     const jsxAttribute = parent.getParent();
     if (Node.isJsxAttribute(jsxAttribute)) {
-      return jsxAttribute
-        .findReferencesAsNodes()
-        .map((r) => {
-          const jsxParent = r.getParent();
-          if (Node.isPropertySignature(jsxParent)) {
-            return jsxParent.getType();
-          }
-          return null;
-        })
-        .filter(isNotNil);
+      return {
+        types: jsxAttribute
+          .findReferencesAsNodes()
+          .map((r) => {
+            const jsxParent = r.getParent();
+            if (Node.isPropertySignature(jsxParent)) {
+              return jsxParent.getType();
+            }
+            return null;
+          })
+          .filter(isNotNil),
+        nullable: false,
+      };
     }
   }
   if (Node.isReturnStatement(parent)) {
@@ -98,16 +137,16 @@ export function findTypeFromRefUsage(ref: Node): Type[] {
       .getAncestors()
       .find((a): a is ArrowFunction | FunctionDeclaration => Node.isArrowFunction(a) || Node.isFunctionDeclaration(a));
     if (closestFunctionDeclaration) {
-      return [closestFunctionDeclaration.getReturnType()];
+      return { types: [closestFunctionDeclaration.getReturnType()], nullable: false };
     }
   }
   if (Node.isVariableDeclaration(parent)) {
     const declarations = parent.getVariableStatement()?.getDeclarations();
 
-    return (declarations ?? [])?.map((d) => d.getType());
+    return { types: (declarations ?? [])?.map((d) => d.getType()), nullable: false };
   }
   const typeOfVariableCall = findTypeOfVariableCall(ref);
-  return typeOfVariableCall ? [typeOfVariableCall] : [];
+  return { types: typeOfVariableCall ? [typeOfVariableCall] : [], nullable: false };
 }
 
 export function computeDestructuredTypes(parametersFn: ParameterDeclaration): string | null {
