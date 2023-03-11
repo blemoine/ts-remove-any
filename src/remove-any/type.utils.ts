@@ -78,6 +78,21 @@ export function computeTypesFromList(callsiteTypes: Type[]): string | null {
 
 export function findTypeFromRefUsage(ref: Node): Type[] {
   const parent = ref.getParent();
+  if (Node.isJsxExpression(parent)) {
+    const jsxAttribute = parent.getParent();
+    if (Node.isJsxAttribute(jsxAttribute)) {
+      return jsxAttribute
+        .findReferencesAsNodes()
+        .map((r) => {
+          const jsxParent = r.getParent();
+          if (Node.isPropertySignature(jsxParent)) {
+            return jsxParent.getType();
+          }
+          return null;
+        })
+        .filter(isNotNil);
+    }
+  }
   if (Node.isReturnStatement(parent)) {
     const closestFunctionDeclaration = parent
       .getAncestors()
@@ -110,12 +125,13 @@ export function computeDestructuredTypes(parametersFn: ParameterDeclaration): st
               return null;
             }
 
-            const typesFromUsage = element.findReferencesAsNodes().flatMap((ref) => {
-              return findTypeFromRefUsage(ref);
-            });
+            const typesFromUsage = element.findReferencesAsNodes().flatMap((ref) => findTypeFromRefUsage(ref));
+
             const type = computeTypesFromList(filterUnusableTypes(typesFromUsage));
 
-            return type ? ({ propertyName: element.getName(), type } as const) : null;
+            const propertyName = element.getPropertyNameNode()?.getText() ?? element.getName();
+
+            return type ? ({ propertyName, type } as const) : null;
           })
           .filter(isNotNil);
       }

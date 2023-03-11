@@ -415,9 +415,44 @@ test.highLevelMethod([], fnToIgnore);
     expect(numberOfChanges.countChangesDone).toBe(1);
     expect(numberOfChanges.countOfAnys).toBe(1);
   });
+
+  it("should find the type of child component calls in JSX", () => {
+    const sourceFile = createSourceFile(`
+interface User { name: string }
+const ChildComponent =  ({childTitle, childUser}: {childTitle: string, childUser: User}) => {
+  return <div>{childTitle} / {childUser.name}</div>
+}
+     
+const ParentComponent = ({title:page_title, user}) => {
+  return <ChildComponent childTitle={page_title} childUser={user} />
+}
+`);
+    const numberOfChanges = removeAny(sourceFile);
+
+    expect(sourceFile.print()).toStrictEqual(
+      `interface User {
+    name: string;
+}
+const ChildComponent = ({ childTitle, childUser }: {
+    childTitle: string;
+    childUser: User;
+}) => {
+    return <div>{childTitle} / {childUser.name}</div>;
+};
+const ParentComponent = ({ title: page_title, user }: {
+    title: string;
+    user: User;
+}) => {
+    return <ChildComponent childTitle={page_title} childUser={user}/>;
+};
+`
+    );
+    expect(numberOfChanges.countChangesDone).toBe(1);
+    expect(numberOfChanges.countOfAnys).toBe(1);
+  });
 });
 
 function createSourceFile(code: string): SourceFile {
   const project = new Project();
-  return project.createSourceFile("/tmp/not_used.ts", code);
+  return project.createSourceFile("/tmp/not_used.tsx", code);
 }
