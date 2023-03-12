@@ -1,6 +1,6 @@
 import { BinaryExpression, Node, ParameterDeclaration, ReferenceFindableNode, Type } from "ts-morph";
 import { isNotNil } from "../utils/is-not-nil";
-import { getParameterTypesFromCallerSignature, getPropsTypeOfJsx, TypesFromRefs } from "./type.utils";
+import { getPropsTypeOfJsx, TypesFromRefs } from "./type.utils";
 import { combineGuards } from "../utils/type-guard.utils";
 import { CallableType, getCallablesTypes } from "./type-unifier/callables.unifier";
 
@@ -145,78 +145,11 @@ function allTypesOfRef(ref: Node): Type[] {
 
   if (Node.isFunctionTypeNode(parent)) {
     const parameterIdx = ref.getChildIndex();
-
     const propertySignature = parent.getParent();
 
-    if (Node.isTypeAliasDeclaration(propertySignature)) {
+    if (Node.isTypeAliasDeclaration(propertySignature) || Node.isPropertySignature(propertySignature)) {
       const callablesTypes = getCallablesTypes(parent);
       return getCallableTypesOfParameter(callablesTypes, parameterIdx);
-    }
-    if (Node.isPropertySignature(propertySignature)) {
-      const interfaceDeclaration = propertySignature.getParent();
-      if (Node.isTypeLiteral(interfaceDeclaration)) {
-        const typeAliasDeclaration = interfaceDeclaration.getParent();
-        if (Node.isTypeAliasDeclaration(typeAliasDeclaration)) {
-          return typeAliasDeclaration.findReferencesAsNodes().flatMap((t): Type[] => {
-            const typeReference = t.getParent();
-            if (Node.isTypeReference(typeReference)) {
-              const parameterDeclaration = typeReference.getParent();
-              if (
-                Node.isParameterDeclaration(parameterDeclaration) ||
-                Node.isVariableDeclaration(parameterDeclaration)
-              ) {
-                return parameterDeclaration.findReferencesAsNodes().flatMap((p): Type[] => {
-                  const propertyName = propertySignature.getName();
-                  const parameterRef = p.getParent();
-                  if (Node.isPropertyAccessExpression(parameterRef) && parameterRef.getName() === propertyName) {
-                    const callExpression = parameterRef.getParent();
-                    if (Node.isCallExpression(callExpression)) {
-                      const callExpressionArguments = callExpression.getArguments();
-                      if (callExpressionArguments[parameterIdx]) {
-                        return [
-                          getParameterTypesFromCallerSignature(callExpression)[parameterIdx],
-                          callExpressionArguments[parameterIdx].getType(),
-                        ];
-                      }
-                    }
-                  }
-                  return [];
-                });
-              }
-            }
-            return [];
-          });
-        }
-      }
-      if (Node.isInterfaceDeclaration(interfaceDeclaration)) {
-        return interfaceDeclaration.findReferencesAsNodes().flatMap((t): Type[] => {
-          const typeReference = t.getParent();
-          if (Node.isTypeReference(typeReference)) {
-            const parameterDeclaration = typeReference.getParent();
-
-            if (Node.isParameterDeclaration(parameterDeclaration) || Node.isVariableDeclaration(parameterDeclaration)) {
-              return parameterDeclaration.findReferencesAsNodes().flatMap((p): Type[] => {
-                const propertyName = propertySignature.getName();
-                const parameterRef = p.getParent();
-                if (Node.isPropertyAccessExpression(parameterRef) && parameterRef.getName() === propertyName) {
-                  const callExpression = parameterRef.getParent();
-                  if (Node.isCallExpression(callExpression)) {
-                    const callExpressionArguments = callExpression.getArguments();
-                    if (callExpressionArguments[parameterIdx]) {
-                      return [
-                        getParameterTypesFromCallerSignature(callExpression)[parameterIdx],
-                        callExpressionArguments[parameterIdx].getType(),
-                      ];
-                    }
-                  }
-                }
-                return [];
-              });
-            }
-          }
-          return [];
-        });
-      }
     }
   } else if (isFunctionLike(parent) || Node.isConstructorDeclaration(parent)) {
     const parameterIdx = ref.getChildIndex();

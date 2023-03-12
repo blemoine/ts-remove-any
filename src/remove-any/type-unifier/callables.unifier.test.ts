@@ -470,6 +470,62 @@ function withTest(test: Test) {
       expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["any", "any"]);
       expect(typesOfFunction.usageInFunction).toStrictEqual({});
     });
+
+    it("should return arguments and parameters types of function type alias in interface", () => {
+      const sourceFile = createSourceFile(`
+interface Test { fn:  (_a: number, _b: string) => void }     
+let myVariable;
+function withTest(test: Test) {
+  test.fn(1, myVariable);
+  test.fn(3, 'test');
+}
+      `);
+
+      const functionTypeNodeDeclaration = sourceFile.getInterface("Test")?.getProperty("fn")?.getTypeNode();
+
+      if (!Node.isFunctionTypeNode(functionTypeNodeDeclaration)) {
+        throw new Error(`There must be function type node in Test type`);
+      }
+
+      const typesOfFunction = getCallablesTypes(functionTypeNodeDeclaration);
+
+      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => p.getText()))).toStrictEqual([
+        ["1", "any"],
+        ["3", '"test"'],
+      ]);
+      expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["number", "string"]);
+      expect(typesOfFunction.usageInFunction).toStrictEqual({});
+    });
+
+    it("should return arguments and parameters types of function type alias in type alia", () => {
+      const sourceFile = createSourceFile(`
+type Test = { fn:  (_a: number, _b: string) => void }     
+let myVariable;
+function withTest(test: Test) {
+  test.fn(1, myVariable);
+  test.fn(3, 'test');
+}
+      `);
+
+      const aliasTypeNode = sourceFile.getTypeAlias("Test")?.getTypeNode();
+      if (!Node.isTypeLiteral(aliasTypeNode)) {
+        throw new Error(`Test must be a type literal`);
+      }
+      const functionTypeNodeDeclaration = aliasTypeNode.getProperty("fn")?.getTypeNode();
+
+      if (!Node.isFunctionTypeNode(functionTypeNodeDeclaration)) {
+        throw new Error(`There must be function type node in Test type`);
+      }
+
+      const typesOfFunction = getCallablesTypes(functionTypeNodeDeclaration);
+
+      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => p.getText()))).toStrictEqual([
+        ["1", "any"],
+        ["3", '"test"'],
+      ]);
+      expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["number", "string"]);
+      expect(typesOfFunction.usageInFunction).toStrictEqual({});
+    });
   });
 });
 

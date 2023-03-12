@@ -137,7 +137,9 @@ function getReferencableNodeFromCallableType(
     }
   } else if (Node.isFunctionTypeNode(functionDeclaration)) {
     const variableDeclaration = functionDeclaration.getParent();
-    if (Node.isTypeAliasDeclaration(variableDeclaration)) {
+    if (Node.isPropertySignature(variableDeclaration)) {
+      return variableDeclaration;
+    } else if (Node.isTypeAliasDeclaration(variableDeclaration)) {
       return variableDeclaration;
     } else {
       return null;
