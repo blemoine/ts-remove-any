@@ -57,8 +57,8 @@ x.test = 2;
     expect(numberOfChanges.countOfAnys).toBe(1);
   });
 
-    it("should add an array type in JSX", () => {
-        const sourceFile = createSourceFile(`
+  it("should add an array type in JSX", () => {
+    const sourceFile = createSourceFile(`
 interface Props { arr: string[] }
 const MyComponent = (props: Props) => <div></div>
 
@@ -70,11 +70,11 @@ function wrapper() {
 }
 `);
 
-        const numberOfChanges = removeAny(sourceFile);
-        expect(numberOfChanges.countChangesDone).toBe(1);
-        expect(numberOfChanges.countOfAnys).toBe(1);
-        expect(sourceFile.print()).toStrictEqual(
-            `interface Props {
+    const numberOfChanges = removeAny(sourceFile);
+    expect(numberOfChanges.countChangesDone).toBe(1);
+    expect(numberOfChanges.countOfAnys).toBe(1);
+    expect(sourceFile.print()).toStrictEqual(
+      `interface Props {
     arr: string[];
 }
 const MyComponent = (props: Props) => <div></div>;
@@ -85,8 +85,35 @@ function wrapper() {
     };
 }
 `
-        );
-    });
+    );
+  });
+
+  it("should deduce the type from jsx callback with spread", () => {
+    const sourceFile = createSourceFile(`
+const ChildComponent = (props: {name: string}) => <div></div>
+let defaultProps;
+const ParentComponent = () => {
+    return <ChildComponent {...defaultProps} />
+}
+`);
+
+    const numberOfChanges = removeAny(sourceFile);
+
+    expect(sourceFile.print()).toStrictEqual(
+      `const ChildComponent = (props: {
+    name: string;
+}) => <div></div>;
+let defaultProps: {
+    name: string;
+};
+const ParentComponent = () => {
+    return <ChildComponent {...defaultProps}/>;
+};
+`
+    );
+    expect(numberOfChanges.countChangesDone).toBe(1);
+    expect(numberOfChanges.countOfAnys).toBe(1);
+  });
 });
 
 function createSourceFile(code: string): SourceFile {

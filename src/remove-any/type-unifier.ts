@@ -1,6 +1,6 @@
 import { BinaryExpression, Node, ParameterDeclaration, ReferenceFindableNode, Type } from "ts-morph";
 import { isNotNil } from "../utils/is-not-nil";
-import { getParameterTypesFromCallerSignature, TypesFromRefs } from "./type.utils";
+import { getParameterTypesFromCallerSignature, getPropsTypeOfJsx, TypesFromRefs } from "./type.utils";
 import { combineGuards } from "../utils/type-guard.utils";
 import { getCallablesTypes } from "./type-unifier/callables.unifier";
 
@@ -47,6 +47,15 @@ function allTypesOfRef(ref: Node): Type[] {
     return [parent.getLeft().getType(), parent.getRight().getType()];
   }
 
+  if (Node.isJsxSpreadAttribute(parent)) {
+    const jsxElement = parent.getParent().getParent();
+    if (Node.isJsxOpeningElement(jsxElement) || Node.isJsxSelfClosingElement(jsxElement)) {
+      const propertiesOfProps = getPropsTypeOfJsx(jsxElement);
+      if (propertiesOfProps) {
+        return [ref.getType(), propertiesOfProps];
+      }
+    }
+  }
   if (Node.isJsxExpression(parent)) {
     const contextualType = parent.getContextualType();
     if (contextualType) {
