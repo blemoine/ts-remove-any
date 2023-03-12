@@ -1,16 +1,20 @@
 import { BinaryExpression, Node, ParameterDeclaration, ReferenceFindableNode, Type } from "ts-morph";
 import { isNotNil } from "../utils/is-not-nil";
-import { getParameterTypesFromCallerSignature } from "./type.utils";
+import { getParameterTypesFromCallerSignature, TypesFromRefs } from "./type.utils";
 import { combineGuards } from "../utils/type-guard.utils";
 import { getCallablesTypes } from "./type-unifier/callables.unifier";
 
-export function allTypesOfRefs(node: ReferenceFindableNode): Type[] {
+export function allTypesOfRefs(node: ReferenceFindableNode): TypesFromRefs {
   const referencesAsNodes = node.findReferencesAsNodes();
   const typesFromReference = referencesAsNodes.flatMap((ref) => allTypesOfRef(ref));
 
   const typesFromLambda = node instanceof ParameterDeclaration ? allTypesOfRef(node) : [];
 
-  return deduplicateTypes([...typesFromReference, ...typesFromLambda]);
+  if (referencesAsNodes.length === 0 && typesFromLambda.length === 1 && typesFromLambda[0].isAny()) {
+    return { types: [], unknown: true, nullable: false };
+  }
+
+  return { types: deduplicateTypes([...typesFromReference, ...typesFromLambda]), unknown: false, nullable: false };
 }
 
 function deduplicateTypes(types: (Type | null | undefined)[]): Type[] {

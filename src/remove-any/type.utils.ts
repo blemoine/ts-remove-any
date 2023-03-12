@@ -49,7 +49,8 @@ export function filterUnusableTypes(typesFromRefs: TypesFromRefs[]): TypesFromRe
     })
   );
   const nullable = typesFromRefs.some((t) => t.nullable);
-  return { types, nullable };
+  const unknown = typesFromRefs.every((t) => t.unknown);
+  return { types, nullable, unknown };
 }
 
 function computeTypesFromList(callsiteTypes: Type[]): string | null {
@@ -80,18 +81,21 @@ function computeTypesFromList(callsiteTypes: Type[]): string | null {
   return null;
 }
 
-export function computeTypesFromRefs({ nullable: isNullable, types: callsiteTypes }: TypesFromRefs): string | null {
-  const resultTypes = computeTypesFromList(callsiteTypes);
-
-  if (isNullable && resultTypes) {
+export function computeTypesFromRefs({ nullable, types, unknown }: TypesFromRefs): string | null {
+  if (types.length === 0 && unknown) {
+    return "unknown";
+  }
+  const resultTypes = computeTypesFromList(types);
+  if (nullable && resultTypes) {
     return resultTypes + " | null | undefined";
   }
   return resultTypes;
 }
 
-interface TypesFromRefs {
+export interface TypesFromRefs {
   types: Type[];
   nullable: boolean;
+  unknown: boolean;
 }
 
 export function findTypeFromRefUsage(ref: Node): TypesFromRefs {
@@ -102,7 +106,11 @@ export function findTypeFromRefUsage(ref: Node): TypesFromRefs {
       const left = parent.getLeft();
       const right = parent.getRight();
 
-      return { types: [left.getType(), right.getType()].map((t) => t.getBaseTypeOfLiteralType()), nullable: true };
+      return {
+        types: [left.getType(), right.getType()].map((t) => t.getBaseTypeOfLiteralType()),
+        nullable: true,
+        unknown: false,
+      };
     }
   }
   if (Node.isJsxExpression(parent)) {
@@ -120,6 +128,7 @@ export function findTypeFromRefUsage(ref: Node): TypesFromRefs {
           })
           .filter(isNotNil),
         nullable: false,
+        unknown: false,
       };
     }
   }
@@ -128,16 +137,16 @@ export function findTypeFromRefUsage(ref: Node): TypesFromRefs {
       .getAncestors()
       .find((a): a is ArrowFunction | FunctionDeclaration => Node.isArrowFunction(a) || Node.isFunctionDeclaration(a));
     if (closestFunctionDeclaration) {
-      return { types: [closestFunctionDeclaration.getReturnType()], nullable: false };
+      return { types: [closestFunctionDeclaration.getReturnType()], nullable: false, unknown: false };
     }
   }
   if (Node.isVariableDeclaration(parent)) {
     const declarations = parent.getVariableStatement()?.getDeclarations();
 
-    return { types: (declarations ?? [])?.map((d) => d.getType()), nullable: false };
+    return { types: (declarations ?? [])?.map((d) => d.getType()), nullable: false, unknown: false };
   }
   const typeOfVariableCall = findTypeOfVariableCall(ref);
-  return { types: typeOfVariableCall ? [typeOfVariableCall] : [], nullable: false };
+  return { types: typeOfVariableCall ? [typeOfVariableCall] : [], nullable: false, unknown: false };
 }
 
 export function computeDestructuredTypes(parametersFn: ParameterDeclaration): string | null {
