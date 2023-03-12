@@ -1,4 +1,4 @@
-import { ArrowFunction, ConstructorDeclaration, MethodDeclaration, Project, SourceFile } from "ts-morph";
+import { ArrowFunction, ConstructorDeclaration, MethodDeclaration, Project, SourceFile, Node } from "ts-morph";
 import { getCallablesTypes } from "./callables.unifier";
 
 describe("getCallablesTypes", () => {
@@ -413,6 +413,59 @@ new Test(2, 'test');
       expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => p.getText()))).toStrictEqual([
         ["1", "string"],
         ["2", '"test"'],
+      ]);
+      expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["any", "any"]);
+      expect(typesOfFunction.usageInFunction).toStrictEqual({});
+    });
+  });
+
+  describe("for function type", () => {
+    it("should return arguments and parameters types of function type alias", () => {
+      const sourceFile = createSourceFile(`
+type Test =  (_a: number, _b: string) => void;     
+let myVariable;
+function withTest(test: Test) {
+  test(1, myVariable);
+  test(3, 'test');
+}
+      `);
+
+      const functionTypeNodeDeclaration = sourceFile.getTypeAlias("Test")?.getTypeNode();
+      if (!Node.isFunctionTypeNode(functionTypeNodeDeclaration)) {
+        throw new Error(`There must be function type node in Test type`);
+      }
+
+      const typesOfFunction = getCallablesTypes(functionTypeNodeDeclaration);
+
+      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => p.getText()))).toStrictEqual([
+        ["1", "any"],
+        ["3", '"test"'],
+      ]);
+      expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["number", "string"]);
+      expect(typesOfFunction.usageInFunction).toStrictEqual({});
+    });
+
+    it("should return arguments and parameters types of function type alias used as references", () => {
+      const sourceFile = createSourceFile(`
+type Test =  (c, x) => void;     
+function map(a: string, x: (c:string, n:number) => {value: number}) {}
+
+function withTest(test: Test) {
+  map('v', test);
+  test('a', 123)
+}
+      `);
+
+      const functionTypeNodeDeclaration = sourceFile.getTypeAlias("Test")?.getTypeNode();
+      if (!Node.isFunctionTypeNode(functionTypeNodeDeclaration)) {
+        throw new Error(`There must be function type node in Test type`);
+      }
+
+      const typesOfFunction = getCallablesTypes(functionTypeNodeDeclaration);
+
+      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => p.getText()))).toStrictEqual([
+        ["string", "number"],
+        ['"a"', "123"],
       ]);
       expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["any", "any"]);
       expect(typesOfFunction.usageInFunction).toStrictEqual({});

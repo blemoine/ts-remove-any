@@ -2,6 +2,7 @@ import {
   ArrowFunction,
   ConstructorDeclaration,
   FunctionDeclaration,
+  FunctionTypeNode,
   MethodDeclaration,
   Node,
   ReferenceFindableNode,
@@ -9,47 +10,63 @@ import {
 } from "ts-morph";
 import { cannotHappen } from "../../utils/cannot-happen";
 import { getParameterTypesFromCallerSignature, getPropsTypeOfJsxElement } from "../type.utils";
+import { isNotNil } from "../../utils/is-not-nil";
 
-interface CallableType {
+export interface CallableType {
   parameterTypes: Type[];
   argumentsTypes: Type[][];
   usageInFunction: Record<number, Type[]>; // this one exist because the parameterTypes may be `any`...
 }
 
-export function getCallablesTypes(
-  functionDeclaration: FunctionDeclaration | ArrowFunction | MethodDeclaration | ConstructorDeclaration
-): CallableType {
+type RuntimeCallable = FunctionDeclaration | ArrowFunction | MethodDeclaration | ConstructorDeclaration;
+
+export function getCallablesTypes(functionDeclaration: RuntimeCallable | FunctionTypeNode): CallableType {
   const referencableNode = getReferencableNodeFromCallableType(functionDeclaration);
 
-  const argumentsTypes = (referencableNode?.findReferencesAsNodes() ?? [])
-    .map((ref) => getArgumentTypesFromRef(ref))
+  const argumentsTypes: Type[][] = (referencableNode?.findReferencesAsNodes() ?? [])
+    .map<Type[][]>((ref) => {
+      const parent = ref.getParent();
+      if (Node.isTypeReference(parent)) {
+        const greatParent = parent.getParent();
+        if (Node.isParameterDeclaration(greatParent)) {
+          return greatParent
+            .findReferencesAsNodes()
+            .map((r) => getArgumentTypesFromRef(r))
+            .filter(isNotNil);
+        }
+      }
+      return [getArgumentTypesFromRef(ref)];
+    })
+    .flat(1)
     .filter((l) => l.length > 0);
 
   const parameterTypes = functionDeclaration.getParameters().map((p) => p.getType());
-  const usageInFunction = Object.fromEntries(
-    functionDeclaration
-      .getParameters()
-      .map((p, idx) => {
-        return [
-          idx,
-          p
-            .findReferencesAsNodes()
-            .filter((ref) => ref !== p)
-            .flatMap((ref): Type[] => {
-              const parent = ref.getParent();
-              const refType = ref.getType();
-              if (Node.isCallExpression(parent)) {
-                const argIdx = parent.getArguments().findIndex((a) => a === ref);
+  const usageInFunction = Node.isFunctionTypeNode(functionDeclaration)
+    ? {}
+    : Object.fromEntries(
+        functionDeclaration
+          .getParameters()
+          .map((p, idx) => {
+            return [
+              idx,
+              p
+                .findReferencesAsNodes()
+                .filter((ref) => ref !== p)
+                .flatMap((ref): Type[] => {
+                  const parent = ref.getParent();
+                  const refType = ref.getType();
+                  if (Node.isCallExpression(parent)) {
+                    const argIdx = parent.getArguments().findIndex((a) => a === ref);
 
-                return [refType, getParameterTypesFromCallerSignature(parent)[argIdx]];
-              }
+                    return [refType, getParameterTypesFromCallerSignature(parent)[argIdx]];
+                  }
 
-              return [refType];
-            }),
-        ] as const;
-      })
-      .filter(([, types]) => types.length > 0)
-  );
+                  return [refType];
+                }),
+            ] as const;
+          })
+          .filter(([, types]) => types.length > 0)
+      );
 
   return {
     parameterTypes,
@@ -103,7 +120,7 @@ function getArgumentTypesFromRef(ref: Node): Type[] {
 }
 
 function getReferencableNodeFromCallableType(
-  functionDeclaration: FunctionDeclaration | ArrowFunction | MethodDeclaration | ConstructorDeclaration
+  functionDeclaration: RuntimeCallable | FunctionTypeNode
 ): ReferenceFindableNode | null {
   if (
     Node.isFunctionDeclaration(functionDeclaration) ||
@@ -114,6 +131,13 @@ function getReferencableNodeFromCallableType(
   } else if (Node.isArrowFunction(functionDeclaration)) {
     const variableDeclaration = functionDeclaration.getParent();
     if (Node.isVariableDeclaration(variableDeclaration)) {
+      return variableDeclaration;
+    } else {
+      return null;
+    }
+  } else if (Node.isFunctionTypeNode(functionDeclaration)) {
+    const variableDeclaration = functionDeclaration.getParent();
+    if (Node.isTypeAliasDeclaration(variableDeclaration)) {
       return variableDeclaration;
     } else {
       return null;

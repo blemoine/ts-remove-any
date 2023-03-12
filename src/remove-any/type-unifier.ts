@@ -2,7 +2,7 @@ import { BinaryExpression, Node, ParameterDeclaration, ReferenceFindableNode, Ty
 import { isNotNil } from "../utils/is-not-nil";
 import { getParameterTypesFromCallerSignature, getPropsTypeOfJsx, TypesFromRefs } from "./type.utils";
 import { combineGuards } from "../utils/type-guard.utils";
-import { getCallablesTypes } from "./type-unifier/callables.unifier";
+import { CallableType, getCallablesTypes } from "./type-unifier/callables.unifier";
 
 export function allTypesOfRefs(node: ReferenceFindableNode): TypesFromRefs {
   const referencesAsNodes = node.findReferencesAsNodes();
@@ -85,11 +85,7 @@ function allTypesOfRef(ref: Node): Type[] {
       if (functionDeclaration) {
         const callablesTypes = getCallablesTypes(functionDeclaration);
 
-        return [
-          callablesTypes.parameterTypes[parameterIdx],
-          ...callablesTypes.argumentsTypes.map((p) => p[parameterIdx]),
-          ...(callablesTypes.usageInFunction[parameterIdx] ?? []),
-        ].filter(isNotNil);
+        return getCallableTypesOfParameter(callablesTypes, parameterIdx);
       }
     }
   }
@@ -108,11 +104,7 @@ function allTypesOfRef(ref: Node): Type[] {
         if (constructors.length > 0) {
           const callablesTypes = getCallablesTypes(constructors[0]);
 
-          return [
-            callablesTypes.parameterTypes[parameterIdx],
-            ...callablesTypes.argumentsTypes.map((p) => p[parameterIdx]),
-            ...(callablesTypes.usageInFunction[parameterIdx] ?? []),
-          ].filter(isNotNil);
+          return getCallableTypesOfParameter(callablesTypes, parameterIdx);
         }
       }
     }
@@ -157,28 +149,8 @@ function allTypesOfRef(ref: Node): Type[] {
     const propertySignature = parent.getParent();
 
     if (Node.isTypeAliasDeclaration(propertySignature)) {
-      return propertySignature.findReferencesAsNodes().flatMap((t): Type[] => {
-        const typeReference = t.getParent();
-        if (Node.isTypeReference(typeReference)) {
-          const parameterDeclaration = typeReference.getParent();
-          if (Node.isParameterDeclaration(parameterDeclaration) || Node.isVariableDeclaration(parameterDeclaration)) {
-            return parameterDeclaration.findReferencesAsNodes().flatMap((p): Type[] => {
-              const callExpression = p.getParent();
-              if (Node.isCallExpression(callExpression)) {
-                const callExpressionArguments = callExpression.getArguments();
-                if (callExpressionArguments[parameterIdx]) {
-                  return [
-                    getParameterTypesFromCallerSignature(callExpression)[parameterIdx],
-                    callExpressionArguments[parameterIdx].getType(),
-                  ];
-                }
-              }
-              return [];
-            });
-          }
-        }
-        return [];
-      });
+      const callablesTypes = getCallablesTypes(parent);
+      return getCallableTypesOfParameter(callablesTypes, parameterIdx);
     }
     if (Node.isPropertySignature(propertySignature)) {
       const interfaceDeclaration = propertySignature.getParent();
@@ -251,11 +223,7 @@ function allTypesOfRef(ref: Node): Type[] {
 
     const callablesTypes = getCallablesTypes(parent);
 
-    return [
-      callablesTypes.parameterTypes[parameterIdx],
-      ...callablesTypes.argumentsTypes.map((p) => p[parameterIdx]),
-      ...(callablesTypes.usageInFunction[parameterIdx] ?? []),
-    ].filter(isNotNil);
+    return getCallableTypesOfParameter(callablesTypes, parameterIdx);
   }
 
   return [];
@@ -265,3 +233,11 @@ const isFunctionLike = combineGuards(
   combineGuards(Node.isFunctionDeclaration, Node.isMethodDeclaration),
   Node.isArrowFunction
 );
+
+function getCallableTypesOfParameter(callablesType: CallableType, parameterIdx: number): Type[] {
+  return [
+    callablesType.parameterTypes[parameterIdx],
+    ...callablesType.argumentsTypes.map((p) => p[parameterIdx]),
+    ...(callablesType.usageInFunction[parameterIdx] ?? []),
+  ].filter(isNotNil);
+}
