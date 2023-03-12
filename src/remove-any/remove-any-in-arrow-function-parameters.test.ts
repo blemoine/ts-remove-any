@@ -454,6 +454,32 @@ const ParentComponent = ({ title: page_title, user, name }: {
     expect(numberOfChanges.countChangesDone).toBe(1);
     expect(numberOfChanges.countOfAnys).toBe(1);
   });
+
+  it("should deduce the type from jsx callback", () => {
+    const sourceFile = createSourceFile(`
+const ChildComponent = (props: {onError: (str:string) => void}) => <div></div>
+const ParentComponent = () => {
+    const handleError = (err) => {}
+
+    return <ChildComponent onError={handleError} />
+}
+`);
+
+    const numberOfChanges = removeAny(sourceFile);
+
+    expect(sourceFile.print()).toStrictEqual(
+      `const ChildComponent = (props: {
+    onError: (str: string) => void;
+}) => <div></div>;
+const ParentComponent = () => {
+    const handleError = (err: string) => { };
+    return <ChildComponent onError={handleError}/>;
+};
+`
+    );
+    expect(numberOfChanges.countChangesDone).toBe(1);
+    expect(numberOfChanges.countOfAnys).toBe(1);
+  });
 });
 
 function createSourceFile(code: string): SourceFile {

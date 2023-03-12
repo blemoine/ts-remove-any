@@ -220,6 +220,50 @@ test('a', 123)
         Object.entries(typesOfFunction.usageInFunction).map(([idx, types]) => [idx, types.map((t) => t.getText())])
       ).toStrictEqual([["1", ["any"]]]);
     });
+
+    it("should return the arguments and parameters when the arrow function is used in JSX context with autoclose tag", () => {
+      const sourceFile = createSourceFile(`
+const handleError = (err) => {}
+const ChildComponent = (props: {onError: (str:string) => void}) => <div></div>
+const ParentComponent = () => {
+    handleError(123);
+    return <ChildComponent onError={handleError} />
+}
+      `);
+
+      const functionDeclaration = sourceFile.getVariableDeclaration("handleError")?.getInitializer();
+      if (!functionDeclaration || !(functionDeclaration instanceof ArrowFunction)) {
+        throw new Error("test should be defined");
+      }
+
+      const typesOfFunction = getCallablesTypes(functionDeclaration);
+
+      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => p.getText()))).toStrictEqual([["123"], ["string"]]);
+      expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["any"]);
+      expect(typesOfFunction.usageInFunction).toStrictEqual({});
+    });
+
+    it("should return the arguments and parameters when the arrow function is used in JSX context with open tag", () => {
+      const sourceFile = createSourceFile(`
+const handleError = (err) => {}
+const ChildComponent = (props: {onError: (str:string) => void}) => <div></div>
+const ParentComponent = () => {
+    handleError(123);
+    return <ChildComponent onError={handleError} ></ChildComponent>
+}
+      `);
+
+      const functionDeclaration = sourceFile.getVariableDeclaration("handleError")?.getInitializer();
+      if (!functionDeclaration || !(functionDeclaration instanceof ArrowFunction)) {
+        throw new Error("test should be defined");
+      }
+
+      const typesOfFunction = getCallablesTypes(functionDeclaration);
+
+      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => p.getText()))).toStrictEqual([["123"], ["string"]]);
+      expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["any"]);
+      expect(typesOfFunction.usageInFunction).toStrictEqual({});
+    });
   });
 
   describe("for methods", () => {

@@ -2,6 +2,8 @@ import {
   ArrowFunction,
   CallExpression,
   FunctionDeclaration,
+  JsxOpeningElement,
+  JsxSelfClosingElement,
   NewExpression,
   Node,
   ParameterDeclaration,
@@ -202,6 +204,26 @@ export function getParameterTypesFromCallerSignature(callExpression: CallExpress
   }
 
   return [];
+}
+
+export function getPropsTypeOfJsxElement(
+  jsxTagNamedNode: JsxSelfClosingElement | JsxOpeningElement
+): Record<string, Type> {
+  const signatures = jsxTagNamedNode.getTagNameNode().getType().getCallSignatures();
+  if (signatures.length > 0) {
+    const parameters = signatures[0].getParameters(); // There should be only one parameters: the props
+    if (parameters.length > 0) {
+      const propsDefinition = parameters[0];
+      const propertiesOfProps = propsDefinition.getTypeAtLocation(jsxTagNamedNode).getProperties();
+
+      return Object.fromEntries(
+        propertiesOfProps.map((p) => {
+          return [p.getName(), p.getTypeAtLocation(jsxTagNamedNode)] as const;
+        })
+      );
+    }
+  }
+  return {};
 }
 
 // if node has a type of something callable, get the parameters of the type associated

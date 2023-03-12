@@ -8,7 +8,7 @@ import {
   Type,
 } from "ts-morph";
 import { cannotHappen } from "../../utils/cannot-happen";
-import { getParameterTypesFromCallerSignature } from "../type.utils";
+import { getParameterTypesFromCallerSignature, getPropsTypeOfJsxElement } from "../type.utils";
 
 interface CallableType {
   parameterTypes: Type[];
@@ -62,10 +62,27 @@ export function getCallablesTypes(
 function getArgumentTypesFromRef(ref: Node): Type[] {
   // the function is called
   const parent = ref.getParent();
+
   if (Node.isPropertyAccessExpression(parent)) {
     return getArgumentTypesFromRef(parent);
   }
-  if (Node.isCallExpression(parent) || Node.isNewExpression(parent)) {
+  if (Node.isJsxExpression(parent)) {
+    const greatParent = parent.getParent();
+    if (Node.isJsxAttribute(greatParent)) {
+      const attributeName = greatParent.getName();
+      const greatGreatParent = greatParent.getParent()?.getParent();
+
+      if (Node.isJsxSelfClosingElement(greatGreatParent) || Node.isJsxOpeningElement(greatGreatParent)) {
+        const higherLevelFnTypeOfCaller = getPropsTypeOfJsxElement(greatGreatParent)[attributeName];
+        if (higherLevelFnTypeOfCaller) {
+          const callSignatures = higherLevelFnTypeOfCaller.getCallSignatures();
+          if (callSignatures.length > 0) {
+            return callSignatures[0].getParameters().map((p) => p.getTypeAtLocation(greatGreatParent));
+          }
+        }
+      }
+    }
+  } else if (Node.isCallExpression(parent) || Node.isNewExpression(parent)) {
     const functionCalled = parent.getExpression();
     if (functionCalled === ref) {
       return parent.getArguments().map((argument) => argument.getType());

@@ -87,5 +87,5 @@ function({value}): string { if(true) { return value } }
 
 function createSourceFile(code: string): SourceFile {
   const project = new Project();
-  return project.createSourceFile("/tmp/not_used.ts", code);
+  return project.createSourceFile("/tmp/not_used.tsx", code);
 }
