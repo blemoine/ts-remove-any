@@ -25,7 +25,7 @@ export function isImplicitAnyArray(node: TypedNode & Node) {
     node
       .getType()
       .getTypeArguments()
-      .some((t) => t.getText() === "any");
+      .some((t) => t.getText() === "any" || t.getText() === "never");
   const declaredType = node.getTypeNode();
   return isAnyArray && !declaredType;
 }

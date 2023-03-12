@@ -56,9 +56,40 @@ x.test = 2;
     expect(numberOfChanges.countChangesDone).toBe(0);
     expect(numberOfChanges.countOfAnys).toBe(1);
   });
+
+    it("should add an array type in JSX", () => {
+        const sourceFile = createSourceFile(`
+interface Props { arr: string[] }
+const MyComponent = (props: Props) => <div></div>
+
+function wrapper() {
+    const ParentComponent = () => {
+       const test = []
+       return <MyComponent arr={test} />
+    }
+}
+`);
+
+        const numberOfChanges = removeAny(sourceFile);
+        expect(numberOfChanges.countChangesDone).toBe(1);
+        expect(numberOfChanges.countOfAnys).toBe(1);
+        expect(sourceFile.print()).toStrictEqual(
+            `interface Props {
+    arr: string[];
+}
+const MyComponent = (props: Props) => <div></div>;
+function wrapper() {
+    const ParentComponent = () => {
+        const test: string[] = [];
+        return <MyComponent arr={test}/>;
+    };
+}
+`
+        );
+    });
 });
 
 function createSourceFile(code: string): SourceFile {
   const project = new Project();
-  return project.createSourceFile("/tmp/not_used.ts", code);
+  return project.createSourceFile("/tmp/not_used.tsx", code);
 }
