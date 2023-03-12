@@ -2,6 +2,44 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.42](https://github.com/blemoine/ts-remove-any/compare/v0.1.41...v0.1.42) (2023-03-12)
+
+
+### Features
+
+* add a callable unifier ([2706dbc](https://github.com/blemoine/ts-remove-any/commit/2706dbcebdd6b2ce4f6ae90f66e3c7706b1dae22))
+* add some basic support for JSX call ([1ab15c5](https://github.com/blemoine/ts-remove-any/commit/1ab15c5ccf652b0d3156b9952be4ea609e0e9459))
+* add support for any in interfaces ([94b1aa0](https://github.com/blemoine/ts-remove-any/commit/94b1aa0159cf8af2ebeb610ff67777a0eeeee7e5))
+* add support for anyArray for let ([222ea50](https://github.com/blemoine/ts-remove-any/commit/222ea503690b2c84757d9060aa6e0321a1142b1b))
+* add support for beta conversion ([bff2226](https://github.com/blemoine/ts-remove-any/commit/bff22268057e09ba4ba8de7cd004ed3bd7070175))
+* add support for constructor in unifier ([4c32695](https://github.com/blemoine/ts-remove-any/commit/4c32695013c64e3c53baa214363dce459ce0313d))
+* add support for method ([0bb98ab](https://github.com/blemoine/ts-remove-any/commit/0bb98ab6c9e33ab3c5272b59f9e3cbc806d07a20))
+* add support for never[] ([687460c](https://github.com/blemoine/ts-remove-any/commit/687460cfc04795a0e0e2fee08ac41dbac9d9f0ff))
+* add support for nullable ([f0bd309](https://github.com/blemoine/ts-remove-any/commit/f0bd309c4bee74962ac82a5c9f5707edf648a7b9))
+* add support for some JSX ([bc453ef](https://github.com/blemoine/ts-remove-any/commit/bc453ef09b49bb7bc578f47f2c084e153d561630))
+* add support for spread props ([a7b04a2](https://github.com/blemoine/ts-remove-any/commit/a7b04a2f9351e8973ee9773b85b707c56169560d))
+* add support for type declaration ([5384497](https://github.com/blemoine/ts-remove-any/commit/5384497f893b66f1612ef24a1b11a00fe2b907b5))
+* add support for unknown ([4bdea9b](https://github.com/blemoine/ts-remove-any/commit/4bdea9b04dacc1967fb4ffe8a653eef459c105ff))
+* add support for variables for types ([57755c4](https://github.com/blemoine/ts-remove-any/commit/57755c454461d0924c605fa36e9adcb7b5d4b7a1))
+* add support function in types ([ce4b3d2](https://github.com/blemoine/ts-remove-any/commit/ce4b3d2381296420c02f7e9e788da2d3d4c5d98f))
+* add types from lambda ([ad50044](https://github.com/blemoine/ts-remove-any/commit/ad500445ba736101b3d0251a33b9090ce2d05e07))
+* add unifier for beta reduction ([4fc9544](https://github.com/blemoine/ts-remove-any/commit/4fc9544c94db389638cbda177e8bb3616df45b38))
+* ensure recursive access to dotted property ([ec6b05f](https://github.com/blemoine/ts-remove-any/commit/ec6b05f44c257d957161706eea0700aa690dbdea))
+* factorize type unifier ([6e18808](https://github.com/blemoine/ts-remove-any/commit/6e18808e50d8548f601ab4488daa2d2b6430aa83))
+* filter some more any ([ec5b357](https://github.com/blemoine/ts-remove-any/commit/ec5b357a3bea7b2eb17288278663a65401c8edf0))
+* find type in JSX expression ([f1fc797](https://github.com/blemoine/ts-remove-any/commit/f1fc797cdaa15fd5a3b09afbee0d338aeea176cb))
+* recurse through object type ([0213922](https://github.com/blemoine/ts-remove-any/commit/0213922db97dd2cd4cbf1582219ccdbcd1ca2cdd))
+* simplify doc ([545d7d6](https://github.com/blemoine/ts-remove-any/commit/545d7d68f7974c633c007beec0cdb27e01ddc7f8))
+* use callables for call to Constructor ([34638a7](https://github.com/blemoine/ts-remove-any/commit/34638a7e90345c9ff1ededb83b73dea2a64abdf4))
+
+
+### Bug Fixes
+
+* add support for no reverts ([90d5db3](https://github.com/blemoine/ts-remove-any/commit/90d5db3eb879ed89433bba38f63fb7c01e88ad73))
+* callable unifier ([e387c9b](https://github.com/blemoine/ts-remove-any/commit/e387c9b8a455817ef2a3329aec8136ba3ad5b719))
+* filter breaking types ([e6b78b3](https://github.com/blemoine/ts-remove-any/commit/e6b78b39258413b123e7d81f349d9222033dbc88))
+* fix some corner failing corner case ([87ca7ed](https://github.com/blemoine/ts-remove-any/commit/87ca7eda25df5a570de9e9503dc888a6d1053b39))
+
 ### [0.1.41](https://github.com/blemoine/ts-remove-any/compare/v0.1.40...v0.1.41) (2023-03-06)
 
 
