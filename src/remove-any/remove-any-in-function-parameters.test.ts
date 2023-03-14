@@ -432,6 +432,43 @@ test.highLevelMethod([], fnToIgnore);
     expect(numberOfChanges.countChangesDone).toBe(1);
     expect(numberOfChanges.countOfAnys).toBe(1);
   });
+
+  it("should set the type from the usage in react components", () => {
+    const sourceFile = createSourceFile(`
+const Input = (props: { type: string, "data-id"?: string, id?: string, value: string | string[] | number}) => <></>;
+export function HiddenInput(props) {
+  return (
+    <Input
+      type="hidden"
+      data-id={props.field.key}
+      id={props.input_id}
+      value={props.input_state.value}
+    />
+  );
+}
+`);
+
+    const numberOfChanges = removeAny(sourceFile);
+
+    expect(sourceFile.print()).toStrictEqual(
+      `const Input = (props: {
+    type: string;
+    "data-id"?: string;
+    id?: string;
+    value: string | string[] | number;
+}) => <></>;
+export function HiddenInput(props: {
+    field: {key: string};
+    input_id: string;
+    input_state: { value: string | string[] | number };
+}) {
+    return (<Input type="hidden" data-id={props.field.key} id={props.input_id} value={props.input_state.value}/>);
+}
+`
+    );
+    expect(numberOfChanges.countChangesDone).toBe(1);
+    expect(numberOfChanges.countOfAnys).toBe(1);
+  });
 });
 
 function createSourceFile(code: string): SourceFile {

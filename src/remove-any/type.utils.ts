@@ -12,6 +12,7 @@ import {
 } from "ts-morph";
 import { isNotNil } from "../utils/is-not-nil";
 import { RevertableOperation } from "./revert-operation";
+import { FakeType } from "./fake-type.utils";
 
 export function isImplicitAny(node: TypedNode & Node) {
   const isAny = node.getType().isAny();
@@ -53,7 +54,7 @@ export function filterUnusableTypes(typesFromRefs: TypesFromRefs[]): TypesFromRe
   return { types, nullable, unknown };
 }
 
-function computeTypesFromList(callsiteTypes: Type[]): string | null {
+function computeTypesFromList(callsiteTypes: FakeType[]): string | null {
   if (callsiteTypes.length === 0) {
     return null;
   }
@@ -93,7 +94,7 @@ export function computeTypesFromRefs({ nullable, types, unknown }: TypesFromRefs
 }
 
 export interface TypesFromRefs {
-  types: Type[];
+  types: FakeType[];
   nullable: boolean;
   unknown: boolean;
 }

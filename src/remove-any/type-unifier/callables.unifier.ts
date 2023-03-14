@@ -11,11 +11,13 @@ import {
 import { cannotHappen } from "../../utils/cannot-happen";
 import { getParameterTypesFromCallerSignature, getPropsTypeOfJsxElement } from "../type.utils";
 import { isNotNil } from "../../utils/is-not-nil";
+import { isNonEmptyList } from "../../utils/non-empty-list";
+import { createFakeType, FakeType, getStringifiedType, mergeTypeWithNames, TypeWithName } from "../fake-type.utils";
 
 export interface CallableType {
   parameterTypes: Type[];
   argumentsTypes: Type[][];
-  usageInFunction: Record<number, Type[]>; // this one exist because the parameterTypes may be `any`...
+  usageInFunction: Record<number, readonly [FakeType]>; // this one exist because the parameterTypes may be `any`...
 }
 
 type RuntimeCallable = FunctionDeclaration | ArrowFunction | MethodDeclaration | ConstructorDeclaration;
@@ -46,26 +48,20 @@ export function getCallablesTypes(functionDeclaration: RuntimeCallable | Functio
     : Object.fromEntries(
         functionDeclaration
           .getParameters()
-          .map((p, idx) => {
-            return [
-              idx,
-              p
-                .findReferencesAsNodes()
-                .filter((ref) => ref !== p)
-                .flatMap((ref): Type[] => {
-                  const parent = ref.getParent();
-                  const refType = ref.getType();
-                  if (Node.isCallExpression(parent)) {
-                    const argIdx = parent.getArguments().findIndex((a) => a === ref);
+          .map<readonly [number, readonly [FakeType]]>((p, idx) => {
+            const usagesOfParameter = p
+              .findReferencesAsNodes()
+              .filter((ref) => ref !== p)
+              .map((ref): TypeWithName | null => getUsageTypeFromRef(ref))
+              .filter(isNotNil);
 
-                    return [refType, getParameterTypesFromCallerSignature(parent)[argIdx]];
-                  }
-
-                  return [refType];
-                }),
-            ] as const;
+            // The final usage is a super type of usagesOfParameter
+            if (isNonEmptyList(usagesOfParameter)) {
+              return [idx, [getStringifiedType(mergeTypeWithNames(usagesOfParameter))]] as const;
+            }
+            return [idx, [createFakeType("")]] as const;
           })
-          .filter(([, types]) => types.length > 0)
+          .filter(([, types]) => types[0].getText().length > 0)
       );
 
   return {
@@ -73,6 +69,43 @@ export function getCallablesTypes(functionDeclaration: RuntimeCallable | Functio
     argumentsTypes: argumentsTypes.map((a) => a.slice(0, parameterTypes.length)),
     usageInFunction,
   };
+}
+
+function getUsageTypeFromRef(ref: Node): TypeWithName | null {
+  const parent = ref.getParent();
+  if (Node.isCallExpression(parent)) {
+    const argIdx = parent.getArguments().findIndex((a) => a === ref);
+
+    return getParameterTypesFromCallerSignature(parent)[argIdx] ?? null;
+  }
+  if (Node.isPropertyAccessExpression(parent)) {
+    const attributeName = parent.getNameNode().getText();
+    const usageFromRef = parent ? getUsageTypeFromRef(parent) : null;
+
+    if (usageFromRef) {
+      return { literal: { [attributeName]: usageFromRef } };
+    }
+
+    const greatParent = parent?.getParent();
+    if (Node.isJsxExpression(greatParent)) {
+      const greatMiddleparent = greatParent.getParent();
+      if (Node.isJsxAttribute(greatMiddleparent)) {
+        const attributeName = greatMiddleparent.getName();
+        const greatGreatParent = greatMiddleparent.getParent()?.getParent();
+
+        if (Node.isJsxSelfClosingElement(greatGreatParent) || Node.isJsxOpeningElement(greatGreatParent)) {
+          //TODO
+          console.log(
+            parent.getNameNode().getText(),
+            attributeName,
+            Object.entries(getPropsTypeOfJsxElement(greatGreatParent)).map(([k, v]) => [k, v.getText()])
+          );
+        }
+      }
+    }
+  }
+
+  return null;
 }
 
 // If ref is a parameter used in a call expression, get the type of the parameter
@@ -88,7 +121,6 @@ function getArgumentTypesFromRef(ref: Node): Type[] {
     if (Node.isJsxAttribute(greatParent)) {
       const attributeName = greatParent.getName();
       const greatGreatParent = greatParent.getParent()?.getParent();
-
       if (Node.isJsxSelfClosingElement(greatGreatParent) || Node.isJsxOpeningElement(greatGreatParent)) {
         const higherLevelFnTypeOfCaller = getPropsTypeOfJsxElement(greatGreatParent)[attributeName];
         if (higherLevelFnTypeOfCaller) {

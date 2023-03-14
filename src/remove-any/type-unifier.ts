@@ -1,8 +1,9 @@
-import { BinaryExpression, Node, ParameterDeclaration, ReferenceFindableNode, Type } from "ts-morph";
+import { BinaryExpression, Node, ParameterDeclaration, ReferenceFindableNode } from "ts-morph";
 import { isNotNil } from "../utils/is-not-nil";
 import { getPropsTypeOfJsx, TypesFromRefs } from "./type.utils";
 import { combineGuards } from "../utils/type-guard.utils";
 import { CallableType, getCallablesTypes } from "./type-unifier/callables.unifier";
+import { FakeType } from "./fake-type.utils";
 
 export function allTypesOfRefs(node: ReferenceFindableNode): TypesFromRefs {
   const referencesAsNodes = node.findReferencesAsNodes();
@@ -17,7 +18,7 @@ export function allTypesOfRefs(node: ReferenceFindableNode): TypesFromRefs {
   return { types: deduplicateTypes([...typesFromReference, ...typesFromLambda]), unknown: false, nullable: false };
 }
 
-function deduplicateTypes(types: (Type | null | undefined)[]): Type[] {
+function deduplicateTypes(types: (FakeType | null | undefined)[]): FakeType[] {
   return [
     ...types
       .filter(isNotNil)
@@ -27,7 +28,7 @@ function deduplicateTypes(types: (Type | null | undefined)[]): Type[] {
           map.set(typeText, type);
         }
         return map;
-      }, new Map<string, Type>())
+      }, new Map<string, FakeType>())
       .values(),
   ];
 }
@@ -36,7 +37,7 @@ function isAssignation(parent: Node): parent is BinaryExpression {
   return Node.isBinaryExpression(parent) && parent.getOperatorToken().getText() === "=";
 }
 
-function allTypesOfRef(ref: Node): Type[] {
+function allTypesOfRef(ref: Node): FakeType[] {
   const parent = ref.getParent();
   if (!parent) {
     return [];
@@ -167,7 +168,7 @@ const isFunctionLike = combineGuards(
   Node.isArrowFunction
 );
 
-function getCallableTypesOfParameter(callablesType: CallableType, parameterIdx: number): Type[] {
+function getCallableTypesOfParameter(callablesType: CallableType, parameterIdx: number): FakeType[] {
   return [
     callablesType.parameterTypes[parameterIdx],
     ...callablesType.argumentsTypes.map((p) => p[parameterIdx]),

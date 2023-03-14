@@ -67,7 +67,7 @@ test('a', 123)
       expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["any", "any"]);
       expect(
         Object.entries(typesOfFunction.usageInFunction).map(([idx, types]) => [idx, types.map((t) => t.getText())])
-      ).toStrictEqual([["1", ["any"]]]);
+      ).toStrictEqual([]);
     });
 
     it("should return arguments and parameters types of plain function used as references in dotted parameters", () => {
@@ -92,7 +92,7 @@ test('a', 123)
       expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["any", "any"]);
       expect(
         Object.entries(typesOfFunction.usageInFunction).map(([idx, types]) => [idx, types.map((t) => t.getText())])
-      ).toStrictEqual([["1", ["any"]]]);
+      ).toStrictEqual([]);
     });
 
     it("should return arguments and parameters types of plain function used as references in multiple dotted parameters", () => {
@@ -117,7 +117,26 @@ test('a', 123)
       expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["any", "any"]);
       expect(
         Object.entries(typesOfFunction.usageInFunction).map(([idx, types]) => [idx, types.map((t) => t.getText())])
-      ).toStrictEqual([["1", ["any"]]]);
+      ).toStrictEqual([]);
+    });
+
+    it("should return a built type from usage in plain function", () => {
+      const sourceFile = createSourceFile(`
+function test(c, x) {
+  return Number.parseInt(c.value) + Number.parseInt(c.name.length);
+}
+`);
+
+      const functionDeclaration = sourceFile.getFunctions()[0];
+      expect(functionDeclaration.getName()).toBe("test");
+
+      const typesOfFunction = getCallablesTypes(functionDeclaration);
+
+      expect(typesOfFunction.argumentsTypes).toStrictEqual([]);
+      expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["any", "any"]);
+      expect(
+        Object.entries(typesOfFunction.usageInFunction).map(([idx, types]) => [idx, types.map((t) => t.getText())])
+      ).toStrictEqual([["0", ['{"value": string, "name": {"length": string}}']]]);
     });
   });
 
@@ -191,7 +210,7 @@ test('a', 123)
       expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["any", "any"]);
       expect(
         Object.entries(typesOfFunction.usageInFunction).map(([idx, types]) => [idx, types.map((t) => t.getText())])
-      ).toStrictEqual([["1", ["any"]]]);
+      ).toStrictEqual([]);
     });
 
     it("should return arguments and parameters types of arrow function used as references in dotted parameters", () => {
@@ -218,7 +237,7 @@ test('a', 123)
       expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["any", "any"]);
       expect(
         Object.entries(typesOfFunction.usageInFunction).map(([idx, types]) => [idx, types.map((t) => t.getText())])
-      ).toStrictEqual([["1", ["any"]]]);
+      ).toStrictEqual([]);
     });
 
     it("should return the arguments and parameters when the arrow function is used in JSX context with autoclose tag", () => {
@@ -340,7 +359,7 @@ test.method('a', 123)
       expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["any", "any"]);
       expect(
         Object.entries(typesOfFunction.usageInFunction).map(([idx, types]) => [idx, types.map((t) => t.getText())])
-      ).toStrictEqual([["1", ["any"]]]);
+      ).toStrictEqual([]);
     });
 
     it("should return arguments and parameters types of method used as references in dotted parameters", () => {
@@ -368,7 +387,7 @@ test.method('a', 123)
       expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["any", "any"]);
       expect(
         Object.entries(typesOfFunction.usageInFunction).map(([idx, types]) => [idx, types.map((t) => t.getText())])
-      ).toStrictEqual([["1", ["any"]]]);
+      ).toStrictEqual([]);
     });
   });
 
