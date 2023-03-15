@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-types */
-import { Type, Symbol } from "ts-morph";
-import { NonEmptyList } from "../utils/non-empty-list";
+import { Symbol, Type } from "ts-morph";
+import { isNonEmptyList, NonEmptyList } from "../utils/non-empty-list";
 
 export interface FakeType {
   getText(): string;
@@ -36,7 +36,7 @@ export function createFakeType(str: string): FakeType {
       return str === "number" || this.isNumberLiteral();
     },
     isNumberLiteral(): boolean {
-      return !!str.match(/d+/);
+      return !!str.match(/^d+$/);
     },
     isString(): boolean {
       return str === "string" || this.isStringLiteral();
@@ -51,23 +51,28 @@ export function createFakeType(str: string): FakeType {
       return str === "true" || str === "false";
     },
     getTypeArguments(): Type[] {
-      throw new Error("not implemented in FakeType");
+      console.debug("not implemented in FakeType");
+      return [];
     },
     getProperty(): Symbol | undefined {
-      throw new Error("not implemented in FakeType");
+      console.debug("not implemented in FakeType");
+      return undefined;
     },
   };
 }
 
-export type TypeWithName = FakeType | { literal: Record<string, TypeWithName> } | { and: [TypeWithName, TypeWithName] };
+interface AndType {
+  and: [TypeWithName, TypeWithName];
+}
+export type TypeWithName = FakeType | { literal: Record<string, TypeWithName> } | AndType;
 
-export function mergeTypeWithName(t1: TypeWithName, t2: TypeWithName): TypeWithName {
+export function getSuperTypeWithName(t1: TypeWithName, t2: TypeWithName): TypeWithName {
   if ("literal" in t1) {
     if ("literal" in t2) {
       return Object.entries(t2.literal).reduce(
         (acc, [k, v]) => {
           if (acc.literal[k]) {
-            acc.literal[k] = mergeTypeWithName(t1.literal[k], v);
+            acc.literal[k] = getSuperTypeWithName(t1.literal[k], v);
           } else {
             acc.literal[k] = v;
           }
@@ -78,20 +83,60 @@ export function mergeTypeWithName(t1: TypeWithName, t2: TypeWithName): TypeWithN
       );
     } else if ("and" in t2) {
       const [firstType, secondType] = t2.and;
-      return { and: [firstType, mergeTypeWithName(t1, secondType)] };
+      return deduplicate({ and: [firstType, getSuperTypeWithName(t1, secondType)] });
     } else {
-      return { and: [t1, t2] };
+      return deduplicate({ and: [t1, t2] });
     }
   } else if ("and" in t1) {
     const [firstType, secondType] = t1.and;
-    return { and: [firstType, mergeTypeWithName(secondType, t2)] };
+    return deduplicate({ and: [firstType, getSuperTypeWithName(secondType, t2)] });
   } else {
-    return { and: [t1, t2] };
+    return deduplicate({ and: [t1, t2] });
   }
 }
 
-export function mergeTypeWithNames(typeWithNames: NonEmptyList<TypeWithName>): TypeWithName {
-  return typeWithNames.reduce(mergeTypeWithName);
+function getAllAnds({ and: [firstType, secondType] }: AndType): NonEmptyList<TypeWithName> {
+  const firstHalf = "and" in firstType ? getAllAnds(firstType) : ([firstType] as const);
+  const secondHalf = "and" in secondType ? getAllAnds(secondType) : ([secondType] as const);
+
+  return [...firstHalf, ...secondHalf];
+}
+
+function deduplicate(andType: AndType): TypeWithName {
+  const allAnds = getAllAnds(andType);
+  const deduplicatedAllAnds = deduplicateTypes(allAnds);
+
+  if (deduplicatedAllAnds.length === 1) {
+    return deduplicatedAllAnds[0];
+  } else {
+    const first = deduplicatedAllAnds[0];
+    const second = deduplicatedAllAnds[1];
+
+    return deduplicatedAllAnds.slice(2).reduce((acc, type) => ({ and: [acc, type] }), { and: [first, second] });
+  }
+}
+
+function deduplicateTypes(types: NonEmptyList<TypeWithName>): NonEmptyList<TypeWithName> {
+  const result = [
+    ...types
+      .reduce((map, type) => {
+        const typeText = getStringifiedType(type).getText();
+        if (!map.has(typeText)) {
+          map.set(typeText, type);
+        }
+        return map;
+      }, new Map<string, TypeWithName>())
+      .values(),
+  ];
+
+  if (!isNonEmptyList(result)) {
+    throw new Error(`There is no way the reduce above generate an empty list`);
+  }
+  return result;
+}
+
+export function getSupertype(typeWithNames: NonEmptyList<TypeWithName>): TypeWithName {
+  return typeWithNames.reduce(getSuperTypeWithName);
 }
 
 export function getStringifiedType(t1: TypeWithName): FakeType {

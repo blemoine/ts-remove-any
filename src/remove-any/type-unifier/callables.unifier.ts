@@ -12,12 +12,12 @@ import { cannotHappen } from "../../utils/cannot-happen";
 import { getParameterTypesFromCallerSignature, getPropsTypeOfJsxElement } from "../type.utils";
 import { isNotNil } from "../../utils/is-not-nil";
 import { isNonEmptyList } from "../../utils/non-empty-list";
-import { createFakeType, FakeType, getStringifiedType, mergeTypeWithNames, TypeWithName } from "../fake-type.utils";
+import { createFakeType, FakeType, getStringifiedType, getSupertype, TypeWithName } from "../fake-type.utils";
 
 export interface CallableType {
   parameterTypes: Type[];
   argumentsTypes: Type[][];
-  usageInFunction: Record<number, readonly [FakeType]>; // this one exist because the parameterTypes may be `any`...
+  usageInFunction: Record<number, FakeType>; // this one exist because the parameterTypes may be `any`...
 }
 
 type RuntimeCallable = FunctionDeclaration | ArrowFunction | MethodDeclaration | ConstructorDeclaration;
@@ -48,7 +48,7 @@ export function getCallablesTypes(functionDeclaration: RuntimeCallable | Functio
     : Object.fromEntries(
         functionDeclaration
           .getParameters()
-          .map<readonly [number, readonly [FakeType]]>((p, idx) => {
+          .map<readonly [number, FakeType]>((p, idx) => {
             const usagesOfParameter = p
               .findReferencesAsNodes()
               .filter((ref) => ref !== p)
@@ -57,11 +57,11 @@ export function getCallablesTypes(functionDeclaration: RuntimeCallable | Functio
 
             // The final usage is a super type of usagesOfParameter
             if (isNonEmptyList(usagesOfParameter)) {
-              return [idx, [getStringifiedType(mergeTypeWithNames(usagesOfParameter))]] as const;
+              return [idx, getStringifiedType(getSupertype(usagesOfParameter))] as const;
             }
-            return [idx, [createFakeType("")]] as const;
+            return [idx, createFakeType("")] as const;
           })
-          .filter(([, types]) => types[0].getText().length > 0)
+          .filter(([, types]) => types.getText().length > 0)
       );
 
   return {
@@ -78,30 +78,27 @@ function getUsageTypeFromRef(ref: Node): TypeWithName | null {
 
     return getParameterTypesFromCallerSignature(parent)[argIdx] ?? null;
   }
+  if (Node.isJsxExpression(parent)) {
+    const greatParent = parent.getParent();
+    if (Node.isJsxAttribute(greatParent)) {
+      const attributeName = greatParent.getName();
+      const greatGreatParent = greatParent.getParent()?.getParent();
+
+      if (Node.isJsxSelfClosingElement(greatGreatParent) || Node.isJsxOpeningElement(greatGreatParent)) {
+        const selectedType = getPropsTypeOfJsxElement(greatGreatParent)[attributeName];
+        if (selectedType) {
+          return selectedType;
+        }
+      }
+    }
+  }
+
   if (Node.isPropertyAccessExpression(parent)) {
     const attributeName = parent.getNameNode().getText();
     const usageFromRef = parent ? getUsageTypeFromRef(parent) : null;
 
     if (usageFromRef) {
       return { literal: { [attributeName]: usageFromRef } };
-    }
-
-    const greatParent = parent?.getParent();
-    if (Node.isJsxExpression(greatParent)) {
-      const greatMiddleparent = greatParent.getParent();
-      if (Node.isJsxAttribute(greatMiddleparent)) {
-        const attributeName = greatMiddleparent.getName();
-        const greatGreatParent = greatMiddleparent.getParent()?.getParent();
-
-        if (Node.isJsxSelfClosingElement(greatGreatParent) || Node.isJsxOpeningElement(greatGreatParent)) {
-          //TODO
-          console.log(
-            parent.getNameNode().getText(),
-            attributeName,
-            Object.entries(getPropsTypeOfJsxElement(greatGreatParent)).map(([k, v]) => [k, v.getText()])
-          );
-        }
-      }
     }
   }
 

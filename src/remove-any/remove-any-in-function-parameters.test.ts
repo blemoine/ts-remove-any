@@ -458,9 +458,13 @@ export function HiddenInput(props) {
     value: string | string[] | number;
 }) => <></>;
 export function HiddenInput(props: {
-    field: {key: string};
-    input_id: string;
-    input_state: { value: string | string[] | number };
+    "field": {
+        "key": string;
+    };
+    "input_id": string;
+    "input_state": {
+        "value": string | number | string[];
+    };
 }) {
     return (<Input type="hidden" data-id={props.field.key} id={props.input_id} value={props.input_state.value}/>);
 }

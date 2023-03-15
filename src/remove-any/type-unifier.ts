@@ -172,6 +172,6 @@ function getCallableTypesOfParameter(callablesType: CallableType, parameterIdx: 
   return [
     callablesType.parameterTypes[parameterIdx],
     ...callablesType.argumentsTypes.map((p) => p[parameterIdx]),
-    ...(callablesType.usageInFunction[parameterIdx] ?? []),
+    ...[callablesType.usageInFunction[parameterIdx]],
   ].filter(isNotNil);
 }

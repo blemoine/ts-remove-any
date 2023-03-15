@@ -66,7 +66,7 @@ test('a', 123)
       ]);
       expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["any", "any"]);
       expect(
-        Object.entries(typesOfFunction.usageInFunction).map(([idx, types]) => [idx, types.map((t) => t.getText())])
+        Object.entries(typesOfFunction.usageInFunction).map(([idx, types]) => [idx, types.getText()])
       ).toStrictEqual([]);
     });
 
@@ -91,7 +91,7 @@ test('a', 123)
       ]);
       expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["any", "any"]);
       expect(
-        Object.entries(typesOfFunction.usageInFunction).map(([idx, types]) => [idx, types.map((t) => t.getText())])
+        Object.entries(typesOfFunction.usageInFunction).map(([idx, types]) => [idx, types.getText()])
       ).toStrictEqual([]);
     });
 
@@ -116,7 +116,7 @@ test('a', 123)
       ]);
       expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["any", "any"]);
       expect(
-        Object.entries(typesOfFunction.usageInFunction).map(([idx, types]) => [idx, types.map((t) => t.getText())])
+        Object.entries(typesOfFunction.usageInFunction).map(([idx, types]) => [idx, types.getText()])
       ).toStrictEqual([]);
     });
 
@@ -135,8 +135,8 @@ function test(c, x) {
       expect(typesOfFunction.argumentsTypes).toStrictEqual([]);
       expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["any", "any"]);
       expect(
-        Object.entries(typesOfFunction.usageInFunction).map(([idx, types]) => [idx, types.map((t) => t.getText())])
-      ).toStrictEqual([["0", ['{"value": string, "name": {"length": string}}']]]);
+        Object.entries(typesOfFunction.usageInFunction).map(([idx, types]) => [idx, types.getText()])
+      ).toStrictEqual([["0", '{"value": string, "name": {"length": string}}']]);
     });
   });
 
@@ -209,7 +209,7 @@ test('a', 123)
       ]);
       expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["any", "any"]);
       expect(
-        Object.entries(typesOfFunction.usageInFunction).map(([idx, types]) => [idx, types.map((t) => t.getText())])
+        Object.entries(typesOfFunction.usageInFunction).map(([idx, types]) => [idx, types.getText()])
       ).toStrictEqual([]);
     });
 
@@ -236,7 +236,7 @@ test('a', 123)
       ]);
       expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["any", "any"]);
       expect(
-        Object.entries(typesOfFunction.usageInFunction).map(([idx, types]) => [idx, types.map((t) => t.getText())])
+        Object.entries(typesOfFunction.usageInFunction).map(([idx, types]) => [idx, types.getText()])
       ).toStrictEqual([]);
     });
 
@@ -358,7 +358,7 @@ test.method('a', 123)
       ]);
       expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["any", "any"]);
       expect(
-        Object.entries(typesOfFunction.usageInFunction).map(([idx, types]) => [idx, types.map((t) => t.getText())])
+        Object.entries(typesOfFunction.usageInFunction).map(([idx, types]) => [idx, types.getText()])
       ).toStrictEqual([]);
     });
 
@@ -386,7 +386,7 @@ test.method('a', 123)
       ]);
       expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["any", "any"]);
       expect(
-        Object.entries(typesOfFunction.usageInFunction).map(([idx, types]) => [idx, types.map((t) => t.getText())])
+        Object.entries(typesOfFunction.usageInFunction).map(([idx, types]) => [idx, types.getText()])
       ).toStrictEqual([]);
     });
   });

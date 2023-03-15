@@ -37,7 +37,7 @@ fnToIgnore(1234);
 `
     );
   });
-  // TODO FROM THERE
+
   it("should set the type to union type if called with 4 numbers", () => {
     const sourceFile = createSourceFile(`
 const fnToIgnore = (my_explicit_variable) => {
