@@ -1,11 +1,11 @@
-import { BinaryExpression, Node, ParameterDeclaration, ReferenceFindableNode } from "ts-morph";
+import { BinaryExpression, Node, ParameterDeclaration, VariableDeclaration } from "ts-morph";
 import { isNotNil } from "../utils/is-not-nil";
 import { getPropsTypeOfJsx, TypesFromRefs } from "./type.utils";
 import { combineGuards } from "../utils/type-guard.utils";
 import { CallableType, getCallablesTypes } from "./type-unifier/callables.unifier";
 import { FakeType } from "./fake-type.utils";
 
-export function allTypesOfRefs(node: ReferenceFindableNode): TypesFromRefs {
+export function allTypesOfRefs(node: VariableDeclaration | ParameterDeclaration): TypesFromRefs {
   const referencesAsNodes = node.findReferencesAsNodes();
   const typesFromReference = referencesAsNodes.flatMap((ref) => allTypesOfRef(ref));
 
@@ -145,7 +145,7 @@ function allTypesOfRef(ref: Node): FakeType[] {
   }
 
   if (Node.isFunctionTypeNode(parent)) {
-    const parameterIdx = ref.getChildIndex();
+    const parameterIdx = parent.getParameters().findIndex((p) => p === ref);
     const propertySignature = parent.getParent();
 
     if (Node.isTypeAliasDeclaration(propertySignature) || Node.isPropertySignature(propertySignature)) {
@@ -153,10 +153,9 @@ function allTypesOfRef(ref: Node): FakeType[] {
       return getCallableTypesOfParameter(callablesTypes, parameterIdx);
     }
   } else if (isFunctionLike(parent) || Node.isConstructorDeclaration(parent)) {
-    const parameterIdx = ref.getChildIndex();
+    const parameterIdx = parent.getParameters().findIndex((p) => p === ref);
 
     const callablesTypes = getCallablesTypes(parent);
-
     return getCallableTypesOfParameter(callablesTypes, parameterIdx);
   }
 

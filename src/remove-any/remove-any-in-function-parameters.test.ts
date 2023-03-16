@@ -382,6 +382,30 @@ arr.map(fnToIgnore);
     expect(numberOfChanges.countOfAnys).toBe(1);
   });
 
+  it("should set the type when used with sort", () => {
+    const sourceFile = createSourceFile(`
+function cmp(a, b) {
+  return a - b;
+}
+
+const arr: number[] = [];
+arr.sort(cmp);
+`);
+
+    const numberOfChanges = removeAny(sourceFile);
+
+    expect(sourceFile.print()).toStrictEqual(
+      `function cmp(a: number, b: number) {
+    return a - b;
+}
+const arr: number[] = [];
+arr.sort(cmp);
+`
+    );
+    expect(numberOfChanges.countChangesDone).toBe(2);
+    expect(numberOfChanges.countOfAnys).toBe(2);
+  });
+
   it("should set the type from anys array", () => {
     const sourceFile = createSourceFile(`
 function fn(arr: number[]){}      
