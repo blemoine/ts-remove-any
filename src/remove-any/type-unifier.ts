@@ -4,6 +4,7 @@ import { getPropsTypeOfJsx, TypesFromRefs } from "./type.utils";
 import { combineGuards } from "../utils/type-guard.utils";
 import { CallableType, getCallablesTypes } from "./type-unifier/callables.unifier";
 import { createFakeType, FakeType } from "./fake-type.utils";
+import { SyntaxKind } from "typescript";
 
 export function allTypesOfRefs(node: VariableDeclaration | ParameterDeclaration): TypesFromRefs {
   const referencesAsNodes = node.findReferencesAsNodes();
@@ -39,6 +40,17 @@ function allTypesOfRef(ref: Node): FakeType[] {
     return [];
   }
 
+  if (Node.isPrefixUnaryExpression(parent)) {
+    const operator = parent.getOperatorToken();
+    if (operator === SyntaxKind.PlusToken || operator === SyntaxKind.MinusToken) {
+      const operand = parent.getOperand();
+      if (operand.getType().isNumberLiteral()) {
+        return [operand.getType()];
+      } else {
+        return [createFakeType("number")];
+      }
+    }
+  }
   if (Node.isBinaryExpression(parent)) {
     const operator = parent.getOperatorToken().getText();
     const left = parent.getLeft();

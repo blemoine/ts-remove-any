@@ -8,5 +8,3 @@
 
 * support explicit any
 * don't edit parameters in `catch`
-* get-leg-cards.ts  -> sort is not well applied
-* operation on number should type as number

@@ -425,6 +425,25 @@ function cmp(a, b) {
     expect(numberOfChanges.countOfAnys).toBe(2);
   });
 
+  it("should set the type when using unary operator", () => {
+    const sourceFile = createSourceFile(`
+function cmp(a:string, b) {
+  return -b;
+}
+`);
+
+    const numberOfChanges = removeAny(sourceFile);
+
+    expect(sourceFile.print()).toStrictEqual(
+      `function cmp(a: string, b: number) {
+    return -b;
+}
+`
+    );
+    expect(numberOfChanges.countChangesDone).toBe(1);
+    expect(numberOfChanges.countOfAnys).toBe(1);
+  });
+
   it("should set the type from anys array", () => {
     const sourceFile = createSourceFile(`
 function fn(arr: number[]){}      
