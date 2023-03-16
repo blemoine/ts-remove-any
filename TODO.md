@@ -7,5 +7,5 @@
   da('value') // x is a subtype of 'value'
 
 * support explicit any
-* `props` in app/modules/checkout/components/passenger.tsx
-* `props` in app/modules/checkout/components/passenger-section/v2/hidden-input.tsx
+* don't edit parameters in `catch`
+* get-leg-cards.ts  -> sort is not well applied
