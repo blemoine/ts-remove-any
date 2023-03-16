@@ -1,9 +1,9 @@
-import { BinaryExpression, Node, ParameterDeclaration, VariableDeclaration } from "ts-morph";
+import { Node, ParameterDeclaration, VariableDeclaration } from "ts-morph";
 import { isNotNil } from "../utils/is-not-nil";
 import { getPropsTypeOfJsx, TypesFromRefs } from "./type.utils";
 import { combineGuards } from "../utils/type-guard.utils";
 import { CallableType, getCallablesTypes } from "./type-unifier/callables.unifier";
-import { FakeType } from "./fake-type.utils";
+import { createFakeType, FakeType } from "./fake-type.utils";
 
 export function allTypesOfRefs(node: VariableDeclaration | ParameterDeclaration): TypesFromRefs {
   const referencesAsNodes = node.findReferencesAsNodes();
@@ -33,19 +33,28 @@ function deduplicateTypes(types: (FakeType | null | undefined)[]): FakeType[] {
   ];
 }
 
-function isAssignation(parent: Node): parent is BinaryExpression {
-  return Node.isBinaryExpression(parent) && parent.getOperatorToken().getText() === "=";
-}
-
 function allTypesOfRef(ref: Node): FakeType[] {
   const parent = ref.getParent();
   if (!parent) {
     return [];
   }
 
-  // x = y
-  if (isAssignation(parent)) {
-    return [parent.getLeft().getType(), parent.getRight().getType()];
+  if (Node.isBinaryExpression(parent)) {
+    const operator = parent.getOperatorToken().getText();
+    const left = parent.getLeft();
+    const right = parent.getRight();
+
+    if (operator === "=") {
+      return [left.getType(), right.getType()];
+    } else if (operator === "-" || operator === "**" || operator === "*" || operator === "/") {
+      if (left === ref && left.getType().isNumberLiteral()) {
+        return [left.getType()];
+      } else if (right === ref && right.getType().isNumberLiteral()) {
+        return [right.getType()];
+      } else {
+        return [createFakeType("number")];
+      }
+    }
   }
 
   if (Node.isJsxSpreadAttribute(parent)) {

@@ -385,7 +385,7 @@ arr.map(fnToIgnore);
   it("should set the type when used with sort", () => {
     const sourceFile = createSourceFile(`
 function cmp(a, b) {
-  return a - b;
+  return a + b;
 }
 
 const arr: number[] = [];
@@ -396,10 +396,29 @@ arr.sort(cmp);
 
     expect(sourceFile.print()).toStrictEqual(
       `function cmp(a: number, b: number) {
-    return a - b;
+    return a + b;
 }
 const arr: number[] = [];
 arr.sort(cmp);
+`
+    );
+    expect(numberOfChanges.countChangesDone).toBe(2);
+    expect(numberOfChanges.countOfAnys).toBe(2);
+  });
+
+  it("should set the type when using arithmetic operators", () => {
+    const sourceFile = createSourceFile(`
+function cmp(a, b) {
+  return a - b;
+}
+`);
+
+    const numberOfChanges = removeAny(sourceFile);
+
+    expect(sourceFile.print()).toStrictEqual(
+      `function cmp(a: number, b: number) {
+    return a - b;
+}
 `
     );
     expect(numberOfChanges.countChangesDone).toBe(2);
