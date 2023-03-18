@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.44](https://github.com/blemoine/ts-remove-any/compare/v0.1.43...v0.1.44) (2023-03-18)
+
+
+### Features
+
+* add support for explicit any ([2f5bb93](https://github.com/blemoine/ts-remove-any/commit/2f5bb930089863e1551f8ddacee8775349e64883))
+
 ### [0.1.43](https://github.com/blemoine/ts-remove-any/compare/v0.1.42...v0.1.43) (2023-03-18)
 
 
