@@ -7,6 +7,7 @@ import { removeAnyInParametersFn } from "./remove-any-in-parameters-declaration"
 interface RemoveAnyOptions {
   noReverts: boolean;
   verbosity: number;
+  explicit: boolean;
 }
 
 export function removeAny(
@@ -18,6 +19,7 @@ export function removeAny(
   }
   const noReverts = options?.noReverts ?? false;
   const verbosity = options?.verbosity ?? 0;
+  const explicit = options?.explicit ?? false;
 
   const variableDeclarations: VariableDeclaration[] = [];
   const parametersDeclaration: ParameterDeclaration[] = [];
@@ -30,13 +32,17 @@ export function removeAny(
     }
   });
 
-  const validatedOptions = { noReverts, verbosity };
+  const validatedOptions = { noReverts, verbosity, explicit };
   const resultsInParameters = parametersDeclaration.map((parameters) => {
-    return revertableOperation(sourceFile, validatedOptions, () => removeAnyInParametersFn(parameters));
+    return revertableOperation(sourceFile, validatedOptions, () =>
+      removeAnyInParametersFn(parameters, validatedOptions)
+    );
   });
 
   const resultsInLets = variableDeclarations.map((variableDeclaration) =>
-    revertableOperation(sourceFile, validatedOptions, () => removeAnyInLetDeclaration(variableDeclaration))
+    revertableOperation(sourceFile, validatedOptions, () =>
+      removeAnyInLetDeclaration(variableDeclaration, validatedOptions)
+    )
   );
 
   const aggregatedResults = [...resultsInLets, ...resultsInParameters];

@@ -7,6 +7,7 @@ describe("cli-parser", () => {
       noReverts: false,
       project: "./tsconfig.json",
       verbosity: 0,
+      explicit: false,
     });
   });
 
@@ -16,6 +17,7 @@ describe("cli-parser", () => {
       noReverts: false,
       project: "./tsconfig.json",
       verbosity: 2,
+      explicit: false,
     });
   });
 
@@ -25,6 +27,26 @@ describe("cli-parser", () => {
       noReverts: false,
       project: "./tsconfig.json",
       verbosity: 1,
+      explicit: false,
+    });
+  });
+
+  it("should support explicit flag", () => {
+    expect(parseCliArgs(["node", "script", "-e"])).toStrictEqual({
+      file: null,
+      noReverts: false,
+      project: "./tsconfig.json",
+      verbosity: 0,
+      explicit: true,
+    });
+  });
+  it("should support revert flag", () => {
+    expect(parseCliArgs(["node", "script", "-r"])).toStrictEqual({
+      file: null,
+      noReverts: true,
+      project: "./tsconfig.json",
+      verbosity: 0,
+      explicit: false,
     });
   });
 });

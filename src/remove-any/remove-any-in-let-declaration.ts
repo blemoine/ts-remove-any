@@ -2,6 +2,8 @@ import { VariableDeclaration } from "ts-morph";
 import {
   computeTypesFromRefs,
   filterUnusableTypes,
+  isAny,
+  isAnyArray,
   isImplicitAny,
   isImplicitAnyArray,
   setTypeOnNode,
@@ -9,8 +11,18 @@ import {
 import { noopRevertableOperation, RevertableOperation } from "./revert-operation";
 import { allTypesOfRefs } from "./type-unifier";
 
-export function removeAnyInLetDeclaration(variableDeclaration: VariableDeclaration): RevertableOperation {
-  if (!isImplicitAny(variableDeclaration) && !isImplicitAnyArray(variableDeclaration)) {
+interface RemoveAnyOptions {
+  explicit: boolean;
+}
+
+export function removeAnyInLetDeclaration(
+  variableDeclaration: VariableDeclaration,
+  { explicit }: RemoveAnyOptions
+): RevertableOperation {
+  if (!explicit && !isImplicitAny(variableDeclaration) && !isImplicitAnyArray(variableDeclaration)) {
+    return noopRevertableOperation;
+  }
+  if (explicit && !isAny(variableDeclaration) && !isAnyArray(variableDeclaration)) {
     return noopRevertableOperation;
   }
 

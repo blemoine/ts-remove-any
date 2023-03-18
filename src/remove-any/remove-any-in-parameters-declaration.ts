@@ -4,6 +4,7 @@ import {
   ComputedType,
   computeTypesFromRefs,
   filterUnusableTypes,
+  isAny,
   isImplicitAny,
   setTypeOnNode,
 } from "./type.utils";
@@ -11,13 +12,20 @@ import { noopRevertableOperation, RevertableOperation } from "./revert-operation
 import { cannotHappen } from "../utils/cannot-happen";
 import { allTypesOfRefs } from "./type-unifier";
 
-function getParameterComputedType(parametersFn: ParameterDeclaration): ComputedType {
+interface RemoveAnyOptions {
+  explicit: boolean;
+}
+
+function getParameterComputedType(parametersFn: ParameterDeclaration, { explicit }: RemoveAnyOptions): ComputedType {
   const destructuredType = computeDestructuredTypes(parametersFn);
   if (destructuredType) {
     return { kind: "type_found", type: destructuredType };
   }
 
-  if (!isImplicitAny(parametersFn)) {
+  if (!explicit && !isImplicitAny(parametersFn)) {
+    return { kind: "no_any" };
+  }
+  if (explicit && !isAny(parametersFn)) {
     return { kind: "no_any" };
   }
   const callsiteTypes = allTypesOfRefs(parametersFn);
@@ -29,8 +37,11 @@ function getParameterComputedType(parametersFn: ParameterDeclaration): ComputedT
   return { kind: "no_type_found" };
 }
 
-export function removeAnyInParametersFn(parametersFn: ParameterDeclaration): RevertableOperation {
-  const newType = getParameterComputedType(parametersFn);
+export function removeAnyInParametersFn(
+  parametersFn: ParameterDeclaration,
+  options: RemoveAnyOptions
+): RevertableOperation {
+  const newType = getParameterComputedType(parametersFn, options);
 
   if (newType.kind === "type_found") {
     try {

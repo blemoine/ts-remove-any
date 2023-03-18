@@ -5,6 +5,7 @@ interface CliArgs {
   project: string;
   file: string | null;
   noReverts: boolean;
+  explicit: boolean;
 }
 
 export function parseCliArgs(args: string[]): CliArgs {
@@ -19,6 +20,7 @@ export function parseCliArgs(args: string[]): CliArgs {
   program.option("-p, --project <value>", "path of the tsconfig file", "./tsconfig.json");
   program.option("-f, --file <value>", "remove any only int the specified file");
   program.option("-r, --prevent-reverts", "don't revert files in case of errors");
+  program.option("-e, --explicit", "try to convert explicit any too");
   program.parse(args);
 
   const opts = program.opts();
@@ -28,5 +30,6 @@ export function parseCliArgs(args: string[]): CliArgs {
     project: opts.project,
     file: opts.file || null,
     noReverts: opts.preventReverts || false,
+    explicit: opts.explicit || false,
   };
 }

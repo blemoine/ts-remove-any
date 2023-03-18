@@ -15,21 +15,28 @@ import { RevertableOperation } from "./revert-operation";
 import { createFakeTypeFromType, FakeType } from "./fake-type.utils";
 import { allTypesOfRefs } from "./type-unifier";
 
-export function isImplicitAny(node: TypedNode & Node) {
-  const isAny = node.getType().isAny();
+export function isImplicitAny(node: TypedNode & Node): boolean {
   const declaredType = node.getTypeNode();
-  return isAny && !declaredType;
+  return isAny(node) && !declaredType;
 }
 
-export function isImplicitAnyArray(node: TypedNode & Node) {
-  const isAnyArray =
+export function isAny(node: TypedNode & Node): boolean {
+  return node.getType().isAny();
+}
+
+export function isAnyArray(node: TypedNode & Node): boolean {
+  return (
     node.getType().isArray() &&
     node
       .getType()
       .getTypeArguments()
-      .some((t) => t.getText() === "any" || t.getText() === "never");
+      .some((t) => t.getText() === "any" || t.getText() === "never")
+  );
+}
+
+export function isImplicitAnyArray(node: TypedNode & Node) {
   const declaredType = node.getTypeNode();
-  return isAnyArray && !declaredType;
+  return isAnyArray(node) && !declaredType;
 }
 
 export function filterUnusableTypes(typesFromRefs: TypesFromRefs[]): TypesFromRefs {
