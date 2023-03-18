@@ -495,6 +495,28 @@ test.highLevelMethod([], fnToIgnore);
     expect(numberOfChanges.countOfAnys).toBe(1);
   });
 
+  it("should set the type on destructured properties", () => {
+    const sourceFile = createSourceFile(`
+function fn(data:{ property, value: number }) {
+ Number.parseInt(data.property);
+}
+`);
+
+    const numberOfChanges = removeAny(sourceFile);
+
+    expect(sourceFile.print()).toStrictEqual(
+      `function fn(data: {
+    property: string;
+    value: number;
+}) {
+    Number.parseInt(data.property);
+}
+`
+    );
+    expect(numberOfChanges.countChangesDone).toBe(1);
+    expect(numberOfChanges.countOfAnys).toBe(1);
+  });
+
   it("should set the type from the usage in react components", () => {
     const sourceFile = createSourceFile(`
 const Input = (props: { type: string, "data-id"?: string, id?: string, value: string | string[] | number}) => <></>;

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-types */
-import { Symbol, Type } from "ts-morph";
+import { Node, Type } from "ts-morph";
 import { isNonEmptyList, NonEmptyList } from "../utils/non-empty-list";
 
 export interface FakeType {
@@ -13,9 +13,38 @@ export interface FakeType {
   isStringLiteral(): boolean;
   isBoolean(): boolean;
   isBooleanLiteral(): boolean;
-  getTypeArguments(): Type[];
+  getTypeArguments(): FakeType[];
   // eslint-disable-next-line no-unused-vars
-  getProperty(_name: string): Symbol | undefined;
+  getProperty(name: string, atLocation: Node): FakeType | undefined;
+}
+
+export function createFakeTypeFromType(type: Type): FakeType {
+  return {
+    ...createFakeType(type.getText()),
+    getTypeArguments(): FakeType[] {
+      return type.getTypeArguments().map(createFakeTypeFromType);
+    },
+    getProperty(name: string, atLocation: Node): FakeType | undefined {
+      const typeAtLocation = type?.getProperty(name)?.getTypeAtLocation(atLocation);
+      return typeAtLocation ? createFakeTypeFromType(typeAtLocation) : undefined;
+    },
+  };
+}
+
+export function createFakeTypeFromObjectLiteral(
+  propertyTypePairs: { propertyName: string; type: FakeType }[]
+): FakeType {
+  const text = `{${propertyTypePairs
+    .map(({ propertyName, type }) => {
+      return `"${propertyName}": ${type.getText()}`;
+    })
+    .join(", ")}}`;
+  return {
+    ...createFakeType(text),
+    getProperty(name: string): FakeType | undefined {
+      return propertyTypePairs.find(({ propertyName }) => propertyName === name)?.type;
+    },
+  };
 }
 
 export function createFakeType(str: string): FakeType {
@@ -33,13 +62,13 @@ export function createFakeType(str: string): FakeType {
       return str.endsWith("[]");
     },
     isNumber(): boolean {
-      return str === "number" || this.isNumberLiteral();
+      return str === "number";
     },
     isNumberLiteral(): boolean {
-      return !!str.match(/^d+$/);
+      return !!str.match(/^\d+$/);
     },
     isString(): boolean {
-      return str === "string" || this.isStringLiteral();
+      return str === "string";
     },
     isStringLiteral(): boolean {
       return str.startsWith('"') && str.endsWith('"');
@@ -50,11 +79,11 @@ export function createFakeType(str: string): FakeType {
     isBooleanLiteral(): boolean {
       return str === "true" || str === "false";
     },
-    getTypeArguments(): Type[] {
+    getTypeArguments(): FakeType[] {
       console.debug("not implemented in FakeType");
       return [];
     },
-    getProperty(): Symbol | undefined {
+    getProperty(): FakeType | undefined {
       console.debug("not implemented in FakeType");
       return undefined;
     },
@@ -141,12 +170,8 @@ export function getSupertype(typeWithNames: NonEmptyList<TypeWithName>): TypeWit
 
 export function getStringifiedType(t1: TypeWithName): FakeType {
   if ("literal" in t1) {
-    return createFakeType(
-      "{" +
-        Object.entries(t1.literal)
-          .map(([k, v]) => `"${k}": ${getStringifiedType(v).getText()}`)
-          .join(", ") +
-        "}"
+    return createFakeTypeFromObjectLiteral(
+      Object.entries(t1.literal).map(([k, v]) => ({ propertyName: k, type: getStringifiedType(v) }))
     );
   } else if ("and" in t1) {
     const [firstType, secondType] = t1.and;
