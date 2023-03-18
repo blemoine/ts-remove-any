@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.43](https://github.com/blemoine/ts-remove-any/compare/v0.1.42...v0.1.43) (2023-03-18)
+
+
+### Features
+
+* add support for arithmetic operators ([9a79727](https://github.com/blemoine/ts-remove-any/commit/9a79727ddd03b8391b400a4ea9e971a1d1683369))
+* add support for JSX usage computation ([35eb8e0](https://github.com/blemoine/ts-remove-any/commit/35eb8e0b45f93f22b4b0bc828fb7c3bc90807af5))
+* add support for type parameter ([855b3bf](https://github.com/blemoine/ts-remove-any/commit/855b3bf49aa5a3baf7f92926b7f624d51a6150d9))
+* add support for unary operations ([9ba935d](https://github.com/blemoine/ts-remove-any/commit/9ba935da3d90f2a7ca7138ec5b15297a1639ecfd))
+* intermediate commit for Fake-type ([f23eeb3](https://github.com/blemoine/ts-remove-any/commit/f23eeb397872d21153bcaa30e862b3d3852ac185))
+* support for union types in callable unifier ([6b3f020](https://github.com/blemoine/ts-remove-any/commit/6b3f02026a4a82c17c20cb33b26adad7c94d903b))
+* use callable unifier for type alias ([f12e902](https://github.com/blemoine/ts-remove-any/commit/f12e9025fb39a47720f403dcd3ffb794dbbd1711))
+
+
+### Bug Fixes
+
+* find correctly the type of 2nd param in function ([3276c1d](https://github.com/blemoine/ts-remove-any/commit/3276c1d38aaebd680568da831112c1aa4cec5ffe))
+
 ### [0.1.42](https://github.com/blemoine/ts-remove-any/compare/v0.1.41...v0.1.42) (2023-03-12)
 
 
