@@ -12,18 +12,11 @@ import { cannotHappen } from "../../utils/cannot-happen";
 import { getParameterTypesFromCallerSignature, getPropsTypeOfJsxElement } from "../type.utils";
 import { isNotNil } from "../../utils/is-not-nil";
 import { isNonEmptyList } from "../../utils/non-empty-list";
-import {
-  createFakeType,
-  createFakeTypeFromType,
-  FakeType,
-  getStringifiedType,
-  getSupertype,
-  TypeWithName,
-} from "../fake-type.utils";
+import { createFakeType, FakeType, getStringifiedType, getSupertype, TypeWithName } from "../fake-type.utils";
 
 export interface CallableType {
-  parameterTypes: FakeType[];
-  argumentsTypes: FakeType[][];
+  parameterTypes: Type[];
+  argumentsTypes: Type[][];
   usageInFunction: Record<number, FakeType>; // this one exist because the parameterTypes may be `any`...
 }
 
@@ -49,10 +42,7 @@ export function getCallablesTypes(functionDeclaration: RuntimeCallable | Functio
     .flat(1)
     .filter((l) => l.length > 0);
 
-  const parameterTypes = functionDeclaration
-    .getParameters()
-    .map((p) => p.getType())
-    .map(createFakeTypeFromType);
+  const parameterTypes = functionDeclaration.getParameters().map((p) => p.getType());
   const usageInFunction = Node.isFunctionTypeNode(functionDeclaration)
     ? {}
     : Object.fromEntries(
@@ -76,7 +66,7 @@ export function getCallablesTypes(functionDeclaration: RuntimeCallable | Functio
 
   return {
     parameterTypes,
-    argumentsTypes: argumentsTypes.map((a) => a.slice(0, parameterTypes.length).map(createFakeTypeFromType)),
+    argumentsTypes: argumentsTypes.map((a) => a.slice(0, parameterTypes.length)),
     usageInFunction,
   };
 }
@@ -86,10 +76,7 @@ function getUsageTypeFromRef(ref: Node): TypeWithName | null {
   if (Node.isCallExpression(parent)) {
     const argIdx = parent.getArguments().findIndex((a) => a === ref);
 
-    const parameterTypesFromCallerSignatureElement = getParameterTypesFromCallerSignature(parent)[argIdx];
-    return parameterTypesFromCallerSignatureElement
-      ? createFakeTypeFromType(parameterTypesFromCallerSignatureElement)
-      : null;
+    return getParameterTypesFromCallerSignature(parent)[argIdx] ?? null;
   }
   if (Node.isJsxExpression(parent)) {
     const greatParent = parent.getParent();
@@ -100,7 +87,7 @@ function getUsageTypeFromRef(ref: Node): TypeWithName | null {
       if (Node.isJsxSelfClosingElement(greatGreatParent) || Node.isJsxOpeningElement(greatGreatParent)) {
         const selectedType = getPropsTypeOfJsxElement(greatGreatParent)[attributeName];
         if (selectedType) {
-          return createFakeTypeFromType(selectedType);
+          return selectedType;
         }
       }
     }

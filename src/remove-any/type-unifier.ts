@@ -3,7 +3,7 @@ import { isNotNil } from "../utils/is-not-nil";
 import { getPropsTypeOfJsx, TypesFromRefs } from "./type.utils";
 import { combineGuards } from "../utils/type-guard.utils";
 import { CallableType, getCallablesTypes } from "./type-unifier/callables.unifier";
-import { createFakeType, createFakeTypeFromType, FakeType } from "./fake-type.utils";
+import { createFakeType, FakeType } from "./fake-type.utils";
 import { SyntaxKind } from "typescript";
 
 export function allTypesOfRefs(node: VariableDeclaration | ParameterDeclaration): TypesFromRefs {
@@ -45,7 +45,7 @@ function allTypesOfRef(ref: Node): FakeType[] {
     if (operator === SyntaxKind.PlusToken || operator === SyntaxKind.MinusToken) {
       const operand = parent.getOperand();
       if (operand.getType().isNumberLiteral()) {
-        return [operand.getType()].map(createFakeTypeFromType);
+        return [operand.getType()];
       } else {
         return [createFakeType("number")];
       }
@@ -57,12 +57,12 @@ function allTypesOfRef(ref: Node): FakeType[] {
     const right = parent.getRight();
 
     if (operator === "=") {
-      return [left.getType(), right.getType()].map(createFakeTypeFromType);
+      return [left.getType(), right.getType()];
     } else if (operator === "-" || operator === "**" || operator === "*" || operator === "/") {
       if (left === ref && left.getType().isNumberLiteral()) {
-        return [left.getType()].map(createFakeTypeFromType);
+        return [left.getType()];
       } else if (right === ref && right.getType().isNumberLiteral()) {
-        return [right.getType()].map(createFakeTypeFromType);
+        return [right.getType()];
       } else {
         return [createFakeType("number")];
       }
@@ -74,14 +74,14 @@ function allTypesOfRef(ref: Node): FakeType[] {
     if (Node.isJsxOpeningElement(jsxElement) || Node.isJsxSelfClosingElement(jsxElement)) {
       const propertiesOfProps = getPropsTypeOfJsx(jsxElement);
       if (propertiesOfProps) {
-        return [ref.getType(), propertiesOfProps].map(createFakeTypeFromType);
+        return [ref.getType(), propertiesOfProps];
       }
     }
   }
   if (Node.isJsxExpression(parent)) {
     const contextualType = parent.getContextualType();
     if (contextualType) {
-      return [ref.getType(), contextualType].map(createFakeTypeFromType);
+      return [ref.getType(), contextualType];
     }
   }
 
@@ -135,12 +135,12 @@ function allTypesOfRef(ref: Node): FakeType[] {
     const closestFunctionDeclaration = parent.getAncestors().find(isFunctionLike);
 
     if (closestFunctionDeclaration) {
-      return [ref.getType(), closestFunctionDeclaration.getReturnType()].map(createFakeTypeFromType);
+      return [ref.getType(), closestFunctionDeclaration.getReturnType()];
     }
   }
 
   if (Node.isVariableDeclaration(parent)) {
-    return [ref.getType(), parent.getType()].map(createFakeTypeFromType);
+    return [ref.getType(), parent.getType()];
   }
   if (Node.isArrayLiteralExpression(parent)) {
     const typesOfRefInArray = allTypesOfRef(parent);
@@ -156,7 +156,11 @@ function allTypesOfRef(ref: Node): FakeType[] {
         const wrapperTypes = allTypesOfRef(greatParent);
         const propertyName = propertyNameNode.getText();
 
-        return wrapperTypes.map((t) => t?.getProperty(propertyName, greatParent)).filter(isNotNil);
+        return wrapperTypes
+          .map((t) => {
+            return t.getProperty(propertyName)?.getTypeAtLocation(greatParent);
+          })
+          .filter(isNotNil);
       }
     }
   }

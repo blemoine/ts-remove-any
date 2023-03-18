@@ -12,8 +12,7 @@ import {
 } from "ts-morph";
 import { isNotNil } from "../utils/is-not-nil";
 import { RevertableOperation } from "./revert-operation";
-import { createFakeTypeFromType, FakeType } from "./fake-type.utils";
-import { allTypesOfRefs } from "./type-unifier";
+import { FakeType } from "./fake-type.utils";
 
 export function isImplicitAny(node: TypedNode & Node): boolean {
   const declaredType = node.getTypeNode();
@@ -116,7 +115,7 @@ export function findTypeFromRefUsage(ref: Node): TypesFromRefs {
       const right = parent.getRight();
 
       return {
-        types: [left.getType(), right.getType()].map((t) => createFakeTypeFromType(t.getBaseTypeOfLiteralType())),
+        types: [left.getType(), right.getType()].map((t) => t.getBaseTypeOfLiteralType()),
         nullable: true,
         unknown: false,
       };
@@ -131,7 +130,7 @@ export function findTypeFromRefUsage(ref: Node): TypesFromRefs {
           .map((r) => {
             const jsxParent = r.getParent();
             if (Node.isPropertySignature(jsxParent)) {
-              return createFakeTypeFromType(jsxParent.getType());
+              return jsxParent.getType();
             }
             return null;
           })
@@ -146,63 +145,24 @@ export function findTypeFromRefUsage(ref: Node): TypesFromRefs {
       .getAncestors()
       .find((a): a is ArrowFunction | FunctionDeclaration => Node.isArrowFunction(a) || Node.isFunctionDeclaration(a));
     if (closestFunctionDeclaration) {
-      return {
-        types: [createFakeTypeFromType(closestFunctionDeclaration.getReturnType())],
-        nullable: false,
-        unknown: false,
-      };
+      return { types: [closestFunctionDeclaration.getReturnType()], nullable: false, unknown: false };
     }
   }
   if (Node.isVariableDeclaration(parent)) {
     const declarations = parent.getVariableStatement()?.getDeclarations();
 
-    return {
-      types: (declarations ?? [])?.map((d) => createFakeTypeFromType(d.getType())),
-      nullable: false,
-      unknown: false,
-    };
+    return { types: (declarations ?? [])?.map((d) => d.getType()), nullable: false, unknown: false };
   }
   const typeOfVariableCall = findTypeOfVariableCall(ref);
   return { types: typeOfVariableCall ? [typeOfVariableCall] : [], nullable: false, unknown: false };
 }
 
 export function computeDestructuredTypes(parametersFn: ParameterDeclaration): string | null {
-  const parameterFnType = parametersFn.getType();
-  const parameterTypeProperties = parameterFnType.getProperties();
-
-  const hasSomeAny = parameterTypeProperties.some((p) => p.getTypeAtLocation(parametersFn).isAny());
-  if (!parameterTypeProperties.every((p) => p.getTypeAtLocation(parametersFn).isAny()) && hasSomeAny) {
-    const allTypesOfParameter = allTypesOfRefs(parametersFn).types;
-
-    const propertyTypePairs = parameterTypeProperties.map((p) => {
-      const propertyName = p.getName();
-      let propertyType: FakeType = createFakeTypeFromType(p.getTypeAtLocation(parametersFn));
-      if (propertyType.isAny()) {
-        propertyType =
-          allTypesOfParameter
-            .find((t) => {
-              const property = t?.getProperty(propertyName, parametersFn);
-              if (!property) {
-                return false;
-              }
-              return !property?.isAny();
-            })
-            ?.getProperty(propertyName, parametersFn) ?? propertyType;
-      }
-
-      return { propertyName, type: propertyType.getText() };
-    });
-
-    // From there find the reference of parameterFn.`symbolOfProperties` or destructured access
-
-    if (propertyTypePairs.length > 0) {
-      return `{${propertyTypePairs.map(({ propertyName, type }) => `${propertyName}: ${type}`).join(",")}}`;
-    }
-  }
   if (parametersFn.getTypeNode()) {
     return null;
   }
-  if (hasSomeAny) {
+  const parameterTypeProperties = parametersFn.getType().getProperties();
+  if (parameterTypeProperties.some((p) => p.getTypeAtLocation(parametersFn).isAny())) {
     const propertyTypePairs = parametersFn.getChildren().flatMap((child) => {
       if (Node.isObjectBindingPattern(child)) {
         return child
@@ -241,7 +201,7 @@ export function computeDestructuredTypes(parametersFn: ParameterDeclaration): st
  *
  * @param ref
  */
-function findTypeOfVariableCall(ref: Node): FakeType | null {
+function findTypeOfVariableCall(ref: Node): Type | null {
   const parent = ref.getParent();
   if (!Node.isCallExpression(parent)) {
     return null;
@@ -249,7 +209,7 @@ function findTypeOfVariableCall(ref: Node): FakeType | null {
   const idxOfCallParameter = parent.getArguments().indexOf(ref);
   const functionDeclaredParametersTypes = getParameterTypesFromCallerSignature(parent);
   return functionDeclaredParametersTypes && functionDeclaredParametersTypes[idxOfCallParameter]
-    ? createFakeTypeFromType(functionDeclaredParametersTypes[idxOfCallParameter])
+    ? functionDeclaredParametersTypes[idxOfCallParameter]
     : null;
 }
 
@@ -305,21 +265,12 @@ function getParametersOfCallSignature(node: Node): Type[] {
 export type ComputedType = { kind: "type_found"; type: string } | { kind: "no_any" } | { kind: "no_type_found" };
 
 export function setTypeOnNode(node: TypedNode, newType: string): RevertableOperation {
-  try {
-    node.setType(newType);
-    return {
-      countChangesDone: 1,
-      countOfAnys: 1,
-      revert() {
-        node.removeType();
-      },
-    };
-  } catch (e) {
-    console.warn("There was an error when setting type", newType, "got:", e);
-    return {
-      countChangesDone: 0,
-      countOfAnys: 1,
-      revert() {},
-    };
-  }
+  node.setType(newType);
+  return {
+    countChangesDone: 1,
+    countOfAnys: 1,
+    revert() {
+      node.removeType();
+    },
+  };
 }
