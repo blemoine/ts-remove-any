@@ -490,6 +490,32 @@ function withTest(test: Test) {
       expect(typesOfFunction.usageInFunction).toStrictEqual({});
     });
 
+    it("should return arguments and parameters types of function type alias used as references if the type is a Union", () => {
+      const sourceFile = createSourceFile(`
+type Test =  (c, x) => void;     
+function map(a: string, x: string | ((c:string, n:number) => {value: number})) {}
+
+function withTest(test: Test) {
+  map('v', test);
+  test('a', 123)
+}
+      `);
+
+      const functionTypeNodeDeclaration = sourceFile.getTypeAlias("Test")?.getTypeNode();
+      if (!Node.isFunctionTypeNode(functionTypeNodeDeclaration)) {
+        throw new Error(`There must be function type node in Test type`);
+      }
+
+      const typesOfFunction = getCallablesTypes(functionTypeNodeDeclaration);
+
+      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => p.getText()))).toStrictEqual([
+        ["string", "number"],
+        ['"a"', "123"],
+      ]);
+      expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["any", "any"]);
+      expect(typesOfFunction.usageInFunction).toStrictEqual({});
+    });
+
     it("should return arguments and parameters types of function type alias in interface", () => {
       const sourceFile = createSourceFile(`
 interface Test { fn:  (_a: number, _b: string) => void }     

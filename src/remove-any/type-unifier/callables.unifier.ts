@@ -140,7 +140,7 @@ function getArgumentTypesFromRef(ref: Node): Type[] {
       if (higherLevelFnTypeOfCaller) {
         const callSignatures = higherLevelFnTypeOfCaller.getCallSignatures();
         if (higherLevelFnTypeOfCaller.isUnion()) {
-          // If there more than one call type... it's just too complex for the moment to handle
+          // If there's more than one call type... it's just too complex for the moment to handle
           const firstCallableType = higherLevelFnTypeOfCaller
             .getUnionTypes()
             .find((t) => t.getCallSignatures().length > 0);
