@@ -3,8 +3,8 @@ import { isNotNil } from "../utils/is-not-nil";
 import { getPropsTypeOfJsx, TypesFromRefs } from "./type.utils";
 import { combineGuards } from "../utils/type-guard.utils";
 import { CallableType, getCallablesTypes } from "./type-unifier/callables.unifier";
-import { createFakeType, FakeType } from "./fake-type.utils";
 import { SyntaxKind } from "typescript";
+import { createTypeModelFromType, getText, TypeModel } from "./type-model/type-model";
 
 export function allTypesOfRefs(node: VariableDeclaration | ParameterDeclaration): TypesFromRefs {
   const referencesAsNodes = node.findReferencesAsNodes();
@@ -12,29 +12,29 @@ export function allTypesOfRefs(node: VariableDeclaration | ParameterDeclaration)
 
   const typesFromLambda = node instanceof ParameterDeclaration ? allTypesOfRef(node) : [];
 
-  if (referencesAsNodes.length === 0 && typesFromLambda.length === 1 && typesFromLambda[0].isAny()) {
+  if (referencesAsNodes.length === 0 && typesFromLambda.length === 1 && typesFromLambda[0].kind === "any") {
     return { types: [], unknown: true, nullable: false };
   }
 
   return { types: deduplicateTypes([...typesFromReference, ...typesFromLambda]), unknown: false, nullable: false };
 }
 
-function deduplicateTypes(types: (FakeType | null | undefined)[]): FakeType[] {
+function deduplicateTypes(types: (TypeModel | null | undefined)[]): TypeModel[] {
   return [
     ...types
       .filter(isNotNil)
       .reduce((map, type) => {
-        const typeText = type.getText();
+        const typeText = getText(type);
         if (!map.has(typeText)) {
           map.set(typeText, type);
         }
         return map;
-      }, new Map<string, FakeType>())
+      }, new Map<string, TypeModel>())
       .values(),
   ];
 }
 
-function allTypesOfRef(ref: Node): FakeType[] {
+function allTypesOfRef(ref: Node): TypeModel[] {
   const parent = ref.getParent();
   if (!parent) {
     return [];
@@ -45,9 +45,9 @@ function allTypesOfRef(ref: Node): FakeType[] {
     if (operator === SyntaxKind.PlusToken || operator === SyntaxKind.MinusToken) {
       const operand = parent.getOperand();
       if (operand.getType().isNumberLiteral()) {
-        return [operand.getType()];
+        return [createTypeModelFromType(operand.getType(), ref)];
       } else {
-        return [createFakeType("number")];
+        return [{ kind: "number" }];
       }
     }
   }
@@ -57,14 +57,14 @@ function allTypesOfRef(ref: Node): FakeType[] {
     const right = parent.getRight();
 
     if (operator === "=") {
-      return [left.getType(), right.getType()];
+      return [createTypeModelFromType(left.getType(), ref), createTypeModelFromType(right.getType(), ref)];
     } else if (operator === "-" || operator === "**" || operator === "*" || operator === "/") {
       if (left === ref && left.getType().isNumberLiteral()) {
-        return [left.getType()];
+        return [createTypeModelFromType(left.getType(), ref)];
       } else if (right === ref && right.getType().isNumberLiteral()) {
-        return [right.getType()];
+        return [createTypeModelFromType(right.getType(), ref)];
       } else {
-        return [createFakeType("number")];
+        return [{ kind: "number" }];
       }
     }
   }
@@ -74,14 +74,14 @@ function allTypesOfRef(ref: Node): FakeType[] {
     if (Node.isJsxOpeningElement(jsxElement) || Node.isJsxSelfClosingElement(jsxElement)) {
       const propertiesOfProps = getPropsTypeOfJsx(jsxElement);
       if (propertiesOfProps) {
-        return [ref.getType(), propertiesOfProps];
+        return [createTypeModelFromType(ref.getType(), ref), createTypeModelFromType(propertiesOfProps, ref)];
       }
     }
   }
   if (Node.isJsxExpression(parent)) {
     const contextualType = parent.getContextualType();
     if (contextualType) {
-      return [ref.getType(), contextualType];
+      return [createTypeModelFromType(ref.getType(), ref), createTypeModelFromType(contextualType, ref)];
     }
   }
 
@@ -135,17 +135,20 @@ function allTypesOfRef(ref: Node): FakeType[] {
     const closestFunctionDeclaration = parent.getAncestors().find(isFunctionLike);
 
     if (closestFunctionDeclaration) {
-      return [ref.getType(), closestFunctionDeclaration.getReturnType()];
+      return [
+        createTypeModelFromType(ref.getType(), ref),
+        createTypeModelFromType(closestFunctionDeclaration.getReturnType(), ref),
+      ];
     }
   }
 
   if (Node.isVariableDeclaration(parent)) {
-    return [ref.getType(), parent.getType()];
+    return [createTypeModelFromType(ref.getType(), ref), createTypeModelFromType(parent.getType(), ref)];
   }
   if (Node.isArrayLiteralExpression(parent)) {
     const typesOfRefInArray = allTypesOfRef(parent);
-    if (typesOfRefInArray.every((t) => t.isArray())) {
-      return typesOfRefInArray.map((t) => t.getTypeArguments()[0]);
+    if (typesOfRefInArray.every((t) => t.kind === "array")) {
+      return typesOfRefInArray.map((t) => (t.kind === "array" ? t.value() : null)).filter(isNotNil);
     }
   }
   if (Node.isPropertyAssignment(parent)) {
@@ -158,7 +161,11 @@ function allTypesOfRef(ref: Node): FakeType[] {
 
         return wrapperTypes
           .map((t) => {
-            return t.getProperty(propertyName)?.getTypeAtLocation(greatParent);
+            if (t.kind !== "object") {
+              return null;
+            }
+
+            return t.value()[propertyName];
           })
           .filter(isNotNil);
       }
@@ -188,7 +195,7 @@ const isFunctionLike = combineGuards(
   Node.isArrowFunction
 );
 
-function getCallableTypesOfParameter(callablesType: CallableType, parameterIdx: number): FakeType[] {
+function getCallableTypesOfParameter(callablesType: CallableType, parameterIdx: number): TypeModel[] {
   return [
     callablesType.parameterTypes[parameterIdx],
     ...callablesType.argumentsTypes.map((p) => p[parameterIdx]),

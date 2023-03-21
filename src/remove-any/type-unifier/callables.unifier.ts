@@ -6,18 +6,18 @@ import {
   MethodDeclaration,
   Node,
   ReferenceFindableNode,
-  Type,
 } from "ts-morph";
 import { cannotHappen } from "../../utils/cannot-happen";
 import { getParameterTypesFromCallerSignature, getPropsTypeOfJsxElement } from "../type.utils";
 import { isNotNil } from "../../utils/is-not-nil";
 import { isNonEmptyList } from "../../utils/non-empty-list";
-import { createFakeType, FakeType, getStringifiedType, getSupertype, TypeWithName } from "../fake-type.utils";
+import { getSupertype, TypeWithName } from "../fake-type.utils";
+import { createTypeModelFromType, createTypeModelFromTypeWithName, getText, TypeModel } from "../type-model/type-model";
 
 export interface CallableType {
-  parameterTypes: Type[];
-  argumentsTypes: Type[][];
-  usageInFunction: Record<number, FakeType>; // this one exist because the parameterTypes may be `any`...
+  parameterTypes: TypeModel[];
+  argumentsTypes: TypeModel[][];
+  usageInFunction: Record<number, TypeModel>; // this one exist because the parameterTypes may be `any`...
 }
 
 type RuntimeCallable = FunctionDeclaration | ArrowFunction | MethodDeclaration | ConstructorDeclaration;
@@ -25,8 +25,8 @@ type RuntimeCallable = FunctionDeclaration | ArrowFunction | MethodDeclaration |
 export function getCallablesTypes(functionDeclaration: RuntimeCallable | FunctionTypeNode): CallableType {
   const referencableNode = getReferencableNodeFromCallableType(functionDeclaration);
 
-  const argumentsTypes: Type[][] = (referencableNode?.findReferencesAsNodes() ?? [])
-    .map<Type[][]>((ref) => {
+  const argumentsTypes: TypeModel[][] = (referencableNode?.findReferencesAsNodes() ?? [])
+    .map<TypeModel[][]>((ref) => {
       const parent = ref.getParent();
       if (Node.isTypeReference(parent)) {
         const greatParent = parent.getParent();
@@ -42,13 +42,13 @@ export function getCallablesTypes(functionDeclaration: RuntimeCallable | Functio
     .flat(1)
     .filter((l) => l.length > 0);
 
-  const parameterTypes = functionDeclaration.getParameters().map((p) => p.getType());
+  const parameterTypes = functionDeclaration.getParameters().map((p) => createTypeModelFromType(p.getType(), p));
   const usageInFunction = Node.isFunctionTypeNode(functionDeclaration)
     ? {}
     : Object.fromEntries(
         functionDeclaration
           .getParameters()
-          .map<readonly [number, FakeType]>((p, idx) => {
+          .map<readonly [number, TypeModel]>((p, idx) => {
             const usagesOfParameter = p
               .findReferencesAsNodes()
               .filter((ref) => ref !== p)
@@ -57,11 +57,13 @@ export function getCallablesTypes(functionDeclaration: RuntimeCallable | Functio
 
             // The final usage is a super type of usagesOfParameter
             if (isNonEmptyList(usagesOfParameter)) {
-              return [idx, getStringifiedType(getSupertype(usagesOfParameter))] as const;
+              const supertype = createTypeModelFromTypeWithName(getSupertype(usagesOfParameter));
+
+              return [idx, supertype] as const;
             }
-            return [idx, createFakeType("")] as const;
+            return [idx, { kind: "" }] as const;
           })
-          .filter(([, types]) => types.getText().length > 0)
+          .filter(([, types]) => getText(types).length > 0)
       );
 
   return {
@@ -76,7 +78,11 @@ function getUsageTypeFromRef(ref: Node): TypeWithName | null {
   if (Node.isCallExpression(parent)) {
     const argIdx = parent.getArguments().findIndex((a) => a === ref);
 
-    return getParameterTypesFromCallerSignature(parent)[argIdx] ?? null;
+    const result = getParameterTypesFromCallerSignature(parent)[argIdx];
+    if (!result) {
+      return null;
+    }
+    return createTypeModelFromType(result, ref);
   }
   if (Node.isJsxExpression(parent)) {
     const greatParent = parent.getParent();
@@ -87,7 +93,7 @@ function getUsageTypeFromRef(ref: Node): TypeWithName | null {
       if (Node.isJsxSelfClosingElement(greatGreatParent) || Node.isJsxOpeningElement(greatGreatParent)) {
         const selectedType = getPropsTypeOfJsxElement(greatGreatParent)[attributeName];
         if (selectedType) {
-          return selectedType;
+          return createTypeModelFromType(selectedType, ref);
         }
       }
     }
@@ -106,7 +112,7 @@ function getUsageTypeFromRef(ref: Node): TypeWithName | null {
 }
 
 // If ref is a parameter used in a call expression, get the type of the parameter
-function getArgumentTypesFromRef(ref: Node): Type[] {
+function getArgumentTypesFromRef(ref: Node): TypeModel[] {
   // the function is called
   const parent = ref.getParent();
 
@@ -123,7 +129,9 @@ function getArgumentTypesFromRef(ref: Node): Type[] {
         if (higherLevelFnTypeOfCaller) {
           const callSignatures = higherLevelFnTypeOfCaller.getCallSignatures();
           if (callSignatures.length > 0) {
-            return callSignatures[0].getParameters().map((p) => p.getTypeAtLocation(greatGreatParent));
+            return callSignatures[0]
+              .getParameters()
+              .map((p) => createTypeModelFromType(p.getTypeAtLocation(greatGreatParent), ref));
           }
         }
       }
@@ -131,7 +139,7 @@ function getArgumentTypesFromRef(ref: Node): Type[] {
   } else if (Node.isCallExpression(parent) || Node.isNewExpression(parent)) {
     const functionCalled = parent.getExpression();
     if (functionCalled === ref) {
-      return parent.getArguments().map((argument) => argument.getType());
+      return parent.getArguments().map((argument) => createTypeModelFromType(argument.getType(), ref));
     } else {
       // the function is passed as an argument to another function
       const idxOfDeclaration = parent.getArguments().findIndex((s) => s === ref);
@@ -147,13 +155,17 @@ function getArgumentTypesFromRef(ref: Node): Type[] {
           if (firstCallableType) {
             const callSignatures = firstCallableType.getCallSignatures();
             if (callSignatures.length > 0) {
-              return callSignatures[0].getParameters().map((p) => p.getTypeAtLocation(functionCalled));
+              return callSignatures[0]
+                .getParameters()
+                .map((p) => createTypeModelFromType(p.getTypeAtLocation(functionCalled), ref));
             }
           }
         }
 
         if (callSignatures.length > 0) {
-          return callSignatures[0].getParameters().map((p) => p.getTypeAtLocation(functionCalled));
+          return callSignatures[0]
+            .getParameters()
+            .map((p) => createTypeModelFromType(p.getTypeAtLocation(functionCalled), ref));
         }
       }
     }

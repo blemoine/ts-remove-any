@@ -104,7 +104,7 @@ const ParentComponent = () => {
     name: string;
 }) => <div></div>;
 let defaultProps: {
-    name: string;
+    "name": string;
 };
 const ParentComponent = () => {
     return <ChildComponent {...defaultProps}/>;

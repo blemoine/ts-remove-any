@@ -1,5 +1,6 @@
 import { ArrowFunction, ConstructorDeclaration, MethodDeclaration, Project, SourceFile, Node } from "ts-morph";
 import { getCallablesTypes } from "./callables.unifier";
+import { getText } from "../type-model/type-model";
 
 describe("getCallablesTypes", () => {
   describe("for plain functions", () => {
@@ -16,11 +17,11 @@ test(3, 'test');
 
       const typesOfFunction = getCallablesTypes(functionDeclaration);
 
-      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => p.getText()))).toStrictEqual([
+      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => getText(p)))).toStrictEqual([
         ["1", "any"],
         ["3", '"test"'],
       ]);
-      expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["number", "string"]);
+      expect(typesOfFunction.parameterTypes.map((p) => getText(p))).toStrictEqual(["number", "string"]);
       expect(typesOfFunction.usageInFunction).toStrictEqual({});
     });
 
@@ -37,11 +38,11 @@ test(2, 'test');
 
       const typesOfFunction = getCallablesTypes(functionDeclaration);
 
-      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => p.getText()))).toStrictEqual([
+      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => getText(p)))).toStrictEqual([
         ["1", "string"],
         ["2", '"test"'],
       ]);
-      expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["any", "any"]);
+      expect(typesOfFunction.parameterTypes.map((p) => getText(p))).toStrictEqual(["any", "any"]);
       expect(typesOfFunction.usageInFunction).toStrictEqual({});
     });
 
@@ -60,13 +61,13 @@ test('a', 123)
 
       const typesOfFunction = getCallablesTypes(functionDeclaration);
 
-      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => p.getText()))).toStrictEqual([
+      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => getText(p)))).toStrictEqual([
         ["string", "number"],
         ['"a"', "123"],
       ]);
-      expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["any", "any"]);
+      expect(typesOfFunction.parameterTypes.map((p) => getText(p))).toStrictEqual(["any", "any"]);
       expect(
-        Object.entries(typesOfFunction.usageInFunction).map(([idx, types]) => [idx, types.getText()])
+        Object.entries(typesOfFunction.usageInFunction).map(([idx, types]) => [idx, getText(types)])
       ).toStrictEqual([]);
     });
 
@@ -85,13 +86,13 @@ test('a', 123)
 
       const typesOfFunction = getCallablesTypes(functionDeclaration);
 
-      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => p.getText()))).toStrictEqual([
+      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => getText(p)))).toStrictEqual([
         ["string", "number"],
         ['"a"', "123"],
       ]);
-      expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["any", "any"]);
+      expect(typesOfFunction.parameterTypes.map((p) => getText(p))).toStrictEqual(["any", "any"]);
       expect(
-        Object.entries(typesOfFunction.usageInFunction).map(([idx, types]) => [idx, types.getText()])
+        Object.entries(typesOfFunction.usageInFunction).map(([idx, types]) => [idx, getText(types)])
       ).toStrictEqual([]);
     });
 
@@ -110,13 +111,13 @@ test('a', 123)
 
       const typesOfFunction = getCallablesTypes(functionDeclaration);
 
-      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => p.getText()))).toStrictEqual([
+      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => getText(p)))).toStrictEqual([
         ["boolean", "number"],
         ['"a"', "123"],
       ]);
-      expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["any", "any"]);
+      expect(typesOfFunction.parameterTypes.map((p) => getText(p))).toStrictEqual(["any", "any"]);
       expect(
-        Object.entries(typesOfFunction.usageInFunction).map(([idx, types]) => [idx, types.getText()])
+        Object.entries(typesOfFunction.usageInFunction).map(([idx, types]) => [idx, getText(types)])
       ).toStrictEqual([]);
     });
 
@@ -133,10 +134,10 @@ function test(c, x) {
       const typesOfFunction = getCallablesTypes(functionDeclaration);
 
       expect(typesOfFunction.argumentsTypes).toStrictEqual([]);
-      expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["any", "any"]);
+      expect(typesOfFunction.parameterTypes.map((p) => getText(p))).toStrictEqual(["any", "any"]);
       expect(
-        Object.entries(typesOfFunction.usageInFunction).map(([idx, types]) => [idx, types.getText()])
-      ).toStrictEqual([["0", '{"value": string, "name": {"length": string}}']]);
+        Object.entries(typesOfFunction.usageInFunction).map(([idx, types]) => [idx, getText(types)])
+      ).toStrictEqual([["0", '{"value": string; "name": {"length": string}}']]);
     });
   });
 
@@ -156,11 +157,11 @@ test(3, 'test');
 
       const typesOfFunction = getCallablesTypes(functionDeclaration);
 
-      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => p.getText()))).toStrictEqual([
+      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => getText(p)))).toStrictEqual([
         ["1", "any"],
         ["3", '"test"'],
       ]);
-      expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["number", "string"]);
+      expect(typesOfFunction.parameterTypes.map((p) => getText(p))).toStrictEqual(["number", "string"]);
       expect(typesOfFunction.usageInFunction).toStrictEqual({});
     });
 
@@ -178,11 +179,11 @@ test(2, 'test');
       }
       const typesOfFunction = getCallablesTypes(functionDeclaration);
 
-      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => p.getText()))).toStrictEqual([
+      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => getText(p)))).toStrictEqual([
         ["1", "string"],
         ["2", '"test"'],
       ]);
-      expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["any", "any"]);
+      expect(typesOfFunction.parameterTypes.map((p) => getText(p))).toStrictEqual(["any", "any"]);
       expect(typesOfFunction.usageInFunction).toStrictEqual({});
     });
 
@@ -203,13 +204,13 @@ test('a', 123)
 
       const typesOfFunction = getCallablesTypes(functionDeclaration);
 
-      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => p.getText()))).toStrictEqual([
+      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => getText(p)))).toStrictEqual([
         ["string", "number"],
         ['"a"', "123"],
       ]);
-      expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["any", "any"]);
+      expect(typesOfFunction.parameterTypes.map((p) => getText(p))).toStrictEqual(["any", "any"]);
       expect(
-        Object.entries(typesOfFunction.usageInFunction).map(([idx, types]) => [idx, types.getText()])
+        Object.entries(typesOfFunction.usageInFunction).map(([idx, types]) => [idx, getText(types)])
       ).toStrictEqual([]);
     });
 
@@ -230,13 +231,13 @@ test('a', 123)
 
       const typesOfFunction = getCallablesTypes(functionDeclaration);
 
-      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => p.getText()))).toStrictEqual([
+      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => getText(p)))).toStrictEqual([
         ["string", "number"],
         ['"a"', "123"],
       ]);
-      expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["any", "any"]);
+      expect(typesOfFunction.parameterTypes.map((p) => getText(p))).toStrictEqual(["any", "any"]);
       expect(
-        Object.entries(typesOfFunction.usageInFunction).map(([idx, types]) => [idx, types.getText()])
+        Object.entries(typesOfFunction.usageInFunction).map(([idx, types]) => [idx, getText(types)])
       ).toStrictEqual([]);
     });
 
@@ -257,8 +258,8 @@ const ParentComponent = () => {
 
       const typesOfFunction = getCallablesTypes(functionDeclaration);
 
-      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => p.getText()))).toStrictEqual([["123"], ["string"]]);
-      expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["any"]);
+      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => getText(p)))).toStrictEqual([["123"], ["string"]]);
+      expect(typesOfFunction.parameterTypes.map((p) => getText(p))).toStrictEqual(["any"]);
       expect(typesOfFunction.usageInFunction).toStrictEqual({});
     });
 
@@ -279,8 +280,8 @@ const ParentComponent = () => {
 
       const typesOfFunction = getCallablesTypes(functionDeclaration);
 
-      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => p.getText()))).toStrictEqual([["123"], ["string"]]);
-      expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["any"]);
+      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => getText(p)))).toStrictEqual([["123"], ["string"]]);
+      expect(typesOfFunction.parameterTypes.map((p) => getText(p))).toStrictEqual(["any"]);
       expect(typesOfFunction.usageInFunction).toStrictEqual({});
     });
   });
@@ -302,11 +303,11 @@ test.method(3, 'test');
 
       const typesOfFunction = getCallablesTypes(functionDeclaration);
 
-      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => p.getText()))).toStrictEqual([
+      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => getText(p)))).toStrictEqual([
         ["1", "any"],
         ["3", '"test"'],
       ]);
-      expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["number", "string"]);
+      expect(typesOfFunction.parameterTypes.map((p) => getText(p))).toStrictEqual(["number", "string"]);
       expect(typesOfFunction.usageInFunction).toStrictEqual({});
     });
 
@@ -325,11 +326,11 @@ test.method(2, 'test');
       }
       const typesOfFunction = getCallablesTypes(functionDeclaration);
 
-      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => p.getText()))).toStrictEqual([
+      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => getText(p)))).toStrictEqual([
         ["1", "string"],
         ["2", '"test"'],
       ]);
-      expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["any", "any"]);
+      expect(typesOfFunction.parameterTypes.map((p) => getText(p))).toStrictEqual(["any", "any"]);
       expect(typesOfFunction.usageInFunction).toStrictEqual({});
     });
 
@@ -352,13 +353,13 @@ test.method('a', 123)
 
       const typesOfFunction = getCallablesTypes(functionDeclaration);
 
-      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => p.getText()))).toStrictEqual([
+      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => getText(p)))).toStrictEqual([
         ["string", "number"],
         ['"a"', "123"],
       ]);
-      expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["any", "any"]);
+      expect(typesOfFunction.parameterTypes.map((p) => getText(p))).toStrictEqual(["any", "any"]);
       expect(
-        Object.entries(typesOfFunction.usageInFunction).map(([idx, types]) => [idx, types.getText()])
+        Object.entries(typesOfFunction.usageInFunction).map(([idx, types]) => [idx, getText(types)])
       ).toStrictEqual([]);
     });
 
@@ -380,13 +381,13 @@ test.method('a', 123)
 
       const typesOfFunction = getCallablesTypes(functionDeclaration);
 
-      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => p.getText()))).toStrictEqual([
+      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => getText(p)))).toStrictEqual([
         ["string", "number"],
         ['"a"', "123"],
       ]);
-      expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["any", "any"]);
+      expect(typesOfFunction.parameterTypes.map((p) => getText(p))).toStrictEqual(["any", "any"]);
       expect(
-        Object.entries(typesOfFunction.usageInFunction).map(([idx, types]) => [idx, types.getText()])
+        Object.entries(typesOfFunction.usageInFunction).map(([idx, types]) => [idx, getText(types)])
       ).toStrictEqual([]);
     });
   });
@@ -407,11 +408,11 @@ new Test(3, 'test');
 
       const typesOfFunction = getCallablesTypes(functionDeclaration);
 
-      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => p.getText()))).toStrictEqual([
+      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => getText(p)))).toStrictEqual([
         ["1", "any"],
         ["3", '"test"'],
       ]);
-      expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["number", "string"]);
+      expect(typesOfFunction.parameterTypes.map((p) => getText(p))).toStrictEqual(["number", "string"]);
       expect(typesOfFunction.usageInFunction).toStrictEqual({});
     });
 
@@ -429,11 +430,11 @@ new Test(2, 'test');
       }
       const typesOfFunction = getCallablesTypes(functionDeclaration);
 
-      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => p.getText()))).toStrictEqual([
+      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => getText(p)))).toStrictEqual([
         ["1", "string"],
         ["2", '"test"'],
       ]);
-      expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["any", "any"]);
+      expect(typesOfFunction.parameterTypes.map((p) => getText(p))).toStrictEqual(["any", "any"]);
       expect(typesOfFunction.usageInFunction).toStrictEqual({});
     });
   });
@@ -456,11 +457,11 @@ function withTest(test: Test) {
 
       const typesOfFunction = getCallablesTypes(functionTypeNodeDeclaration);
 
-      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => p.getText()))).toStrictEqual([
+      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => getText(p)))).toStrictEqual([
         ["1", "any"],
         ["3", '"test"'],
       ]);
-      expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["number", "string"]);
+      expect(typesOfFunction.parameterTypes.map((p) => getText(p))).toStrictEqual(["number", "string"]);
       expect(typesOfFunction.usageInFunction).toStrictEqual({});
     });
 
@@ -482,11 +483,11 @@ function withTest(test: Test) {
 
       const typesOfFunction = getCallablesTypes(functionTypeNodeDeclaration);
 
-      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => p.getText()))).toStrictEqual([
+      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => getText(p)))).toStrictEqual([
         ["string", "number"],
         ['"a"', "123"],
       ]);
-      expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["any", "any"]);
+      expect(typesOfFunction.parameterTypes.map((p) => getText(p))).toStrictEqual(["any", "any"]);
       expect(typesOfFunction.usageInFunction).toStrictEqual({});
     });
 
@@ -508,11 +509,11 @@ function withTest(test: Test) {
 
       const typesOfFunction = getCallablesTypes(functionTypeNodeDeclaration);
 
-      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => p.getText()))).toStrictEqual([
+      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => getText(p)))).toStrictEqual([
         ["string", "number"],
         ['"a"', "123"],
       ]);
-      expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["any", "any"]);
+      expect(typesOfFunction.parameterTypes.map((p) => getText(p))).toStrictEqual(["any", "any"]);
       expect(typesOfFunction.usageInFunction).toStrictEqual({});
     });
 
@@ -534,11 +535,11 @@ function withTest(test: Test) {
 
       const typesOfFunction = getCallablesTypes(functionTypeNodeDeclaration);
 
-      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => p.getText()))).toStrictEqual([
+      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => getText(p)))).toStrictEqual([
         ["1", "any"],
         ["3", '"test"'],
       ]);
-      expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["number", "string"]);
+      expect(typesOfFunction.parameterTypes.map((p) => getText(p))).toStrictEqual(["number", "string"]);
       expect(typesOfFunction.usageInFunction).toStrictEqual({});
     });
 
@@ -564,11 +565,11 @@ function withTest(test: Test) {
 
       const typesOfFunction = getCallablesTypes(functionTypeNodeDeclaration);
 
-      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => p.getText()))).toStrictEqual([
+      expect(typesOfFunction.argumentsTypes.map((s) => s.map((p) => getText(p)))).toStrictEqual([
         ["1", "any"],
         ["3", '"test"'],
       ]);
-      expect(typesOfFunction.parameterTypes.map((p) => p.getText())).toStrictEqual(["number", "string"]);
+      expect(typesOfFunction.parameterTypes.map((p) => getText(p))).toStrictEqual(["number", "string"]);
       expect(typesOfFunction.usageInFunction).toStrictEqual({});
     });
   });

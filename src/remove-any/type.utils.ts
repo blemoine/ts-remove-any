@@ -12,7 +12,7 @@ import {
 } from "ts-morph";
 import { isNotNil } from "../utils/is-not-nil";
 import { RevertableOperation } from "./revert-operation";
-import { FakeType } from "./fake-type.utils";
+import { createTypeModelFromType, getText, TypeModel } from "./type-model/type-model";
 
 export function isImplicitAny(node: TypedNode & Node): boolean {
   const declaredType = node.getTypeNode();
@@ -41,16 +41,16 @@ export function isImplicitAnyArray(node: TypedNode & Node) {
 export function filterUnusableTypes(typesFromRefs: TypesFromRefs[]): TypesFromRefs {
   const types = typesFromRefs.flatMap(({ types }) =>
     types.filter(isNotNil).filter((t) => {
-      const text = t.getText();
+      const text = getText(t);
       return (
-        !t.isAny() &&
+        t.kind !== "any" &&
         !text.includes("any[]") &&
         !text.includes("<any") &&
         !text.includes("any>") &&
         !text.includes(" any,") &&
         !text.includes(": any") &&
         !text.includes("import(") &&
-        !t.isNever() &&
+        t.kind !== "never" &&
         !text.includes("never[]") &&
         !text.includes(": never")
       );
@@ -61,29 +61,35 @@ export function filterUnusableTypes(typesFromRefs: TypesFromRefs[]): TypesFromRe
   return { types, nullable, unknown };
 }
 
-function computeTypesFromList(callsiteTypes: FakeType[]): string | null {
+function computeTypesFromList(callsiteTypes: TypeModel[]): string | null {
   if (callsiteTypes.length === 0) {
     return null;
   }
-  if (callsiteTypes.every((s) => s.isBooleanLiteral() || s.isBoolean())) {
+  if (callsiteTypes.every((s) => s.kind === "boolean" || s.kind === "boolean-literal")) {
     return "boolean";
   }
 
   if (callsiteTypes.length <= 4) {
-    if (callsiteTypes.every((t) => t.isNumber() || t.isNumberLiteral()) && callsiteTypes.some((t) => t.isNumber())) {
+    if (
+      callsiteTypes.every((t) => t.kind === "number" || t.kind === "number-literal") &&
+      callsiteTypes.some((t) => t.kind === "number")
+    ) {
       return "number";
     }
-    if (callsiteTypes.every((t) => t.isString() || t.isStringLiteral()) && callsiteTypes.some((t) => t.isString())) {
+    if (
+      callsiteTypes.every((t) => t.kind === "string" || t.kind === "string-literal") &&
+      callsiteTypes.some((t) => t.kind === "string")
+    ) {
       return "string";
     }
 
-    const newTypes = [...new Set(callsiteTypes.map((t) => t.getText()))];
+    const newTypes = [...new Set(callsiteTypes.map((t) => getText(t)))];
     return newTypes.join(" | ");
   }
 
-  if (callsiteTypes.every((t) => t.isNumber() || t.isNumberLiteral())) {
+  if (callsiteTypes.every((t) => t.kind === "number" || t.kind === "number-literal")) {
     return "number";
-  } else if (callsiteTypes.every((t) => t.isString() || t.isStringLiteral())) {
+  } else if (callsiteTypes.every((t) => t.kind === "string" || t.kind === "string-literal")) {
     return "string";
   }
   return null;
@@ -101,7 +107,7 @@ export function computeTypesFromRefs({ nullable, types, unknown }: TypesFromRefs
 }
 
 export interface TypesFromRefs {
-  types: FakeType[];
+  types: TypeModel[];
   nullable: boolean;
   unknown: boolean;
 }
@@ -115,7 +121,19 @@ export function findTypeFromRefUsage(ref: Node): TypesFromRefs {
       const right = parent.getRight();
 
       return {
-        types: [left.getType(), right.getType()].map((t) => t.getBaseTypeOfLiteralType()),
+        types: [createTypeModelFromType(left.getType(), left), createTypeModelFromType(right.getType(), right)].map(
+          (t) => {
+            if (t.kind === "boolean-literal") {
+              return { kind: "boolean" };
+            } else if (t.kind === "number-literal") {
+              return { kind: "number" };
+            } else if (t.kind === "string-literal") {
+              return { kind: "string" };
+            } else {
+              return { kind: "" };
+            }
+          }
+        ),
         nullable: true,
         unknown: false,
       };
@@ -130,7 +148,7 @@ export function findTypeFromRefUsage(ref: Node): TypesFromRefs {
           .map((r) => {
             const jsxParent = r.getParent();
             if (Node.isPropertySignature(jsxParent)) {
-              return jsxParent.getType();
+              return createTypeModelFromType(jsxParent.getType(), jsxParent);
             }
             return null;
           })
@@ -145,16 +163,28 @@ export function findTypeFromRefUsage(ref: Node): TypesFromRefs {
       .getAncestors()
       .find((a): a is ArrowFunction | FunctionDeclaration => Node.isArrowFunction(a) || Node.isFunctionDeclaration(a));
     if (closestFunctionDeclaration) {
-      return { types: [closestFunctionDeclaration.getReturnType()], nullable: false, unknown: false };
+      return {
+        types: [createTypeModelFromType(closestFunctionDeclaration.getReturnType(), ref)],
+        nullable: false,
+        unknown: false,
+      };
     }
   }
   if (Node.isVariableDeclaration(parent)) {
     const declarations = parent.getVariableStatement()?.getDeclarations();
 
-    return { types: (declarations ?? [])?.map((d) => d.getType()), nullable: false, unknown: false };
+    return {
+      types: (declarations ?? [])?.map((d) => createTypeModelFromType(d.getType(), d)),
+      nullable: false,
+      unknown: false,
+    };
   }
   const typeOfVariableCall = findTypeOfVariableCall(ref);
-  return { types: typeOfVariableCall ? [typeOfVariableCall] : [], nullable: false, unknown: false };
+  return {
+    types: typeOfVariableCall ? [createTypeModelFromType(typeOfVariableCall, ref)] : [],
+    nullable: false,
+    unknown: false,
+  };
 }
 
 export function computeDestructuredTypes(parametersFn: ParameterDeclaration): string | null {
