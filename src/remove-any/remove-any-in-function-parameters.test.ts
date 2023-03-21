@@ -535,6 +535,37 @@ export function HiddenInput(props: {
     expect(numberOfChanges.countChangesDone).toBe(1);
     expect(numberOfChanges.countOfAnys).toBe(1);
   });
+
+  it("should deduplicate union types", () => {
+    const sourceFile = createSourceFile(`
+function fnToIgnore(my_explicit_variable) {
+  if (typeof my_explicit_variable !== 'boolean') {
+      innerFn(my_explicit_variable);
+  }    
+  if (typeof my_explicit_variable !== 'number') {
+      innerFn2(my_explicit_variable);
+  }
+}
+
+function innerFn(x: string | number) {}
+function innerFn2(x: string | boolean) {}
+`);
+
+    removeAny(sourceFile, { verbosity: 2 });
+    expect(sourceFile.print()).toStrictEqual(
+      `function fnToIgnore(my_explicit_variable: string | number | boolean) {
+    if (typeof my_explicit_variable !== 'boolean') {
+        innerFn(my_explicit_variable);
+    }
+    if (typeof my_explicit_variable !== 'number') {
+        innerFn2(my_explicit_variable);
+    }
+}
+function innerFn(x: string | number) { }
+function innerFn2(x: string | boolean) { }
+`
+    );
+  });
 });
 
 function createSourceFile(code: string): SourceFile {

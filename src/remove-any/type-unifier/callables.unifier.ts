@@ -48,7 +48,9 @@ export function getCallablesTypes(functionDeclaration: RuntimeCallable | Functio
     .flat(1)
     .filter((l) => l.length > 0);
 
-  const parameterTypes = functionDeclaration.getParameters().map((p) => createTypeModelFromNode(p));
+  const parameterTypes = functionDeclaration.getParameters().map((p) => {
+    return createTypeModelFromNode(p);
+  });
   const usageInFunction = Node.isFunctionTypeNode(functionDeclaration)
     ? {}
     : Object.fromEntries(
@@ -149,7 +151,6 @@ function getArgumentTypesFromRef(ref: Node): TypeModel[] {
     } else {
       // the function is passed as an argument to another function
       const idxOfDeclaration = parent.getArguments().findIndex((s) => s === ref);
-
       const higherLevelFnTypeOfCaller = getParameterTypesFromCallerSignature(parent)[idxOfDeclaration];
       if (higherLevelFnTypeOfCaller) {
         const callSignatures = higherLevelFnTypeOfCaller.getCallSignatures();

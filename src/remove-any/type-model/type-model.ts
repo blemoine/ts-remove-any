@@ -1,5 +1,6 @@
 import { Type, Node } from "ts-morph";
 import { TypeWithName } from "../fake-type.utils";
+import { isNotNil } from "../../utils/is-not-nil";
 
 export type TypeModel =
   | { kind: "" }
@@ -115,7 +116,7 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
   } else if (type.isBoolean()) {
     return { kind: "boolean", original: type };
   } else if (type.isBooleanLiteral()) {
-    return { kind: "boolean-literal", value: Boolean(type.getText()), original: type };
+    return { kind: "boolean-literal", value: type.getText() === "true", original: type };
   } else if (type.isNumberLiteral()) {
     return { kind: "number-literal", value: Number(type.getText()), original: type };
   } else if (type.isStringLiteral()) {
@@ -152,9 +153,24 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
     };
   } else if (type.isUnion()) {
     const symbolName = type.getSymbol()?.getName();
+
     return {
       kind: "union",
-      value: () => type.getUnionTypes().map((t) => createTypeModelFromType(t, node)),
+      value: () => {
+        const unionTypes = type.getUnionTypes();
+        if (
+          unionTypes.some((t) => (t.isBooleanLiteral() ? t.getText() === "true" : false)) &&
+          unionTypes.some((t) => (t.isBooleanLiteral() ? t.getText() === "false" : false))
+        ) {
+          return [
+            ...unionTypes
+              .filter((t) => !t.isBooleanLiteral() && !t.isBoolean())
+              .map((t) => createTypeModelFromType(t, node)),
+            { kind: "boolean" },
+          ];
+        }
+        return unionTypes.map((t) => createTypeModelFromType(t, node));
+      },
       alias: symbolName,
       original: type,
     };
@@ -184,4 +200,40 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
   } else {
     return { kind: "unsupported", value: () => type.getText() };
   }
+}
+
+function flattenUnionTypeModel(t1: TypeModel): TypeModel[] {
+  if (t1.kind === "union") {
+    const types = t1.value();
+    return types.flatMap((t) => flattenUnionTypeModel(t));
+  }
+  return [t1];
+}
+export function unionTypeModel(t1: TypeModel, t2: TypeModel): TypeModel {
+  return {
+    kind: "union",
+    value: () => {
+      const allTypes = [
+        ...(t1.kind === "union" ? t1.value() : [t1]),
+        ...(t2.kind === "union" ? t2.value() : [t2]),
+      ].flatMap(flattenUnionTypeModel);
+
+      return deduplicateTypes(allTypes);
+    },
+  };
+}
+
+export function deduplicateTypes(types: (TypeModel | null | undefined)[]): TypeModel[] {
+  return [
+    ...types
+      .filter(isNotNil)
+      .reduce((map, type) => {
+        const typeText = getText(type);
+        if (!map.has(typeText)) {
+          map.set(typeText, type);
+        }
+        return map;
+      }, new Map<string, TypeModel>())
+      .values(),
+  ];
 }

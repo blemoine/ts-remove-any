@@ -4,7 +4,7 @@ import { getPropsTypeOfJsx, TypesFromRefs } from "./type.utils";
 import { combineGuards } from "../utils/type-guard.utils";
 import { CallableType, getCallablesTypes } from "./type-unifier/callables.unifier";
 import { SyntaxKind } from "typescript";
-import { createTypeModelFromNode, createTypeModelFromType, getText, TypeModel } from "./type-model/type-model";
+import { createTypeModelFromNode, createTypeModelFromType, deduplicateTypes, TypeModel } from "./type-model/type-model";
 
 export function allTypesOfRefs(node: VariableDeclaration | ParameterDeclaration): TypesFromRefs {
   const referencesAsNodes = node.findReferencesAsNodes();
@@ -17,21 +17,6 @@ export function allTypesOfRefs(node: VariableDeclaration | ParameterDeclaration)
   }
 
   return { types: deduplicateTypes([...typesFromReference, ...typesFromLambda]), unknown: false, nullable: false };
-}
-
-function deduplicateTypes(types: (TypeModel | null | undefined)[]): TypeModel[] {
-  return [
-    ...types
-      .filter(isNotNil)
-      .reduce((map, type) => {
-        const typeText = getText(type);
-        if (!map.has(typeText)) {
-          map.set(typeText, type);
-        }
-        return map;
-      }, new Map<string, TypeModel>())
-      .values(),
-  ];
 }
 
 function allTypesOfRef(ref: Node): TypeModel[] {
@@ -103,7 +88,6 @@ function allTypesOfRef(ref: Node): TypeModel[] {
           }
         })
         .find(isFunctionLike);
-
       if (functionDeclaration) {
         const callablesTypes = getCallablesTypes(functionDeclaration);
 

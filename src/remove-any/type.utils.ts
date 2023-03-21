@@ -12,7 +12,13 @@ import {
 } from "ts-morph";
 import { isNotNil } from "../utils/is-not-nil";
 import { RevertableOperation } from "./revert-operation";
-import { createTypeModelFromNode, createTypeModelFromType, getText, TypeModel } from "./type-model/type-model";
+import {
+  createTypeModelFromNode,
+  createTypeModelFromType,
+  getText,
+  TypeModel,
+  unionTypeModel,
+} from "./type-model/type-model";
 
 export function isImplicitAny(node: TypedNode & Node): boolean {
   const declaredType = node.getTypeNode();
@@ -83,8 +89,7 @@ function computeTypesFromList(callsiteTypes: TypeModel[]): string | null {
       return "string";
     }
 
-    const newTypes = [...new Set(callsiteTypes.map((t) => getText(t)))];
-    return newTypes.join(" | ");
+    return getText(callsiteTypes.reduce(unionTypeModel));
   }
 
   if (callsiteTypes.every((t) => t.kind === "number" || t.kind === "number-literal")) {
