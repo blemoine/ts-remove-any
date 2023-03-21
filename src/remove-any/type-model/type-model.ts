@@ -103,6 +103,10 @@ export function createTypeModelFromTypeWithName(typeWithName: TypeWithName): Typ
   }
 }
 
+export function createTypeModelFromNode(node: Node): TypeModel {
+  return createTypeModelFromType(node.getType(), node);
+}
+
 export function createTypeModelFromType(type: Type, node: Node): TypeModel {
   if (type.isNumber()) {
     return { kind: "number", original: type };

@@ -12,7 +12,7 @@ import {
 } from "ts-morph";
 import { isNotNil } from "../utils/is-not-nil";
 import { RevertableOperation } from "./revert-operation";
-import { createTypeModelFromType, getText, TypeModel } from "./type-model/type-model";
+import { createTypeModelFromNode, createTypeModelFromType, getText, TypeModel } from "./type-model/type-model";
 
 export function isImplicitAny(node: TypedNode & Node): boolean {
   const declaredType = node.getTypeNode();
@@ -121,19 +121,17 @@ export function findTypeFromRefUsage(ref: Node): TypesFromRefs {
       const right = parent.getRight();
 
       return {
-        types: [createTypeModelFromType(left.getType(), left), createTypeModelFromType(right.getType(), right)].map(
-          (t) => {
-            if (t.kind === "boolean-literal") {
-              return { kind: "boolean" };
-            } else if (t.kind === "number-literal") {
-              return { kind: "number" };
-            } else if (t.kind === "string-literal") {
-              return { kind: "string" };
-            } else {
-              return { kind: "" };
-            }
+        types: [createTypeModelFromNode(left), createTypeModelFromNode(right)].map((t) => {
+          if (t.kind === "boolean-literal") {
+            return { kind: "boolean" };
+          } else if (t.kind === "number-literal") {
+            return { kind: "number" };
+          } else if (t.kind === "string-literal") {
+            return { kind: "string" };
+          } else {
+            return { kind: "" };
           }
-        ),
+        }),
         nullable: true,
         unknown: false,
       };
@@ -148,7 +146,7 @@ export function findTypeFromRefUsage(ref: Node): TypesFromRefs {
           .map((r) => {
             const jsxParent = r.getParent();
             if (Node.isPropertySignature(jsxParent)) {
-              return createTypeModelFromType(jsxParent.getType(), jsxParent);
+              return createTypeModelFromNode(jsxParent);
             }
             return null;
           })
@@ -174,7 +172,7 @@ export function findTypeFromRefUsage(ref: Node): TypesFromRefs {
     const declarations = parent.getVariableStatement()?.getDeclarations();
 
     return {
-      types: (declarations ?? [])?.map((d) => createTypeModelFromType(d.getType(), d)),
+      types: (declarations ?? [])?.map((d) => createTypeModelFromNode(d)),
       nullable: false,
       unknown: false,
     };

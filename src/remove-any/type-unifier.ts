@@ -4,7 +4,7 @@ import { getPropsTypeOfJsx, TypesFromRefs } from "./type.utils";
 import { combineGuards } from "../utils/type-guard.utils";
 import { CallableType, getCallablesTypes } from "./type-unifier/callables.unifier";
 import { SyntaxKind } from "typescript";
-import { createTypeModelFromType, getText, TypeModel } from "./type-model/type-model";
+import { createTypeModelFromNode, createTypeModelFromType, getText, TypeModel } from "./type-model/type-model";
 
 export function allTypesOfRefs(node: VariableDeclaration | ParameterDeclaration): TypesFromRefs {
   const referencesAsNodes = node.findReferencesAsNodes();
@@ -74,14 +74,14 @@ function allTypesOfRef(ref: Node): TypeModel[] {
     if (Node.isJsxOpeningElement(jsxElement) || Node.isJsxSelfClosingElement(jsxElement)) {
       const propertiesOfProps = getPropsTypeOfJsx(jsxElement);
       if (propertiesOfProps) {
-        return [createTypeModelFromType(ref.getType(), ref), createTypeModelFromType(propertiesOfProps, ref)];
+        return [createTypeModelFromNode(ref), createTypeModelFromType(propertiesOfProps, ref)];
       }
     }
   }
   if (Node.isJsxExpression(parent)) {
     const contextualType = parent.getContextualType();
     if (contextualType) {
-      return [createTypeModelFromType(ref.getType(), ref), createTypeModelFromType(contextualType, ref)];
+      return [createTypeModelFromNode(ref), createTypeModelFromType(contextualType, ref)];
     }
   }
 
@@ -135,15 +135,12 @@ function allTypesOfRef(ref: Node): TypeModel[] {
     const closestFunctionDeclaration = parent.getAncestors().find(isFunctionLike);
 
     if (closestFunctionDeclaration) {
-      return [
-        createTypeModelFromType(ref.getType(), ref),
-        createTypeModelFromType(closestFunctionDeclaration.getReturnType(), ref),
-      ];
+      return [createTypeModelFromNode(ref), createTypeModelFromType(closestFunctionDeclaration.getReturnType(), ref)];
     }
   }
 
   if (Node.isVariableDeclaration(parent)) {
-    return [createTypeModelFromType(ref.getType(), ref), createTypeModelFromType(parent.getType(), ref)];
+    return [createTypeModelFromNode(ref), createTypeModelFromType(parent.getType(), ref)];
   }
   if (Node.isArrayLiteralExpression(parent)) {
     const typesOfRefInArray = allTypesOfRef(parent);

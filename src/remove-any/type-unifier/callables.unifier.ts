@@ -12,7 +12,13 @@ import { getParameterTypesFromCallerSignature, getPropsTypeOfJsxElement } from "
 import { isNotNil } from "../../utils/is-not-nil";
 import { isNonEmptyList } from "../../utils/non-empty-list";
 import { getSupertype, TypeWithName } from "../fake-type.utils";
-import { createTypeModelFromType, createTypeModelFromTypeWithName, getText, TypeModel } from "../type-model/type-model";
+import {
+  createTypeModelFromNode,
+  createTypeModelFromType,
+  createTypeModelFromTypeWithName,
+  getText,
+  TypeModel,
+} from "../type-model/type-model";
 
 export interface CallableType {
   parameterTypes: TypeModel[];
@@ -42,7 +48,7 @@ export function getCallablesTypes(functionDeclaration: RuntimeCallable | Functio
     .flat(1)
     .filter((l) => l.length > 0);
 
-  const parameterTypes = functionDeclaration.getParameters().map((p) => createTypeModelFromType(p.getType(), p));
+  const parameterTypes = functionDeclaration.getParameters().map((p) => createTypeModelFromNode(p));
   const usageInFunction = Node.isFunctionTypeNode(functionDeclaration)
     ? {}
     : Object.fromEntries(
