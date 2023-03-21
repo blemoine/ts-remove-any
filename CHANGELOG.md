@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.45](https://github.com/blemoine/ts-remove-any/compare/v0.1.44...v0.1.45) (2023-03-21)
+
+
+### Features
+
+* add a test for union type ([f8eff80](https://github.com/blemoine/ts-remove-any/commit/f8eff8060374b322a1c3f622f592f6a60c865dbd))
+* flatten union type ([ab11a6f](https://github.com/blemoine/ts-remove-any/commit/ab11a6f2389323c831a681118f706dba09a64143))
+
 ### [0.1.44](https://github.com/blemoine/ts-remove-any/compare/v0.1.43...v0.1.44) (2023-03-18)
 
 
