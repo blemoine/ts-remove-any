@@ -6,5 +6,6 @@
   }
   da('value') // x is a subtype of 'value'
 
-* support explicit any
-* don't edit parameters in `catch`
+* ../../busbud/public-website/app/modules/checkout/components/price-information/departure-summary.test.tsx <- syntax error
+* any | { target: Element }  -> should return any
+* 

@@ -1,4 +1,4 @@
-import { ParameterDeclaration, SourceFile, VariableDeclaration } from "ts-morph";
+import { ParameterDeclaration, SourceFile, VariableDeclaration, Node } from "ts-morph";
 import { sum } from "../utils/array.utils";
 import { removeAnyInLetDeclaration } from "./remove-any-in-let-declaration";
 import { RevertableOperation } from "./revert-operation";
@@ -33,17 +33,21 @@ export function removeAny(
   });
 
   const validatedOptions = { noReverts, verbosity, explicit };
-  const resultsInParameters = parametersDeclaration.map((parameters) => {
-    return revertableOperation(sourceFile, validatedOptions, () =>
-      removeAnyInParametersFn(parameters, validatedOptions)
-    );
-  });
+  const resultsInParameters = parametersDeclaration
+    .filter((p) => !Node.isCatchClause(p.getParent()))
+    .map((parameters) => {
+      return revertableOperation(sourceFile, validatedOptions, () =>
+        removeAnyInParametersFn(parameters, validatedOptions)
+      );
+    });
 
-  const resultsInLets = variableDeclarations.map((variableDeclaration) =>
-    revertableOperation(sourceFile, validatedOptions, () =>
-      removeAnyInLetDeclaration(variableDeclaration, validatedOptions)
-    )
-  );
+  const resultsInLets = variableDeclarations
+    .filter((p) => !Node.isCatchClause(p.getParent()))
+    .map((variableDeclaration) =>
+      revertableOperation(sourceFile, validatedOptions, () =>
+        removeAnyInLetDeclaration(variableDeclaration, validatedOptions)
+      )
+    );
 
   const aggregatedResults = [...resultsInLets, ...resultsInParameters];
 
