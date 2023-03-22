@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.46](https://github.com/blemoine/ts-remove-any/compare/v0.1.45...v0.1.46) (2023-03-22)
+
+
+### Features
+
+* remove catch clause computation ([a413699](https://github.com/blemoine/ts-remove-any/commit/a413699f7666f8563c0ada968c6fc44ccb6ba277))
+
 ### [0.1.45](https://github.com/blemoine/ts-remove-any/compare/v0.1.44...v0.1.45) (2023-03-21)
 
 
