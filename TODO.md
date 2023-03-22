@@ -8,4 +8,4 @@
 
 * ../../busbud/public-website/app/modules/checkout/components/price-information/departure-summary.test.tsx <- syntax error
 * any | { target: Element }  -> should return any
-* 
+* dry run mode + verbose expliciting the changes made

@@ -298,7 +298,7 @@ function getParametersOfCallSignature(node: Node): Type[] {
 export type ComputedType = { kind: "type_found"; type: string } | { kind: "no_any" } | { kind: "no_type_found" };
 
 export function setTypeOnNode(node: TypedNode, newType: string): RevertableOperation {
-  //node.setType(newType);
+  node.setType(newType);
   return {
     countChangesDone: 1,
     countOfAnys: 1,
