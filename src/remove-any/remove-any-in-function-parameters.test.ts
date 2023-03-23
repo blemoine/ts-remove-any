@@ -646,6 +646,54 @@ function fn2(x: Fn) {
     );
   });
 
+    it("should type with aliased array", () => {
+        const sourceFile = createSourceFile(`
+type Arr = string[];
+function fnToIgnore(my_explicit_variable) {
+}
+function fn2(x: Arr) {
+    fnToIgnore(x);
+}
+`);
+
+        removeAny(sourceFile, { verbosity: 2 });
+        expect(sourceFile.print()).toStrictEqual(
+            `type Arr = string[];
+function fnToIgnore(my_explicit_variable: Arr) {
+}
+function fn2(x: Arr) {
+    fnToIgnore(x);
+}
+`
+        );
+    });
+
+    it("should type with aliased tuple", () => {
+        const sourceFile = createSourceFile(`
+type Arr = [string, boolean];
+function fnToIgnore(my_explicit_variable) {
+}
+function fn2(x: Arr) {
+    fnToIgnore(x);
+}
+`);
+
+        removeAny(sourceFile, { verbosity: 2 });
+        expect(sourceFile.print()).toStrictEqual(
+            `type Arr = [
+    string,
+    boolean
+];
+function fnToIgnore(my_explicit_variable: Arr) {
+}
+function fn2(x: Arr) {
+    fnToIgnore(x);
+}
+`
+        );
+    })
+
+
     it("should type with aliased union", () => {
         const sourceFile = createSourceFile(`
 type StringOrNumber = string | number;

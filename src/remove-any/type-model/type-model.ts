@@ -147,18 +147,24 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
   } else if (type.isUnknown()) {
     return { kind: "unknown", original: type };
   } else if (type.isTuple()) {
+    const symbolName = type.getAliasSymbol()?.getName();
+
     const compilerType = type.getTargetType()?.compilerType;
     return {
       kind: "tuple",
       value: () => type.getTupleElements().map((t) => createTypeModelFromType(t, node)),
       readonly: compilerType && "readonly" in compilerType ? !!compilerType.readonly : false,
+      alias: symbolName,
       original: type,
     };
   } else if (type.isArray()) {
+    const symbolName = type.getAliasSymbol()?.getName();
+
     return {
       kind: "array",
       value: () => createTypeModelFromType(type.getTypeArguments()[0], node),
       readonly: type.isReadonlyArray(),
+      alias: symbolName,
       original: type,
     };
   } else if (type.getCallSignatures().length > 0) {
