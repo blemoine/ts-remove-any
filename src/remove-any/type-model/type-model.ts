@@ -352,6 +352,11 @@ function getSuperTypeWithName(t1: TypeModel, t2: TypeModel): TypeModel {
         return [firstType, getSuperTypeWithName(secondType, t2)];
       },
     };
+  } else if (t1.kind === "union" && t2.kind === "union") {
+    return {
+      kind: "union",
+      value: () => [...t1.value(), ...t2.value()],
+    };
   } else {
     return { kind: "intersection", value: () => [t1, t2] };
   }
