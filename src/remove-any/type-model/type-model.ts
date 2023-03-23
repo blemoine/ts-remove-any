@@ -73,7 +73,7 @@ export function getText(typeModel: TypeModel): string {
         return typeModel.alias;
       }
       return `(${Object.entries(typeModel.parameters)
-        .map(([name, type]) => `"${name}": ${getText(type)}`)
+        .map(([name, type]) => `${name}: ${getText(type)}`)
         .join(", ")}) => ${getText(typeModel.returnType)}`;
     case "object":
       if (typeModel.alias) {
@@ -155,6 +155,21 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
       readonly: type.isReadonlyArray(),
       original: type,
     };
+  } else if (type.getCallSignatures().length > 0) {
+    const firstCallSignature = type.getCallSignatures()[0];
+    const symbolName = type.getSymbol()?.getName();
+
+    return {
+      kind: "function",
+      parameters: Object.fromEntries(
+        firstCallSignature
+          .getParameters()
+          .map((p) => [p.getName(), createTypeModelFromType(p.getTypeAtLocation(node), node)])
+      ),
+      returnType: createTypeModelFromType(firstCallSignature.getReturnType(), node),
+      alias: symbolName?.startsWith("(") || symbolName === "__function" ? undefined : symbolName,
+      original: type,
+    };
   } else if (type.isObject()) {
     const symbolName = type.getSymbol()?.getName();
 
@@ -197,21 +212,6 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
       kind: "intersection",
       value: () => type.getIntersectionTypes().map((t) => createTypeModelFromType(t, node)),
       alias: symbolName,
-      original: type,
-    };
-  } else if (type.getCallSignatures().length > 0) {
-    const firstCallSignature = type.getCallSignatures()[0];
-    const symbolName = type.getSymbol()?.getName();
-
-    return {
-      kind: "function",
-      parameters: Object.fromEntries(
-        firstCallSignature
-          .getParameters()
-          .map((p) => [p.getName(), createTypeModelFromType(p.getTypeAtLocation(node), node)])
-      ),
-      returnType: createTypeModelFromType(firstCallSignature.getReturnType(), node),
-      alias: symbolName?.startsWith("(") ? undefined : symbolName,
       original: type,
     };
   } else {

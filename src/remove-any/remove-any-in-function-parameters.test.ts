@@ -536,16 +536,16 @@ export function HiddenInput(props: {
     expect(numberOfChanges.countOfAnys).toBe(1);
   });
 
-    it("should type with tuples", () => {
-        const sourceFile = createSourceFile(`
+  it("should type with tuples", () => {
+    const sourceFile = createSourceFile(`
 function fnToIgnore(my_explicit_variable) {
 }
 fnToIgnore([1,2,3] as const);
 `);
 
-        removeAny(sourceFile, { verbosity: 2 });
-        expect(sourceFile.print()).toStrictEqual(
-            `function fnToIgnore(my_explicit_variable: readonly [
+    removeAny(sourceFile, { verbosity: 2 });
+    expect(sourceFile.print()).toStrictEqual(
+      `function fnToIgnore(my_explicit_variable: readonly [
     1,
     2,
     3
@@ -553,8 +553,56 @@ fnToIgnore([1,2,3] as const);
 }
 fnToIgnore([1, 2, 3] as const);
 `
-        );
-    })
+    );
+  });
+
+  it("should type with null", () => {
+    const sourceFile = createSourceFile(`
+function fnToIgnore(my_explicit_variable) {
+}
+fnToIgnore(null);
+`);
+
+    removeAny(sourceFile, { verbosity: 2 });
+    expect(sourceFile.print()).toStrictEqual(
+      `function fnToIgnore(my_explicit_variable: null) {
+}
+fnToIgnore(null);
+`
+    );
+  });
+
+  it("should type with undefined", () => {
+    const sourceFile = createSourceFile(`
+function fnToIgnore(my_explicit_variable) {
+}
+fnToIgnore(undefined);
+`);
+
+    removeAny(sourceFile, { verbosity: 2 });
+    expect(sourceFile.print()).toStrictEqual(
+      `function fnToIgnore(my_explicit_variable: undefined) {
+}
+fnToIgnore(undefined);
+`
+    );
+  });
+
+  it("should type with a function", () => {
+    const sourceFile = createSourceFile(`
+function fnToIgnore(my_explicit_variable) {
+}
+fnToIgnore((x: string) => 2);
+`);
+
+    removeAny(sourceFile, { verbosity: 2 });
+    expect(sourceFile.print()).toStrictEqual(
+      `function fnToIgnore(my_explicit_variable: (x: string) => number) {
+}
+fnToIgnore((x: string) => 2);
+`
+    );
+  });
 
   it("should deduplicate union types", () => {
     const sourceFile = createSourceFile(`
