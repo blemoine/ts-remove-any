@@ -11,11 +11,10 @@ import { cannotHappen } from "../../utils/cannot-happen";
 import { getParameterTypesFromCallerSignature, getPropsTypeOfJsxElement } from "../type.utils";
 import { isNotNil } from "../../utils/is-not-nil";
 import { isNonEmptyList } from "../../utils/non-empty-list";
-import { getSupertype, TypeWithName } from "../fake-type.utils";
 import {
   createTypeModelFromNode,
   createTypeModelFromType,
-  createTypeModelFromTypeWithName,
+  getSupertype,
   getText,
   TypeModel,
 } from "../type-model/type-model";
@@ -60,12 +59,12 @@ export function getCallablesTypes(functionDeclaration: RuntimeCallable | Functio
             const usagesOfParameter = p
               .findReferencesAsNodes()
               .filter((ref) => ref !== p)
-              .map((ref): TypeWithName | null => getUsageTypeFromRef(ref))
+              .map((ref) => getUsageTypeFromRef(ref))
               .filter(isNotNil);
 
             // The final usage is a super type of usagesOfParameter
             if (isNonEmptyList(usagesOfParameter)) {
-              const supertype = createTypeModelFromTypeWithName(getSupertype(usagesOfParameter));
+              const supertype = getSupertype(usagesOfParameter);
 
               return [idx, supertype] as const;
             }
@@ -81,7 +80,7 @@ export function getCallablesTypes(functionDeclaration: RuntimeCallable | Functio
   };
 }
 
-function getUsageTypeFromRef(ref: Node): TypeWithName | null {
+function getUsageTypeFromRef(ref: Node): TypeModel | null {
   const parent = ref.getParent();
   if (Node.isCallExpression(parent)) {
     const argIdx = parent.getArguments().findIndex((a) => a === ref);
@@ -112,7 +111,7 @@ function getUsageTypeFromRef(ref: Node): TypeWithName | null {
     const usageFromRef = parent ? getUsageTypeFromRef(parent) : null;
 
     if (usageFromRef) {
-      return { literal: { [attributeName]: usageFromRef } };
+      return { kind: "object", value: () => ({ [attributeName]: usageFromRef }) };
     }
   }
 

@@ -1,7 +1,7 @@
 import { Type, Node } from "ts-morph";
-import { TypeWithName } from "../fake-type.utils";
 import { isNotNil } from "../../utils/is-not-nil";
 import { partition } from "../../utils/array.utils";
+import { NonEmptyList } from "../../utils/non-empty-list";
 
 interface IntersectionTypeModel {
   kind: "intersection";
@@ -124,22 +124,6 @@ export function getText(typeModel: TypeModel): string {
         .join(" & ");
     case "unsupported":
       return typeModel.value();
-  }
-}
-
-export function createTypeModelFromTypeWithName(typeWithName: TypeWithName): TypeModel {
-  if ("literal" in typeWithName) {
-    return {
-      kind: "object",
-      value: () =>
-        Object.fromEntries(
-          Object.entries(typeWithName.literal).map(([k, v]) => [k, createTypeModelFromTypeWithName(v)])
-        ),
-    };
-  } else if ("and" in typeWithName) {
-    return { kind: "union", value: () => typeWithName.and.map((t) => createTypeModelFromTypeWithName(t)) };
-  } else {
-    return typeWithName;
   }
 }
 
@@ -315,4 +299,53 @@ export function deduplicateTypes(types: (TypeModel | null | undefined)[]): TypeM
       }, new Map<string, TypeModel>())
       .values(),
   ];
+}
+
+export function getSupertype(typeWithNames: NonEmptyList<TypeModel>): TypeModel {
+  return typeWithNames.reduce(getSuperTypeWithName);
+}
+
+function getSuperTypeWithName(t1: TypeModel, t2: TypeModel): TypeModel {
+  if (t1.kind === "object" && !t1.alias) {
+    if (t2.kind === "object" && !t2.alias) {
+      return {
+        kind: "object",
+        value: () => {
+          // TODO This part is duplicated
+          const mergedObjectTypeModels = [t1, t2].reduce<Record<string, TypeModel>>(
+            (acc, objectTypeModel: ObjectTypeModel) => {
+              Object.entries(objectTypeModel.value()).forEach(([k, v]) => {
+                acc[k] = v;
+              });
+
+              return acc;
+            },
+            {}
+          );
+
+          return mergedObjectTypeModels;
+        },
+      };
+    } else if (t2.kind === "intersection") {
+      return {
+        kind: "intersection",
+        value: () => {
+          const [firstType, secondType] = t2.value();
+          return [firstType, getSuperTypeWithName(t1, secondType)];
+        },
+      };
+    } else {
+      return { kind: "intersection", value: () => [t1, t2] };
+    }
+  } else if (t1.kind === "intersection") {
+    return {
+      kind: "intersection",
+      value: () => {
+        const [firstType, secondType] = t1.value();
+        return [firstType, getSuperTypeWithName(secondType, t2)];
+      },
+    };
+  } else {
+    return { kind: "intersection", value: () => [t1, t2] };
+  }
 }
