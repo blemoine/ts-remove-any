@@ -742,6 +742,34 @@ function fn2(x: User) {
         );
     });
 
+    it("should type with  intersection", () => {
+        const sourceFile = createSourceFile(`
+function fnToIgnore(my_explicit_variable) {
+}
+function fn2(x: {name: string} & {age: number}) {
+    fnToIgnore(x);
+}
+`);
+
+        removeAny(sourceFile, { verbosity: 2 });
+        expect(sourceFile.print()).toStrictEqual(
+            `function fnToIgnore(my_explicit_variable: {
+    "name": string;
+} & {
+    "age": number;
+}) {
+}
+function fn2(x: {
+    name: string;
+} & {
+    age: number;
+}) {
+    fnToIgnore(x);
+}
+`
+        );
+    })
+
   it("should deduplicate union types", () => {
     const sourceFile = createSourceFile(`
 function fnToIgnore(my_explicit_variable) {
