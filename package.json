@@ -29,7 +29,7 @@
     "commander": "10.0.0",
     "patch-package": "6.5.1",
     "ts-morph": "17.0.1",
-    "typescript": "5.0.2"
+    "typescript": "4.9.5"
   },
   "engines": {
     "node": ">=18.3"

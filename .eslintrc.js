@@ -8,5 +8,6 @@ module.exports = {
   plugins: ["@typescript-eslint"],
   rules: {
     "@typescript-eslint/no-empty-function": 0,
+    "no-unused-vars": 0,
   },
 };

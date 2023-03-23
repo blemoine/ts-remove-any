@@ -253,7 +253,7 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
         const [objectTypeModels, otherTypeModels] = partition(typeModels, isObjectTypeModel);
         const [aliasedObjectTypeModels, nonAliasedObjectTypeModels] = partition(
           objectTypeModels,
-          (t: ObjectTypeModel): t is ObjectTypeModel => !!t.alias
+          (t): t is ObjectTypeModel => !!t.alias
         );
 
         const mergedObjectTypeModels = nonAliasedObjectTypeModels.reduce<Record<string, TypeModel>>(
