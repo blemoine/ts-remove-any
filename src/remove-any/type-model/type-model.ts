@@ -240,22 +240,20 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
           (t): t is ObjectTypeModel => !!t.alias
         );
 
-        const mergedObjectTypeModels = nonAliasedObjectTypeModels.reduce<Record<string, TypeModel>>(
-          (acc, objectTypeModel: ObjectTypeModel) => {
-            Object.entries(objectTypeModel.value()).forEach(([k, v]) => {
-              acc[k] = v;
-            });
+        const mergedObjectTypeModels =
+          nonAliasedObjectTypeModels.length > 1
+            ? [
+                nonAliasedObjectTypeModels.reduce((a, b) => {
+                  const result = mergeObjectTypeModel(a, b);
+                  if (result.kind === "intersection") {
+                    throw new Error(`It cannot happen`);
+                  }
+                  return result;
+                }),
+              ]
+            : [];
 
-            return acc;
-          },
-          {}
-        );
-
-        return [
-          ...otherTypeModels,
-          ...aliasedObjectTypeModels,
-          { kind: "object", value: () => mergedObjectTypeModels },
-        ];
+        return [...otherTypeModels, ...aliasedObjectTypeModels, ...mergedObjectTypeModels];
       },
       alias: symbolName,
       original: type,
@@ -301,6 +299,32 @@ export function deduplicateTypes(types: (TypeModel | null | undefined)[]): TypeM
   ];
 }
 
+export function mergeObjectTypeModel(
+  t1: ObjectTypeModel,
+  t2: ObjectTypeModel
+): ObjectTypeModel | IntersectionTypeModel {
+  if (!t1.alias && !t2.alias) {
+    return {
+      kind: "object",
+      value: () => {
+        const mergedObjectTypeModels = [t1, t2].reduce<Record<string, TypeModel>>(
+          (acc, objectTypeModel: ObjectTypeModel) => {
+            Object.entries(objectTypeModel.value()).forEach(([k, v]) => {
+              acc[k] = v;
+            });
+
+            return acc;
+          },
+          {}
+        );
+
+        return mergedObjectTypeModels;
+      },
+    };
+  }
+  return { kind: "intersection", value: () => [t1, t2] };
+}
+
 export function getSupertype(typeWithNames: NonEmptyList<TypeModel>): TypeModel {
   return typeWithNames.reduce(getSuperTypeWithName);
 }
@@ -308,24 +332,7 @@ export function getSupertype(typeWithNames: NonEmptyList<TypeModel>): TypeModel 
 function getSuperTypeWithName(t1: TypeModel, t2: TypeModel): TypeModel {
   if (t1.kind === "object" && !t1.alias) {
     if (t2.kind === "object" && !t2.alias) {
-      return {
-        kind: "object",
-        value: () => {
-          // TODO This part is duplicated
-          const mergedObjectTypeModels = [t1, t2].reduce<Record<string, TypeModel>>(
-            (acc, objectTypeModel: ObjectTypeModel) => {
-              Object.entries(objectTypeModel.value()).forEach(([k, v]) => {
-                acc[k] = v;
-              });
-
-              return acc;
-            },
-            {}
-          );
-
-          return mergedObjectTypeModels;
-        },
-      };
+      return mergeObjectTypeModel(t1, t2);
     } else if (t2.kind === "intersection") {
       return {
         kind: "intersection",
