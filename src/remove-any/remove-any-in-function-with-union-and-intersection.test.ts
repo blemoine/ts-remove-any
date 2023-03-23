@@ -55,7 +55,7 @@ function innerFn2(x: string | boolean) { }
     );
   });
 
-  it("should type with  intersection", () => {
+  it("should type with intersection", () => {
     const sourceFile = createSourceFile(`
 function fnToIgnore(my_explicit_variable) {
 }
@@ -78,6 +78,77 @@ function fn2(x: {
 }) {
     fnToIgnore(x);
 }
+`
+    );
+  });
+
+  it("should type with intersection and union", () => {
+    const sourceFile = createSourceFile(`
+function fnToIgnore(my_explicit_variable) {
+}
+function fn2(x: {name: string} & {age: number}) {
+    fnToIgnore(x);
+}
+function fn3(x: {date: Date}) {
+    fnToIgnore(x)
+}
+`);
+
+    removeAny(sourceFile, { verbosity: 2 });
+    expect(sourceFile.print()).toStrictEqual(
+      `function fnToIgnore(my_explicit_variable: {
+    "name": string;
+    "age": number;
+} | {
+    "date": Date;
+}) {
+}
+function fn2(x: {
+    name: string;
+} & {
+    age: number;
+}) {
+    fnToIgnore(x);
+}
+function fn3(x: {
+    date: Date;
+}) {
+    fnToIgnore(x);
+}
+`
+    );
+  });
+
+  //TODO unskip
+  it.skip("should type with deep intersection", () => {
+    const sourceFile = createSourceFile(`
+function fnToIgnore(my) {
+    fn2(my);
+    fn3(my);
+}
+function fn2(x: {name: string}) {}
+function fn3(x: {age: number} & {updated: Date}) {}
+
+`);
+
+    removeAny(sourceFile, { verbosity: 2 });
+    expect(sourceFile.print()).toStrictEqual(
+      `function fnToIgnore(my: {
+    name:string;
+    age: number;
+    updated:Date;
+}) {
+    fn2(my);
+    fn3(my);
+}
+function fn2(x: {
+    name: string;
+}) { }
+function fn3(x: {
+    age: number;
+} & {
+    updated: Date;
+}) { }
 `
     );
   });

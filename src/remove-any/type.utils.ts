@@ -63,8 +63,8 @@ export function filterUnusableTypes(typesFromRefs: TypesFromRefs[]): TypesFromRe
     })
   );
   const nullable = typesFromRefs.some((t) => t.nullable);
-  const unknown = typesFromRefs.every((t) => t.unknown);
-  return { types, nullable, unknown };
+
+  return { types, nullable };
 }
 
 function computeTypesFromList(callsiteTypes: TypeModel[]): string | null {
@@ -100,10 +100,7 @@ function computeTypesFromList(callsiteTypes: TypeModel[]): string | null {
   return null;
 }
 
-export function computeTypesFromRefs({ nullable, types, unknown }: TypesFromRefs): string | null {
-  if (types.length === 0 && unknown) {
-    return "unknown";
-  }
+export function computeTypesFromRefs({ nullable, types }: TypesFromRefs): string | null {
   const resultTypes = computeTypesFromList(types);
   if (nullable && resultTypes) {
     return resultTypes + " | null | undefined";
@@ -114,7 +111,6 @@ export function computeTypesFromRefs({ nullable, types, unknown }: TypesFromRefs
 export interface TypesFromRefs {
   types: TypeModel[];
   nullable: boolean;
-  unknown: boolean;
 }
 
 export function findTypeFromRefUsage(ref: Node): TypesFromRefs {
@@ -138,7 +134,6 @@ export function findTypeFromRefUsage(ref: Node): TypesFromRefs {
           }
         }),
         nullable: true,
-        unknown: false,
       };
     }
   }
@@ -157,7 +152,6 @@ export function findTypeFromRefUsage(ref: Node): TypesFromRefs {
           })
           .filter(isNotNil),
         nullable: false,
-        unknown: false,
       };
     }
   }
@@ -169,7 +163,6 @@ export function findTypeFromRefUsage(ref: Node): TypesFromRefs {
       return {
         types: [createTypeModelFromType(closestFunctionDeclaration.getReturnType(), ref)],
         nullable: false,
-        unknown: false,
       };
     }
   }
@@ -179,14 +172,12 @@ export function findTypeFromRefUsage(ref: Node): TypesFromRefs {
     return {
       types: (declarations ?? [])?.map((d) => createTypeModelFromNode(d)),
       nullable: false,
-      unknown: false,
     };
   }
   const typeOfVariableCall = findTypeOfVariableCall(ref);
   return {
     types: typeOfVariableCall ? [createTypeModelFromType(typeOfVariableCall, ref)] : [],
     nullable: false,
-    unknown: false,
   };
 }
 
