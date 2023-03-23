@@ -1,6 +1,6 @@
 {
   "name": "ts-remove-any",
-  "version": "0.1.46",
+  "version": "0.1.47",
   "description": "",
   "main": "dist/index.js",
   "bin": "bin/ts-remove-any",

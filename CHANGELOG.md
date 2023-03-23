@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.47](https://github.com/blemoine/ts-remove-any/compare/v0.1.46...v0.1.47) (2023-03-23)
+
+
+### Features
+
+* add support for tuples ([6fb9fed](https://github.com/blemoine/ts-remove-any/commit/6fb9fedc3954f9a2e945504cc1c297954652e03f))
+
+
+### Bug Fixes
+
+* fix support for function ([4371976](https://github.com/blemoine/ts-remove-any/commit/437197649268d84e050a246d6ffdc2d297175e86))
+* put back the setType ([514eaf3](https://github.com/blemoine/ts-remove-any/commit/514eaf30523aec1a31559ce9c6521a1594e1ddf9))
+
 ### [0.1.46](https://github.com/blemoine/ts-remove-any/compare/v0.1.45...v0.1.46) (2023-03-22)
 
 
