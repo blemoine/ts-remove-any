@@ -13,10 +13,10 @@ export function allTypesOfRefs(node: VariableDeclaration | ParameterDeclaration)
   const typesFromLambda = node instanceof ParameterDeclaration ? allTypesOfRef(node) : [];
 
   if (referencesAsNodes.length === 0 && typesFromLambda.length === 1 && typesFromLambda[0].kind === "any") {
-    return { types: [{ kind: "unknown" }], nullable: false };
+    return { types: [{ kind: "unknown" }] };
   }
 
-  return { types: deduplicateTypes([...typesFromReference, ...typesFromLambda]), nullable: false };
+  return { types: deduplicateTypes([...typesFromReference, ...typesFromLambda]) };
 }
 
 function allTypesOfRef(ref: Node): TypeModel[] {

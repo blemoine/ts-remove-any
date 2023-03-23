@@ -62,9 +62,8 @@ export function filterUnusableTypes(typesFromRefs: TypesFromRefs[]): TypesFromRe
       );
     })
   );
-  const nullable = typesFromRefs.some((t) => t.nullable);
 
-  return { types, nullable };
+  return { types };
 }
 
 function computeTypesFromList(callsiteTypes: TypeModel[]): string | null {
@@ -100,17 +99,12 @@ function computeTypesFromList(callsiteTypes: TypeModel[]): string | null {
   return null;
 }
 
-export function computeTypesFromRefs({ nullable, types }: TypesFromRefs): string | null {
-  const resultTypes = computeTypesFromList(types);
-  if (nullable && resultTypes) {
-    return resultTypes + " | null | undefined";
-  }
-  return resultTypes;
+export function computeTypesFromRefs({ types }: TypesFromRefs): string | null {
+  return computeTypesFromList(types);
 }
 
 export interface TypesFromRefs {
   types: TypeModel[];
-  nullable: boolean;
 }
 
 export function findTypeFromRefUsage(ref: Node): TypesFromRefs {
@@ -121,19 +115,19 @@ export function findTypeFromRefUsage(ref: Node): TypesFromRefs {
       const left = parent.getLeft();
       const right = parent.getRight();
 
+      const types = [createTypeModelFromNode(left), createTypeModelFromNode(right)].map<TypeModel>((t) => {
+        if (t.kind === "boolean-literal") {
+          return { kind: "boolean" };
+        } else if (t.kind === "number-literal") {
+          return { kind: "number" };
+        } else if (t.kind === "string-literal") {
+          return { kind: "string" };
+        } else {
+          return { kind: "" };
+        }
+      });
       return {
-        types: [createTypeModelFromNode(left), createTypeModelFromNode(right)].map((t) => {
-          if (t.kind === "boolean-literal") {
-            return { kind: "boolean" };
-          } else if (t.kind === "number-literal") {
-            return { kind: "number" };
-          } else if (t.kind === "string-literal") {
-            return { kind: "string" };
-          } else {
-            return { kind: "" };
-          }
-        }),
-        nullable: true,
+        types: [{ kind: "union", value: () => [...types, { kind: "null" as const }, { kind: "undefined" as const }] }],
       };
     }
   }
@@ -151,7 +145,6 @@ export function findTypeFromRefUsage(ref: Node): TypesFromRefs {
             return null;
           })
           .filter(isNotNil),
-        nullable: false,
       };
     }
   }
@@ -162,7 +155,6 @@ export function findTypeFromRefUsage(ref: Node): TypesFromRefs {
     if (closestFunctionDeclaration) {
       return {
         types: [createTypeModelFromType(closestFunctionDeclaration.getReturnType(), ref)],
-        nullable: false,
       };
     }
   }
@@ -171,13 +163,11 @@ export function findTypeFromRefUsage(ref: Node): TypesFromRefs {
 
     return {
       types: (declarations ?? [])?.map((d) => createTypeModelFromNode(d)),
-      nullable: false,
     };
   }
   const typeOfVariableCall = findTypeOfVariableCall(ref);
   return {
     types: typeOfVariableCall ? [createTypeModelFromType(typeOfVariableCall, ref)] : [],
-    nullable: false,
   };
 }
 
