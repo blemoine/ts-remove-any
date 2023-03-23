@@ -16,6 +16,7 @@ export type TypeModel =
   | { kind: "undefined"; original?: Type }
   | { kind: "never"; original?: Type }
   | { kind: "array"; value: () => TypeModel; readonly: boolean; alias?: string; original?: Type }
+  | { kind: "tuple"; value: () => TypeModel[]; readonly: boolean; alias?: string; original?: Type }
   | {
       kind: "function";
       parameters: Record<string, TypeModel>;
@@ -54,6 +55,14 @@ export function getText(typeModel: TypeModel): string {
       return "never";
     case "any":
       return "any";
+    case "tuple":
+      if (typeModel.alias) {
+        return typeModel.alias;
+      }
+      return `${typeModel.readonly ? "readonly " : ""}[${typeModel
+        .value()
+        .map((t) => getText(t))
+        .join(", ")}]`;
     case "array":
       if (typeModel.alias) {
         return typeModel.alias;
@@ -131,6 +140,14 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
     return { kind: "any", original: type };
   } else if (type.isUnknown()) {
     return { kind: "unknown", original: type };
+  } else if (type.isTuple()) {
+    const compilerType = type.getTargetType()?.compilerType;
+    return {
+      kind: "tuple",
+      value: () => type.getTupleElements().map((t) => createTypeModelFromType(t, node)),
+      readonly: compilerType && "readonly" in compilerType ? !!compilerType.readonly : false,
+      original: type,
+    };
   } else if (type.isArray()) {
     return {
       kind: "array",

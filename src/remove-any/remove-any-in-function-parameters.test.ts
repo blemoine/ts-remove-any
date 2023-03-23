@@ -536,6 +536,26 @@ export function HiddenInput(props: {
     expect(numberOfChanges.countOfAnys).toBe(1);
   });
 
+    it("should type with tuples", () => {
+        const sourceFile = createSourceFile(`
+function fnToIgnore(my_explicit_variable) {
+}
+fnToIgnore([1,2,3] as const);
+`);
+
+        removeAny(sourceFile, { verbosity: 2 });
+        expect(sourceFile.print()).toStrictEqual(
+            `function fnToIgnore(my_explicit_variable: readonly [
+    1,
+    2,
+    3
+]) {
+}
+fnToIgnore([1, 2, 3] as const);
+`
+        );
+    })
+
   it("should deduplicate union types", () => {
     const sourceFile = createSourceFile(`
 function fnToIgnore(my_explicit_variable) {
