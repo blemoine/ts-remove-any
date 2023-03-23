@@ -2,6 +2,31 @@ import { Type, Node } from "ts-morph";
 import { TypeWithName } from "../fake-type.utils";
 import { isNotNil } from "../../utils/is-not-nil";
 
+interface IntersectionTypeModel {
+  kind: "intersection";
+  value: () => TypeModel[];
+  alias?: string;
+  original?: Type;
+}
+interface UnionTypeModel {
+  kind: "union";
+  value: () => TypeModel[];
+  alias?: string;
+  original?: Type;
+}
+interface FunctionTypeModel {
+  kind: "function";
+  parameters: Record<string, TypeModel>;
+  returnType: TypeModel;
+  alias?: string;
+  original?: Type;
+}
+interface ObjectTypeModel {
+  kind: "object";
+  value: () => Record<string, TypeModel>;
+  alias?: string;
+  original?: Type;
+}
 export type TypeModel =
   | { kind: "" }
   | { kind: "number"; original?: Type }
@@ -17,16 +42,10 @@ export type TypeModel =
   | { kind: "never"; original?: Type }
   | { kind: "array"; value: () => TypeModel; readonly: boolean; alias?: string; original?: Type }
   | { kind: "tuple"; value: () => TypeModel[]; readonly: boolean; alias?: string; original?: Type }
-  | {
-      kind: "function";
-      parameters: Record<string, TypeModel>;
-      returnType: TypeModel;
-      alias?: string;
-      original?: Type;
-    }
-  | { kind: "object"; value: () => Record<string, TypeModel>; alias?: string; original?: Type }
-  | { kind: "union"; value: () => TypeModel[]; alias?: string; original?: Type }
-  | { kind: "intersection"; value: () => TypeModel[]; alias?: string; original?: Type }
+  | FunctionTypeModel
+  | ObjectTypeModel
+  | UnionTypeModel
+  | IntersectionTypeModel
   | { kind: "unsupported"; value: () => string };
 
 export function getText(typeModel: TypeModel): string {
