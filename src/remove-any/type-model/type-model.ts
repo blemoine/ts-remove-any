@@ -83,11 +83,17 @@ export function getText(typeModel: TypeModel): string {
         .map(([name, type]) => `"${name}": ${getText(type)}`)
         .join("; ")}}`;
     case "union":
+      if (typeModel.alias) {
+        return typeModel.alias;
+      }
       return typeModel
         .value()
         .map((type) => getText(type))
         .join(" | ");
     case "intersection":
+      if (typeModel.alias) {
+        return typeModel.alias;
+      }
       return typeModel
         .value()
         .map((type) => getText(type))
@@ -157,7 +163,7 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
     };
   } else if (type.getCallSignatures().length > 0) {
     const firstCallSignature = type.getCallSignatures()[0];
-    const symbolName = type.getSymbol()?.getName();
+    const symbolName = type.getAliasSymbol()?.getName();
 
     return {
       kind: "function",
@@ -167,13 +173,15 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
           .map((p) => [p.getName(), createTypeModelFromType(p.getTypeAtLocation(node), node)])
       ),
       returnType: createTypeModelFromType(firstCallSignature.getReturnType(), node),
-      alias: symbolName?.startsWith("(") || symbolName === "__function" ? undefined : symbolName,
+      alias: symbolName,
       original: type,
     };
   } else if (type.isObject()) {
     const symbolName = type.getSymbol()?.getName();
 
-    const alias = symbolName?.startsWith("{") || symbolName?.startsWith("__type") ? undefined : symbolName;
+    const alias =
+      type.getAliasSymbol()?.getName() ||
+      (symbolName?.startsWith("{") || symbolName?.startsWith("__type") ? undefined : symbolName);
     return {
       kind: "object",
       value: () =>
@@ -184,8 +192,7 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
       original: type,
     };
   } else if (type.isUnion()) {
-    const symbolName = type.getSymbol()?.getName();
-
+    const symbolName = type.getAliasSymbol()?.getName();
     return {
       kind: "union",
       value: () => {
@@ -207,7 +214,7 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
       original: type,
     };
   } else if (type.isIntersection()) {
-    const symbolName = type.getSymbol()?.getName();
+    const symbolName = type.getAliasSymbol()?.getName();
     return {
       kind: "intersection",
       value: () => type.getIntersectionTypes().map((t) => createTypeModelFromType(t, node)),

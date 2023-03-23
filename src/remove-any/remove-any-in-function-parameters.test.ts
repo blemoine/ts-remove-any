@@ -604,6 +604,96 @@ fnToIgnore((x: string) => 2);
     );
   });
 
+  it("should type with unknown", () => {
+    const sourceFile = createSourceFile(`
+function fnToIgnore(my_explicit_variable) {
+}
+function fn2(x: unknown) {
+    fnToIgnore(x);
+}
+`);
+
+    removeAny(sourceFile, { verbosity: 2 });
+    expect(sourceFile.print()).toStrictEqual(
+      `function fnToIgnore(my_explicit_variable: unknown) {
+}
+function fn2(x: unknown) {
+    fnToIgnore(x);
+}
+`
+    );
+  });
+
+  it("should type with aliased function", () => {
+    const sourceFile = createSourceFile(`
+type Fn = (x: string) => number;
+function fnToIgnore(my_explicit_variable) {
+}
+function fn2(x: Fn) {
+    fnToIgnore(x);
+}
+`);
+
+    removeAny(sourceFile, { verbosity: 2 });
+    expect(sourceFile.print()).toStrictEqual(
+      `type Fn = (x: string) => number;
+function fnToIgnore(my_explicit_variable: Fn) {
+}
+function fn2(x: Fn) {
+    fnToIgnore(x);
+}
+`
+    );
+  });
+
+    it("should type with aliased union", () => {
+        const sourceFile = createSourceFile(`
+type StringOrNumber = string | number;
+function fnToIgnore(my_explicit_variable) {
+}
+function fn2(x: StringOrNumber) {
+    fnToIgnore(x);
+}
+`);
+
+        removeAny(sourceFile, { verbosity: 2 });
+        expect(sourceFile.print()).toStrictEqual(
+            `type StringOrNumber = string | number;
+function fnToIgnore(my_explicit_variable: StringOrNumber) {
+}
+function fn2(x: StringOrNumber) {
+    fnToIgnore(x);
+}
+`
+        );
+    });
+
+    it("should type with aliased intersection", () => {
+        const sourceFile = createSourceFile(`
+type User = {name: string} & {age: number};
+function fnToIgnore(my_explicit_variable) {
+}
+function fn2(x: User) {
+    fnToIgnore(x);
+}
+`);
+
+        removeAny(sourceFile, { verbosity: 2 });
+        expect(sourceFile.print()).toStrictEqual(
+            `type User = {
+    name: string;
+} & {
+    age: number;
+};
+function fnToIgnore(my_explicit_variable: User) {
+}
+function fn2(x: User) {
+    fnToIgnore(x);
+}
+`
+        );
+    });
+
   it("should deduplicate union types", () => {
     const sourceFile = createSourceFile(`
 function fnToIgnore(my_explicit_variable) {
