@@ -326,6 +326,9 @@ export function mergeObjectTypeModel(
 }
 
 export function getSupertype(typeWithNames: NonEmptyList<TypeModel>): TypeModel {
+  if (typeWithNames.length === 1) {
+    return typeWithNames[0];
+  }
   return typeWithNames.reduce(getSuperTypeWithName);
 }
 
@@ -337,7 +340,11 @@ function getSuperTypeWithName(t1: TypeModel, t2: TypeModel): TypeModel {
       return {
         kind: "intersection",
         value: () => {
-          const [firstType, secondType] = t2.value();
+          const t2Values = t2.value();
+          if (t2Values.length < 2) {
+            return t2Values;
+          }
+          const [firstType, secondType] = t2Values;
           return [firstType, getSuperTypeWithName(t1, secondType)];
         },
       };
@@ -348,7 +355,11 @@ function getSuperTypeWithName(t1: TypeModel, t2: TypeModel): TypeModel {
     return {
       kind: "intersection",
       value: () => {
-        const [firstType, secondType] = t1.value();
+        const t1Values = t1.value();
+        if (t1Values.length < 2) {
+          return t1Values;
+        }
+        const [firstType, secondType] = t1Values;
         return [firstType, getSuperTypeWithName(secondType, t2)];
       },
     };
