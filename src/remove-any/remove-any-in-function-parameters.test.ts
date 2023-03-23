@@ -646,8 +646,8 @@ function fn2(x: Fn) {
     );
   });
 
-    it("should type with aliased array", () => {
-        const sourceFile = createSourceFile(`
+  it("should type with aliased array", () => {
+    const sourceFile = createSourceFile(`
 type Arr = string[];
 function fnToIgnore(my_explicit_variable) {
 }
@@ -656,20 +656,20 @@ function fn2(x: Arr) {
 }
 `);
 
-        removeAny(sourceFile, { verbosity: 2 });
-        expect(sourceFile.print()).toStrictEqual(
-            `type Arr = string[];
+    removeAny(sourceFile, { verbosity: 2 });
+    expect(sourceFile.print()).toStrictEqual(
+      `type Arr = string[];
 function fnToIgnore(my_explicit_variable: Arr) {
 }
 function fn2(x: Arr) {
     fnToIgnore(x);
 }
 `
-        );
-    });
+    );
+  });
 
-    it("should type with aliased tuple", () => {
-        const sourceFile = createSourceFile(`
+  it("should type with aliased tuple", () => {
+    const sourceFile = createSourceFile(`
 type Arr = [string, boolean];
 function fnToIgnore(my_explicit_variable) {
 }
@@ -678,9 +678,9 @@ function fn2(x: Arr) {
 }
 `);
 
-        removeAny(sourceFile, { verbosity: 2 });
-        expect(sourceFile.print()).toStrictEqual(
-            `type Arr = [
+    removeAny(sourceFile, { verbosity: 2 });
+    expect(sourceFile.print()).toStrictEqual(
+      `type Arr = [
     string,
     boolean
 ];
@@ -690,12 +690,11 @@ function fn2(x: Arr) {
     fnToIgnore(x);
 }
 `
-        );
-    })
+    );
+  });
 
-
-    it("should type with aliased union", () => {
-        const sourceFile = createSourceFile(`
+  it("should type with aliased union", () => {
+    const sourceFile = createSourceFile(`
 type StringOrNumber = string | number;
 function fnToIgnore(my_explicit_variable) {
 }
@@ -704,20 +703,20 @@ function fn2(x: StringOrNumber) {
 }
 `);
 
-        removeAny(sourceFile, { verbosity: 2 });
-        expect(sourceFile.print()).toStrictEqual(
-            `type StringOrNumber = string | number;
+    removeAny(sourceFile, { verbosity: 2 });
+    expect(sourceFile.print()).toStrictEqual(
+      `type StringOrNumber = string | number;
 function fnToIgnore(my_explicit_variable: StringOrNumber) {
 }
 function fn2(x: StringOrNumber) {
     fnToIgnore(x);
 }
 `
-        );
-    });
+    );
+  });
 
-    it("should type with aliased intersection", () => {
-        const sourceFile = createSourceFile(`
+  it("should type with aliased intersection", () => {
+    const sourceFile = createSourceFile(`
 type User = {name: string} & {age: number};
 function fnToIgnore(my_explicit_variable) {
 }
@@ -726,9 +725,9 @@ function fn2(x: User) {
 }
 `);
 
-        removeAny(sourceFile, { verbosity: 2 });
-        expect(sourceFile.print()).toStrictEqual(
-            `type User = {
+    removeAny(sourceFile, { verbosity: 2 });
+    expect(sourceFile.print()).toStrictEqual(
+      `type User = {
     name: string;
 } & {
     age: number;
@@ -739,11 +738,11 @@ function fn2(x: User) {
     fnToIgnore(x);
 }
 `
-        );
-    });
+    );
+  });
 
-    it("should type with  intersection", () => {
-        const sourceFile = createSourceFile(`
+  it("should type with  intersection", () => {
+    const sourceFile = createSourceFile(`
 function fnToIgnore(my_explicit_variable) {
 }
 function fn2(x: {name: string} & {age: number}) {
@@ -751,11 +750,10 @@ function fn2(x: {name: string} & {age: number}) {
 }
 `);
 
-        removeAny(sourceFile, { verbosity: 2 });
-        expect(sourceFile.print()).toStrictEqual(
-            `function fnToIgnore(my_explicit_variable: {
+    removeAny(sourceFile, { verbosity: 2 });
+    expect(sourceFile.print()).toStrictEqual(
+      `function fnToIgnore(my_explicit_variable: {
     "name": string;
-} & {
     "age": number;
 }) {
 }
@@ -767,8 +765,8 @@ function fn2(x: {
     fnToIgnore(x);
 }
 `
-        );
-    })
+    );
+  });
 
   it("should deduplicate union types", () => {
     const sourceFile = createSourceFile(`

@@ -1,6 +1,7 @@
 import { Type, Node } from "ts-morph";
 import { TypeWithName } from "../fake-type.utils";
 import { isNotNil } from "../../utils/is-not-nil";
+import { partition } from "../../utils/array.utils";
 
 interface IntersectionTypeModel {
   kind: "intersection";
@@ -27,6 +28,10 @@ interface ObjectTypeModel {
   alias?: string;
   original?: Type;
 }
+function isObjectTypeModel(typeModel: TypeModel): typeModel is ObjectTypeModel {
+  return typeModel.kind === "object";
+}
+
 export type TypeModel =
   | { kind: "" }
   | { kind: "number"; original?: Type }
@@ -242,7 +247,32 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
     const symbolName = type.getAliasSymbol()?.getName();
     return {
       kind: "intersection",
-      value: () => type.getIntersectionTypes().map((t) => createTypeModelFromType(t, node)),
+      value: () => {
+        const typeModels = type.getIntersectionTypes().map((t) => createTypeModelFromType(t, node));
+
+        const [objectTypeModels, otherTypeModels] = partition(typeModels, isObjectTypeModel);
+        const [aliasedObjectTypeModels, nonAliasedObjectTypeModels] = partition(
+          objectTypeModels,
+          (t: ObjectTypeModel): t is ObjectTypeModel => !!t.alias
+        );
+
+        const mergedObjectTypeModels = nonAliasedObjectTypeModels.reduce<Record<string, TypeModel>>(
+          (acc, objectTypeModel: ObjectTypeModel) => {
+            Object.entries(objectTypeModel.value()).forEach(([k, v]) => {
+              acc[k] = v;
+            });
+
+            return acc;
+          },
+          {}
+        );
+
+        return [
+          ...otherTypeModels,
+          ...aliasedObjectTypeModels,
+          { kind: "object", value: () => mergedObjectTypeModels },
+        ];
+      },
       alias: symbolName,
       original: type,
     };
@@ -258,7 +288,7 @@ function flattenUnionTypeModel(t1: TypeModel): TypeModel[] {
   }
   return [t1];
 }
-export function unionTypeModel(t1: TypeModel, t2: TypeModel): TypeModel {
+export function unionTypeModel(t1: TypeModel, t2: TypeModel): UnionTypeModel {
   return {
     kind: "union",
     value: () => {
