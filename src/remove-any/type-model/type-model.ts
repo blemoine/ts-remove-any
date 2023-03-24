@@ -112,7 +112,13 @@ export function getText(typeModel: TypeModel): string {
       }
       return typeModel
         .value()
-        .map((type) => getText(type))
+        .map((type) => {
+          const text = getText(type);
+          if (type.kind === "function") {
+            return "(" + text + ")";
+          }
+          return text;
+        })
         .join(" | ");
     case "intersection":
       if (typeModel.alias) {
@@ -200,7 +206,7 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
   } else if (type.isUnknown()) {
     return { kind: "unknown", original: type };
   } else if (type.isTuple()) {
-    const symbolName = type.getAliasSymbol()?.getName();
+    const symbolName = type.getAliasSymbol()?.getFullyQualifiedName();
 
     const compilerType = type.getTargetType()?.compilerType;
     return {
@@ -211,7 +217,7 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
       original: type,
     };
   } else if (type.isArray()) {
-    const symbolName = type.getAliasSymbol()?.getName();
+    const symbolName = type.getAliasSymbol()?.getFullyQualifiedName();
 
     return {
       kind: "array",
@@ -222,7 +228,7 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
     };
   } else if (type.getCallSignatures().length > 0) {
     const firstCallSignature = type.getCallSignatures()[0];
-    const symbolName = type.getAliasSymbol()?.getName();
+    const symbolName = type.getAliasSymbol()?.getFullyQualifiedName();
 
     return {
       kind: "function",
@@ -237,10 +243,10 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
       original: type,
     };
   } else if (type.isObject()) {
-    const symbolName = type.getSymbol()?.getName();
+    const symbolName = type.getSymbol()?.getFullyQualifiedName();
 
     const alias =
-      type.getAliasSymbol()?.getName() ||
+      type.getAliasSymbol()?.getFullyQualifiedName() ||
       (symbolName?.startsWith("{") || symbolName?.startsWith("__type") || symbolName?.startsWith("__object")
         ? undefined
         : symbolName);
@@ -255,7 +261,7 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
       original: type,
     };
   } else if (type.isUnion()) {
-    const symbolName = type.getAliasSymbol()?.getName();
+    const symbolName = type.getAliasSymbol()?.getFullyQualifiedName();
     return {
       kind: "union",
       value: () => {
@@ -277,7 +283,7 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
       original: type,
     };
   } else if (type.isIntersection()) {
-    const symbolName = type.getAliasSymbol()?.getName();
+    const symbolName = type.getAliasSymbol()?.getFullyQualifiedName();
     return {
       kind: "intersection",
       value: () => {
