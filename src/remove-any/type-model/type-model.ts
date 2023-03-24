@@ -241,7 +241,10 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
 
     const alias =
       type.getAliasSymbol()?.getName() ||
-      (symbolName?.startsWith("{") || symbolName?.startsWith("__type") ? undefined : symbolName);
+      (symbolName?.startsWith("{") || symbolName?.startsWith("__type") || symbolName?.startsWith("__object")
+        ? undefined
+        : symbolName);
+
     return {
       kind: "object",
       value: () =>
