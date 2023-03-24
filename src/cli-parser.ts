@@ -6,6 +6,7 @@ interface CliArgs {
   file: string | null;
   noReverts: boolean;
   explicit: boolean;
+  dryRun: boolean;
 }
 
 export function parseCliArgs(args: string[]): CliArgs {
@@ -21,6 +22,7 @@ export function parseCliArgs(args: string[]): CliArgs {
   program.option("-f, --file <value>", "remove any only int the specified file");
   program.option("-r, --prevent-reverts", "don't revert files in case of errors");
   program.option("-e, --explicit", "try to convert explicit any too");
+  program.option("-d, --dry-run", "display the change that would be done, but don't actually make them");
   program.parse(args);
 
   const opts = program.opts();
@@ -31,5 +33,6 @@ export function parseCliArgs(args: string[]): CliArgs {
     file: opts.file || null,
     noReverts: opts.preventReverts || false,
     explicit: opts.explicit || false,
+    dryRun: opts.dryRun || false,
   };
 }

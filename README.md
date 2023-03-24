@@ -33,11 +33,12 @@ some type errors.
 More options are available, and can be found from the cli help.
 
 | Option | Effect                                                                                                                                                                                   |
-| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ------ |------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | -v     | increase the verbosity, ie. the amount of logs displayed. Can be double to see even more logs: `-v -v`                                                                                   |
 | -p     | the path of tsconfig.json file to use                                                                                                                                                    |
 | -f     | a pattern against which the file name and path will be matched. <br/>Useful if you want to run `ts-remove-any` only on one file, or group of files                                       |
 | -r     | don't revert the code in case of errors. <br/>`ts-remove-any` may generate invalid types, this option will ensure that we keep those types. They may be used as a basis for a manual fix |
+| -d     | dry-run, don't apply any change, but display a log of the changes that would be made                                                                                                     |
 | --help | display a contextual help                                                                                                                                                                |
 
 ---

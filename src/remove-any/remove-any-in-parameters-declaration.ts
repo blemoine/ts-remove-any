@@ -14,6 +14,7 @@ import { allTypesOfRefs } from "./type-unifier";
 
 interface RemoveAnyOptions {
   explicit: boolean;
+  dryRun: boolean;
 }
 
 function getParameterComputedType(parametersFn: ParameterDeclaration, { explicit }: RemoveAnyOptions): ComputedType {
@@ -45,6 +46,16 @@ export function removeAnyInParametersFn(
 
   if (newType.kind === "type_found") {
     try {
+      if (options.dryRun) {
+        const filePath = parametersFn.getSourceFile().getBaseName();
+        console.info(`${filePath} \`${parametersFn.getText()}\` would got type \`${newType.type}\``);
+
+        return {
+          countChangesDone: 0,
+          countOfAnys: 1,
+          revert() {},
+        };
+      }
       return setTypeOnNode(parametersFn, newType.type);
     } catch (e) {
       console.error("Unexpected error, please notify ts-remove-any maintainer", e);

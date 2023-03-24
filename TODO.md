@@ -7,5 +7,4 @@
   da('value') // x is a subtype of 'value'
 
 * any | { target: Element }  -> should return any
-* dry run mode + verbose expliciting the changes made
 * app-with-xp.test.tsx -> any & any

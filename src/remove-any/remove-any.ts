@@ -8,6 +8,7 @@ interface RemoveAnyOptions {
   noReverts: boolean;
   verbosity: number;
   explicit: boolean;
+  dryRun: boolean;
 }
 
 export function removeAny(
@@ -20,6 +21,7 @@ export function removeAny(
   const noReverts = options?.noReverts ?? false;
   const verbosity = options?.verbosity ?? 0;
   const explicit = options?.explicit ?? false;
+  const dryRun = options?.dryRun ?? false;
 
   const variableDeclarations: VariableDeclaration[] = [];
   const parametersDeclaration: ParameterDeclaration[] = [];
@@ -32,7 +34,7 @@ export function removeAny(
     }
   });
 
-  const validatedOptions = { noReverts, verbosity, explicit };
+  const validatedOptions = { noReverts, verbosity, explicit, dryRun };
   const resultsInParameters = parametersDeclaration
     .filter((p) => !Node.isCatchClause(p.getParent()))
     .map((parameters) => {
