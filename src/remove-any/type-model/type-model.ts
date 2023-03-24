@@ -96,7 +96,7 @@ export function getText(typeModel: TypeModel): string {
       if (typeModel.alias) {
         return typeModel.alias;
       }
-      return `(${Object.entries(typeModel.parameters)
+      return `(${Object.entries(typeModel.parameters())
         .map(([name, type]) => `${name}: ${getText(type)}`)
         .join(", ")}) => ${getText(typeModel.returnType)}`;
     case "object":
@@ -129,6 +129,51 @@ export function getText(typeModel: TypeModel): string {
 
 export function createTypeModelFromNode(node: Node): TypeModel {
   return createTypeModelFromType(node.getType(), node);
+}
+
+function createIntersectionModels(
+  typeModels: (
+    | { kind: "" }
+    | { kind: "number"; original?: Type }
+    | { kind: "number-literal"; value: number; original?: Type }
+    | { kind: "string"; original?: Type }
+    | { kind: "string-literal"; value: string; original?: Type }
+    | { kind: "boolean"; original?: Type }
+    | { kind: "boolean-literal"; value: boolean; original?: Type }
+    | { kind: "unknown"; original?: Type }
+    | { kind: "null"; original?: Type }
+    | { kind: "any"; original?: Type }
+    | { kind: "undefined"; original?: Type }
+    | { kind: "never"; original?: Type }
+    | { kind: "array"; value: () => TypeModel; readonly: boolean; alias?: string; original?: Type }
+    | { kind: "tuple"; value: () => TypeModel[]; readonly: boolean; alias?: string; original?: Type }
+    | FunctionTypeModel
+    | ObjectTypeModel
+    | UnionTypeModel
+    | IntersectionTypeModel
+    | { kind: "unsupported"; value: () => string }
+  )[]
+) {
+  const [objectTypeModels, otherTypeModels] = partition(typeModels, isObjectTypeModel);
+  const [aliasedObjectTypeModels, nonAliasedObjectTypeModels] = partition(
+    objectTypeModels,
+    (t): t is ObjectTypeModel => !!t.alias
+  );
+
+  const mergedObjectTypeModels =
+    nonAliasedObjectTypeModels.length > 1
+      ? [
+          nonAliasedObjectTypeModels.reduce((a, b) => {
+            const result = mergeObjectTypeModel(a, b);
+            if (result.kind === "intersection") {
+              throw new Error(`It cannot happen`);
+            }
+            return result;
+          }),
+        ]
+      : [];
+
+  return deduplicateTypes([...otherTypeModels, ...aliasedObjectTypeModels, ...mergedObjectTypeModels]);
 }
 
 export function createTypeModelFromType(type: Type, node: Node): TypeModel {
@@ -181,11 +226,12 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
 
     return {
       kind: "function",
-      parameters: () => Object.fromEntries(
-        firstCallSignature
-          .getParameters()
-          .map((p) => [p.getName(), createTypeModelFromType(p.getTypeAtLocation(node), node)])
-      ),
+      parameters: () =>
+        Object.fromEntries(
+          firstCallSignature
+            .getParameters()
+            .map((p) => [p.getName(), createTypeModelFromType(p.getTypeAtLocation(node), node)])
+        ),
       returnType: createTypeModelFromType(firstCallSignature.getReturnType(), node),
       alias: symbolName,
       original: type,
@@ -233,27 +279,7 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
       kind: "intersection",
       value: () => {
         const typeModels = type.getIntersectionTypes().map((t) => createTypeModelFromType(t, node));
-
-        const [objectTypeModels, otherTypeModels] = partition(typeModels, isObjectTypeModel);
-        const [aliasedObjectTypeModels, nonAliasedObjectTypeModels] = partition(
-          objectTypeModels,
-          (t): t is ObjectTypeModel => !!t.alias
-        );
-
-        const mergedObjectTypeModels =
-          nonAliasedObjectTypeModels.length > 1
-            ? [
-                nonAliasedObjectTypeModels.reduce((a, b) => {
-                  const result = mergeObjectTypeModel(a, b);
-                  if (result.kind === "intersection") {
-                    throw new Error(`It cannot happen`);
-                  }
-                  return result;
-                }),
-              ]
-            : [];
-
-        return [...otherTypeModels, ...aliasedObjectTypeModels, ...mergedObjectTypeModels];
+        return createIntersectionModels(typeModels);
       },
       alias: symbolName,
       original: type,
@@ -345,11 +371,11 @@ function getSuperTypeWithName(t1: TypeModel, t2: TypeModel): TypeModel {
             return t2Values;
           }
           const [firstType, secondType] = t2Values;
-          return [firstType, getSuperTypeWithName(t1, secondType)];
+          return createIntersectionModels([firstType, getSuperTypeWithName(t1, secondType)]);
         },
       };
     } else {
-      return { kind: "intersection", value: () => [t1, t2] };
+      return { kind: "intersection", value: () => createIntersectionModels([t1, t2]) };
     }
   } else if (t1.kind === "intersection") {
     return {
@@ -360,7 +386,7 @@ function getSuperTypeWithName(t1: TypeModel, t2: TypeModel): TypeModel {
           return t1Values;
         }
         const [firstType, secondType] = t1Values;
-        return [firstType, getSuperTypeWithName(secondType, t2)];
+        return createIntersectionModels([firstType, getSuperTypeWithName(secondType, t2)]);
       },
     };
   } else if (t1.kind === "union" && t2.kind === "union") {
@@ -369,6 +395,6 @@ function getSuperTypeWithName(t1: TypeModel, t2: TypeModel): TypeModel {
       value: () => [...t1.value(), ...t2.value()],
     };
   } else {
-    return { kind: "intersection", value: () => [t1, t2] };
+    return { kind: "intersection", value: () => createIntersectionModels([t1, t2]) };
   }
 }

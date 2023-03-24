@@ -8,6 +8,7 @@ describe("cli-parser", () => {
       project: "./tsconfig.json",
       verbosity: 0,
       explicit: false,
+      dryRun: false,
     });
   });
 
@@ -18,6 +19,7 @@ describe("cli-parser", () => {
       project: "./tsconfig.json",
       verbosity: 2,
       explicit: false,
+      dryRun: false,
     });
   });
 
@@ -28,6 +30,7 @@ describe("cli-parser", () => {
       project: "./tsconfig.json",
       verbosity: 1,
       explicit: false,
+      dryRun: false,
     });
   });
 
@@ -38,6 +41,7 @@ describe("cli-parser", () => {
       project: "./tsconfig.json",
       verbosity: 0,
       explicit: true,
+      dryRun: false,
     });
   });
   it("should support revert flag", () => {
@@ -47,6 +51,7 @@ describe("cli-parser", () => {
       project: "./tsconfig.json",
       verbosity: 0,
       explicit: false,
+      dryRun: false,
     });
   });
 });
