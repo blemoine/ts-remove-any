@@ -134,9 +134,9 @@ function fn3(x: {age: number} & {updated: Date}) {}
     removeAny(sourceFile, { verbosity: 2 });
     expect(sourceFile.print()).toStrictEqual(
       `function fnToIgnore(my: {
-    name:string;
-    age: number;
-    updated:Date;
+    "name": string;
+    "age": number;
+    "updated": Date;
 }) {
     fn2(my);
     fn3(my);

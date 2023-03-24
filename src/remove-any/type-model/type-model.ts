@@ -17,7 +17,7 @@ interface UnionTypeModel {
 }
 interface FunctionTypeModel {
   kind: "function";
-  parameters: Record<string, TypeModel>;
+  parameters: () => Record<string, TypeModel>;
   returnType: TypeModel;
   alias?: string;
   original?: Type;
@@ -181,7 +181,7 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
 
     return {
       kind: "function",
-      parameters: Object.fromEntries(
+      parameters: () => Object.fromEntries(
         firstCallSignature
           .getParameters()
           .map((p) => [p.getName(), createTypeModelFromType(p.getTypeAtLocation(node), node)])
