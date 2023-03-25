@@ -226,12 +226,12 @@ function findTypeOfVariableCall(ref: Node): Type | null {
   }
   const idxOfCallParameter = parent.getArguments().indexOf(ref);
   const functionDeclaredParametersTypes = getParameterTypesFromCallerSignature(parent);
-  return functionDeclaredParametersTypes && functionDeclaredParametersTypes[idxOfCallParameter]
-    ? functionDeclaredParametersTypes[idxOfCallParameter]
+  return functionDeclaredParametersTypes && functionDeclaredParametersTypes[idxOfCallParameter]?.type
+    ? functionDeclaredParametersTypes[idxOfCallParameter].type
     : null;
 }
 
-export function getParameterTypesFromCallerSignature(callExpression: CallExpression | NewExpression): Type[] {
+export function getParameterTypesFromCallerSignature(callExpression: CallExpression | NewExpression): TypeOrSpread[] {
   const functionItself = callExpression.getExpression();
 
   if (Node.isIdentifier(functionItself) || Node.isPropertyAccessExpression(functionItself)) {
@@ -269,13 +269,27 @@ export function getPropsTypeOfJsxElement(
   );
 }
 
+type TypeOrSpread = { kind: "type"; type: Type } | { kind: "spread"; type: Type };
+
 // if node has a type of something callable, get the parameters of the type associated
 // could be a function, an arrow function, a method
 // eg. `n: (a: string, b:number) => void`  => [string, number]
-function getParametersOfCallSignature(node: Node): Type[] {
-  const signatures = node?.getType().getCallSignatures();
+function getParametersOfCallSignature(node: Node): TypeOrSpread[] {
+  const signatures = node.getType().getCallSignatures();
   if (signatures?.length > 0) {
-    return signatures[0].getParameters().map((p) => p.getTypeAtLocation(node));
+    const parameters = signatures[0].getParameters();
+    return parameters.map((p) => {
+      const typeAtLocation = p.getTypeAtLocation(node);
+      const valueDeclaration = p.getValueDeclaration();
+      if (
+        Node.isParameterDeclaration(valueDeclaration) &&
+        valueDeclaration.getDotDotDotToken() &&
+        typeAtLocation.isArray()
+      ) {
+        return { kind: "spread", type: typeAtLocation.getTypeArguments()[0] };
+      }
+      return { kind: "type", type: typeAtLocation };
+    });
   }
   return [];
 }

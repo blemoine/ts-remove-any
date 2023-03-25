@@ -624,6 +624,24 @@ function fn2(x: unknown) {
     );
   });
 
+  it("should type with array push", () => {
+    const sourceFile = createSourceFile(`
+let arr: string[];        
+function fnToIgnore(my_explicit_variable) {
+   arr.push(my_explicit_variable);
+}
+`);
+
+    removeAny(sourceFile, { verbosity: 2 });
+    expect(sourceFile.print()).toStrictEqual(
+      `let arr: string[];
+function fnToIgnore(my_explicit_variable: string) {
+    arr.push(my_explicit_variable);
+}
+`
+    );
+  });
+
   it("should type with aliased function", () => {
     const sourceFile = createSourceFile(`
 type Fn = (x: string) => number;

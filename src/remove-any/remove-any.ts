@@ -39,7 +39,7 @@ export function removeAny(
     .filter((p) => !Node.isCatchClause(p.getParent()))
     .map((parameters) => {
       return revertableOperation(sourceFile, validatedOptions, () => {
-        if (verbosity > 1) {
+        if (verbosity > 2) {
           console.info(`${sourceFile.getBaseName()}: remove any in ${parameters.getText()}`);
         }
         return removeAnyInParametersFn(parameters, validatedOptions);
@@ -50,7 +50,7 @@ export function removeAny(
     .filter((p) => !Node.isCatchClause(p.getParent()))
     .map((variableDeclaration) =>
       revertableOperation(sourceFile, validatedOptions, () => {
-        if (verbosity > 1) {
+        if (verbosity > 2) {
           console.info(`${sourceFile.getBaseName()}: remove any in ${variableDeclaration.getText()}`);
         }
         return removeAnyInLetDeclaration(variableDeclaration, validatedOptions);

@@ -82,13 +82,16 @@ export function getCallablesTypes(functionDeclaration: RuntimeCallable | Functio
 
 function getUsageTypeFromRef(ref: Node): TypeModel | null {
   const parent = ref.getParent();
+
   if (Node.isCallExpression(parent)) {
     const argIdx = parent.getArguments().findIndex((a) => a === ref);
 
-    const result = getParameterTypesFromCallerSignature(parent)[argIdx];
+    const parameterTypesFromCallerSignature = getParameterTypesFromCallerSignature(parent);
+    const result = parameterTypesFromCallerSignature[argIdx]?.type;
     if (!result) {
       return null;
     }
+
     return createTypeModelFromType(result, ref);
   }
   if (Node.isJsxExpression(parent)) {
@@ -150,7 +153,7 @@ function getArgumentTypesFromRef(ref: Node): TypeModel[] {
     } else {
       // the function is passed as an argument to another function
       const idxOfDeclaration = parent.getArguments().findIndex((s) => s === ref);
-      const higherLevelFnTypeOfCaller = getParameterTypesFromCallerSignature(parent)[idxOfDeclaration];
+      const higherLevelFnTypeOfCaller = getParameterTypesFromCallerSignature(parent)[idxOfDeclaration]?.type;
       if (higherLevelFnTypeOfCaller) {
         const callSignatures = higherLevelFnTypeOfCaller.getCallSignatures();
         if (higherLevelFnTypeOfCaller.isUnion()) {
