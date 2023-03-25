@@ -195,7 +195,9 @@ function getAlias(type: Type): string | undefined {
   }
 
   const baseSymbolName = type.getSymbol()?.getFullyQualifiedName();
-  const symbolName = baseSymbolName?.includes('"') ? type.getSymbol()?.getName() : baseSymbolName;
+  const symbolName = baseSymbolName?.includes('"')
+    ? type.getSymbol()?.getName()
+    : baseSymbolName?.replace(/^global\./, "");
 
   return symbolName?.startsWith("{") || symbolName?.startsWith("__type") || symbolName?.startsWith("__object")
     ? undefined
