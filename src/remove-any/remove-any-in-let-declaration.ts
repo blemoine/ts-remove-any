@@ -13,11 +13,12 @@ import { allTypesOfRefs } from "./type-unifier";
 
 interface RemoveAnyOptions {
   explicit: boolean;
+  dryRun: boolean;
 }
 
 export function removeAnyInLetDeclaration(
   variableDeclaration: VariableDeclaration,
-  { explicit }: RemoveAnyOptions
+  { explicit, dryRun }: RemoveAnyOptions
 ): RevertableOperation {
   if (!explicit && !isImplicitAny(variableDeclaration) && !isImplicitAnyArray(variableDeclaration)) {
     return noopRevertableOperation;
@@ -31,6 +32,16 @@ export function removeAnyInLetDeclaration(
   const newType = computeTypesFromRefs(filterUnusableTypes([typesOfSets]));
 
   if (newType) {
+    if (dryRun) {
+      const filePath = variableDeclaration.getSourceFile().getBaseName();
+      console.info(`${filePath} \`${variableDeclaration.getText()}\` would got type \`${newType}\``);
+
+      return {
+        countChangesDone: 0,
+        countOfAnys: 1,
+        revert() {},
+      };
+    }
     return setTypeOnNode(variableDeclaration, newType);
   }
   return { countChangesDone: 0, countOfAnys: 1, revert() {} };

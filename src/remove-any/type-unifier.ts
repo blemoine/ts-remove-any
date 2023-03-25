@@ -9,7 +9,6 @@ import { createTypeModelFromNode, createTypeModelFromType, deduplicateTypes, Typ
 export function allTypesOfRefs(node: VariableDeclaration | ParameterDeclaration): TypesFromRefs {
   const referencesAsNodes = node.findReferencesAsNodes();
   const typesFromReference = referencesAsNodes.flatMap((ref) => allTypesOfRef(ref));
-
   const typesFromLambda = node instanceof ParameterDeclaration ? allTypesOfRef(node) : [];
 
   if (referencesAsNodes.length === 0 && typesFromLambda.length === 1 && typesFromLambda[0].kind === "any") {

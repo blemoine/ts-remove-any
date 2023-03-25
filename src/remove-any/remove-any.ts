@@ -38,17 +38,17 @@ export function removeAny(
   const resultsInParameters = parametersDeclaration
     .filter((p) => !Node.isCatchClause(p.getParent()))
     .map((parameters) => {
-      return revertableOperation(sourceFile, validatedOptions, () =>
-        removeAnyInParametersFn(parameters, validatedOptions)
-      );
+      return revertableOperation(sourceFile, validatedOptions, () => {
+        return removeAnyInParametersFn(parameters, validatedOptions);
+      });
     });
 
   const resultsInLets = variableDeclarations
     .filter((p) => !Node.isCatchClause(p.getParent()))
     .map((variableDeclaration) =>
-      revertableOperation(sourceFile, validatedOptions, () =>
-        removeAnyInLetDeclaration(variableDeclaration, validatedOptions)
-      )
+      revertableOperation(sourceFile, validatedOptions, () => {
+        return removeAnyInLetDeclaration(variableDeclaration, validatedOptions);
+      })
     );
 
   const aggregatedResults = [...resultsInLets, ...resultsInParameters];
