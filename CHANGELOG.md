@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.48](https://github.com/blemoine/ts-remove-any/compare/v0.1.47...v0.1.48) (2023-03-25)
+
+
+### Features
+
+* add preliminary support for intersection ([9beaca6](https://github.com/blemoine/ts-remove-any/commit/9beaca6065eeb63d211960dd723d640fce06c997))
+* add support for aliased union/intersection ([e3ca0de](https://github.com/blemoine/ts-remove-any/commit/e3ca0de9e72e70e3a3e28452905d2db2e91aba25))
+* add support for dry-run ([e9a4e49](https://github.com/blemoine/ts-remove-any/commit/e9a4e494be2f95d94064f3e3185a7a46702a7af1))
+* add support for lazy parameters ([a68836c](https://github.com/blemoine/ts-remove-any/commit/a68836ceb8a953bdee6a8f6b0e446171ec71ae7b))
+* add support for merging intersection ([b4d0bb2](https://github.com/blemoine/ts-remove-any/commit/b4d0bb24416438b4b79d3e4c626587a1d9e769f7))
+* remove badly formated type ([562c8c0](https://github.com/blemoine/ts-remove-any/commit/562c8c047d7edb4aeb385993b09341221e5bbd93))
+* remove nullable ([c8d2301](https://github.com/blemoine/ts-remove-any/commit/c8d23013c8352283f12f26902bf2fe59b5df0cda))
+* remove unknown ([036572e](https://github.com/blemoine/ts-remove-any/commit/036572ebdc172b5831b72fe39a7bcf5c3b6359e1))
+* support for union deduplication ([70d3b44](https://github.com/blemoine/ts-remove-any/commit/70d3b445fec073fadcaa48bde89081fee8608914))
+* use fully qualified alias ([eb55663](https://github.com/blemoine/ts-remove-any/commit/eb556637a5a83624916e566a8ecf135cf896bd1e))
+
+
+### Bug Fixes
+
+* prevent crash for alias ([f186a53](https://github.com/blemoine/ts-remove-any/commit/f186a530c2db42098c2d914f4b3c8cc9bc9fe5c0))
+* prevent crash if only one member in union(?) ([edfbb98](https://github.com/blemoine/ts-remove-any/commit/edfbb98cf5586b954758a92fcb627df48ed9416d))
+* type aliasing for intersection ([242d390](https://github.com/blemoine/ts-remove-any/commit/242d390b1fac922be40d80e16a15ef54a23925f5))
+* unit test ([b91dbcf](https://github.com/blemoine/ts-remove-any/commit/b91dbcf77e2fbe4a913795d9861a8a11905be3e0))
+
 ### [0.1.47](https://github.com/blemoine/ts-remove-any/compare/v0.1.46...v0.1.47) (2023-03-23)
 
 
