@@ -27,9 +27,11 @@ export function removeAny(
   const parametersDeclaration: ParameterDeclaration[] = [];
 
   sourceFile.forEachDescendant((node) => {
-    if (Node.isCatchClause(node.getParent())) {
+    const nodeParent = node.getParent();
+    if (Node.isCatchClause(nodeParent) || isPromiseCatch(nodeParent)) {
       return;
     }
+
     if (Node.isParameterDeclaration(node)) {
       parametersDeclaration.push(node);
     } else if (Node.isVariableDeclaration(node)) {
@@ -94,4 +96,17 @@ function revertableOperation(
   }
 
   return { countOfAnys: result.countOfAnys, countChangesDone: result.countChangesDone };
+}
+
+function isPromiseCatch(node: Node | undefined): boolean {
+  if (Node.isArrowFunction(node) || Node.isFunctionDeclaration(node)) {
+    return isPromiseCatch(node.getParent());
+  }
+  if (Node.isCallExpression(node)) {
+    const expression = node.getExpression();
+    if (Node.isPropertyAccessExpression(expression)) {
+      return expression.getName() === "catch";
+    }
+  }
+  return false;
 }
