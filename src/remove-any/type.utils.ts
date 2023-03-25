@@ -58,7 +58,8 @@ export function filterUnusableTypes(typesFromRefs: TypesFromRefs[]): TypesFromRe
         !text.includes("import(") &&
         t.kind !== "never" &&
         !text.includes("never[]") &&
-        !text.includes(": never")
+        !text.includes(": never") &&
+        !text.startsWith('"')
       );
     })
   );
