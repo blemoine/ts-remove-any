@@ -48,6 +48,10 @@ export function filterUnusableTypes(typesFromRefs: TypesFromRefs[]): TypesFromRe
   const types = typesFromRefs.flatMap(({ types }) =>
     types.filter(isNotNil).filter((t) => {
       const text = getText(t);
+
+      if ("alias" in t && text.startsWith('"')) {
+        return false;
+      }
       return (
         t.kind !== "any" &&
         !text.includes("any[]") &&
@@ -58,8 +62,7 @@ export function filterUnusableTypes(typesFromRefs: TypesFromRefs[]): TypesFromRe
         !text.includes("import(") &&
         t.kind !== "never" &&
         !text.includes("never[]") &&
-        !text.includes(": never") &&
-        !text.startsWith('"')
+        !text.includes(": never")
       );
     })
   );

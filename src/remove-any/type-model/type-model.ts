@@ -186,7 +186,7 @@ function getAlias(type: Type): string | undefined {
   const aliasFullyQualified = type.getAliasSymbol()?.getFullyQualifiedName();
   if (aliasFullyQualified) {
     if (!aliasFullyQualified.includes('"')) {
-      return aliasFullyQualified;
+      return aliasFullyQualified.replace(/^global\./, "");
     }
     const alias = type.getAliasSymbol()?.getName();
     if (alias) {
@@ -265,6 +265,10 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
   } else if (type.isObject()) {
     const alias = getAlias(type);
 
+    if (!alias && type.getProperties().length > 25) {
+      // we have a stack problem here
+      return { kind: "unsupported", value: () => type.getText() };
+    }
     return {
       kind: "object",
       value: () =>

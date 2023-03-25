@@ -4,7 +4,13 @@ import { getPropsTypeOfJsx, TypesFromRefs } from "./type.utils";
 import { combineGuards } from "../utils/type-guard.utils";
 import { CallableType, getCallablesTypes } from "./type-unifier/callables.unifier";
 import { SyntaxKind } from "typescript";
-import { createTypeModelFromNode, createTypeModelFromType, deduplicateTypes, TypeModel } from "./type-model/type-model";
+import {
+  createTypeModelFromNode,
+  createTypeModelFromType,
+  deduplicateTypes,
+  getText,
+  TypeModel,
+} from "./type-model/type-model";
 
 export function allTypesOfRefs(node: VariableDeclaration | ParameterDeclaration): TypesFromRefs {
   const referencesAsNodes = node.findReferencesAsNodes();
