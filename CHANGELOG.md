@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.49](https://github.com/blemoine/ts-remove-any/compare/v0.1.48...v0.1.49) (2023-03-25)
+
+
+### Features
+
+* add support for spread ([7a32a33](https://github.com/blemoine/ts-remove-any/commit/7a32a336c4af2a330e0c2c831087b7016cf48b85))
+* filter out catch clause ([a73e0b3](https://github.com/blemoine/ts-remove-any/commit/a73e0b38c749cf8a80d423fec7023550d7cb015d))
+
+
+### Bug Fixes
+
+* ignore global for alais ([9c53368](https://github.com/blemoine/ts-remove-any/commit/9c5336883fb4204e074ccac08e6128cf52a6a600))
+
 ### [0.1.48](https://github.com/blemoine/ts-remove-any/compare/v0.1.47...v0.1.48) (2023-03-25)
 
 
