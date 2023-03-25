@@ -48,7 +48,7 @@ export function removeAnyInParametersFn(
     try {
       if (options.dryRun) {
         const filePath = parametersFn.getSourceFile().getBaseName();
-        console.info(`${filePath} \`${parametersFn.getText()}\` would got type \`${newType.type}\``);
+        console.info(`${filePath} parameter \`${parametersFn.getText()}\` would got type \`${newType.type}\``);
 
         return {
           countChangesDone: 0,

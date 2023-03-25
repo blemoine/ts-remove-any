@@ -27,9 +27,12 @@ export function removeAny(
   const parametersDeclaration: ParameterDeclaration[] = [];
 
   sourceFile.forEachDescendant((node) => {
-    if (node instanceof ParameterDeclaration) {
+    if (Node.isCatchClause(node.getParent())) {
+      return;
+    }
+    if (Node.isParameterDeclaration(node)) {
       parametersDeclaration.push(node);
-    } else if (node instanceof VariableDeclaration) {
+    } else if (Node.isVariableDeclaration(node)) {
       variableDeclarations.push(node);
     }
   });
