@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.50](https://github.com/blemoine/ts-remove-any/compare/v0.1.49...v0.1.50) (2023-03-26)
+
+
+### Features
+
+* add support for generics ([2806f51](https://github.com/blemoine/ts-remove-any/commit/2806f511f693157e7352d290e736c2b54b0bde31))
+* add support for template span ([a92f8cf](https://github.com/blemoine/ts-remove-any/commit/a92f8cf2e7b62c0d7d8a8c3f35d60fd686915901))
+* better destructuring support ([15c7326](https://github.com/blemoine/ts-remove-any/commit/15c73266be99a6fbd83a67f83e1904a8ac2d9322))
+
 ### [0.1.49](https://github.com/blemoine/ts-remove-any/compare/v0.1.48...v0.1.49) (2023-03-25)
 
 
