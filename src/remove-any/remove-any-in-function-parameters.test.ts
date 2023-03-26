@@ -745,6 +745,70 @@ function fnToIgnore<T>(my_explicit_variable): T {
 `
     );
   });
+
+  it("should type with a type having generic parameters", () => {
+    const sourceFile = createSourceFile(`
+interface Gen<A, B> {
+a: A 
+b: B
+}        
+function fnToIgnore(my_explicit_variable) {
+    return my_explicit_variable;
+}
+
+function use(gen: Gen<string, number>) {
+    fnToIgnore(gen)
+}
+
+`);
+
+    removeAny(sourceFile, { verbosity: 2 });
+    expect(sourceFile.print()).toStrictEqual(
+      `interface Gen<A, B> {
+    a: A;
+    b: B;
+}
+function fnToIgnore(my_explicit_variable: Gen<string, number>) {
+    return my_explicit_variable;
+}
+function use(gen: Gen<string, number>) {
+    fnToIgnore(gen);
+}
+`
+    );
+  });
+
+  it("should type with a type having generic parameters for type alias", () => {
+    const sourceFile = createSourceFile(`
+type Gen<A, B> = {
+a: A 
+b: B
+}        
+function fnToIgnore(my_explicit_variable) {
+    return my_explicit_variable;
+}
+
+function use(gen: Gen<string, number>) {
+    fnToIgnore(gen)
+}
+
+`);
+
+    removeAny(sourceFile, { verbosity: 2 });
+    expect(sourceFile.print()).toStrictEqual(
+      `type Gen<A, B> = {
+    a: A;
+    b: B;
+};
+function fnToIgnore(my_explicit_variable: Gen<string, number>) {
+    return my_explicit_variable;
+}
+function use(gen: Gen<string, number>) {
+    fnToIgnore(gen);
+}
+`
+    );
+  });
 });
 
 function createSourceFile(code: string): SourceFile {

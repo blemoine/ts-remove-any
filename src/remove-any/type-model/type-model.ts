@@ -183,25 +183,7 @@ function createIntersectionModels(
 }
 
 function getAlias(type: Type): string | undefined {
-  const aliasFullyQualified = type.getAliasSymbol()?.getFullyQualifiedName();
-  if (aliasFullyQualified) {
-    if (!aliasFullyQualified.includes('"')) {
-      return aliasFullyQualified.replace(/^global\./, "");
-    }
-    const alias = type.getAliasSymbol()?.getName();
-    if (alias) {
-      return alias;
-    }
-  }
-
-  const baseSymbolName = type.getSymbol()?.getFullyQualifiedName();
-  const symbolName = baseSymbolName?.includes('"')
-    ? type.getSymbol()?.getName()
-    : baseSymbolName?.replace(/^global\./, "");
-
-  return symbolName?.startsWith("{") || symbolName?.startsWith("__type") || symbolName?.startsWith("__object")
-    ? undefined
-    : symbolName;
+  return type.getText();
 }
 
 export function createTypeModelFromType(type: Type, node: Node): TypeModel {
@@ -271,16 +253,19 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
       // we have a stack problem here
       return { kind: "unsupported", value: () => type.getText() };
     }
+
     return {
       kind: "object",
       value: () =>
         Object.fromEntries(
           type.getProperties().map((p) => [p.getName(), createTypeModelFromType(p.getTypeAtLocation(node), node)])
         ),
-      alias,
+      alias: alias?.startsWith("{") ? undefined : alias,
       original: type,
     };
   } else if (type.isUnion()) {
+    const alias = getAlias(type);
+
     return {
       kind: "union",
       value: () => {
@@ -298,17 +283,19 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
         }
         return unionTypes.map((t) => createTypeModelFromType(t, node));
       },
-      alias: getAlias(type),
+      alias: alias?.startsWith("{") ? undefined : alias,
       original: type,
     };
   } else if (type.isIntersection()) {
+    const alias = getAlias(type);
+
     return {
       kind: "intersection",
       value: () => {
         const typeModels = type.getIntersectionTypes().map((t) => createTypeModelFromType(t, node));
         return createIntersectionModels(typeModels);
       },
-      alias: getAlias(type),
+      alias: alias?.startsWith("{") ? undefined : alias,
       original: type,
     };
   } else {
