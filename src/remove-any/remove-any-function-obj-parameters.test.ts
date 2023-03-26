@@ -83,6 +83,27 @@ function({value}): string { if(true) { return value } }
     expect(numberOfChanges.countChangesDone).toBe(1);
     expect(numberOfChanges.countOfAnys).toBe(1);
   });
+
+  it("should deduce the type from template", () => {
+    const sourceFile = createSourceFile(`
+function fnToIgnore({my_explicit_variable}) {
+  const a = \`da \${my_explicit_variable}\`;
+}
+`);
+
+    const numberOfChanges = removeAny(sourceFile);
+
+    expect(sourceFile.print()).toStrictEqual(
+      `function fnToIgnore({ my_explicit_variable }: {
+    my_explicit_variable: string;
+}) {
+    const a = \`da \${my_explicit_variable}\`;
+}
+`
+    );
+    expect(numberOfChanges.countChangesDone).toBe(1);
+    expect(numberOfChanges.countOfAnys).toBe(1);
+  });
 });
 
 function createSourceFile(code: string): SourceFile {

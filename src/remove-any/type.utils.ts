@@ -19,6 +19,7 @@ import {
   TypeModel,
   unionTypeModel,
 } from "./type-model/type-model";
+import { allTypesOfRefs } from "./type-unifier";
 
 export function isImplicitAny(node: TypedNode & Node): boolean {
   const declaredType = node.getTypeNode();
@@ -190,7 +191,12 @@ export function computeDestructuredTypes(parametersFn: ParameterDeclaration): st
               return null;
             }
 
-            const typesFromUsage = element.findReferencesAsNodes().flatMap((ref) => findTypeFromRefUsage(ref));
+            const typesFromUsage = element.findReferencesAsNodes().flatMap((ref) => {
+              if (Node.isReferenceFindable(ref)) {
+                return { types: [...allTypesOfRefs(ref).types, ...findTypeFromRefUsage(ref).types] };
+              }
+              return { types: [] };
+            });
 
             const type = computeTypesFromRefs(filterUnusableTypes(typesFromUsage));
 

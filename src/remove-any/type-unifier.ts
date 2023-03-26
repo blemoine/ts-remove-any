@@ -1,4 +1,4 @@
-import { Node, ParameterDeclaration, VariableDeclaration } from "ts-morph";
+import { Node, ParameterDeclaration, ReferenceFindableNode } from "ts-morph";
 import { isNotNil } from "../utils/is-not-nil";
 import { getPropsTypeOfJsx, TypesFromRefs } from "./type.utils";
 import { combineGuards } from "../utils/type-guard.utils";
@@ -6,7 +6,7 @@ import { CallableType, getCallablesTypes } from "./type-unifier/callables.unifie
 import { SyntaxKind } from "typescript";
 import { createTypeModelFromNode, createTypeModelFromType, deduplicateTypes, TypeModel } from "./type-model/type-model";
 
-export function allTypesOfRefs(node: VariableDeclaration | ParameterDeclaration): TypesFromRefs {
+export function allTypesOfRefs(node: Node & ReferenceFindableNode): TypesFromRefs {
   const referencesAsNodes = node.findReferencesAsNodes();
   const typesFromReference = referencesAsNodes.flatMap((ref) => allTypesOfRef(ref));
   const typesFromLambda = node instanceof ParameterDeclaration ? allTypesOfRef(node) : [];
@@ -75,17 +75,16 @@ function allTypesOfRef(ref: Node): TypeModel[] {
     const functionArguments = parent.getArguments();
     const parameterIdx = functionArguments.indexOf(ref);
     const callable = parent.getExpression();
-
     if (Node.isIdentifier(callable) || Node.isPropertyAccessExpression(callable)) {
       const functionDeclaration = callable
         .findReferencesAsNodes()
         .map((r) => {
-          const parent = r.getParent();
+          const parent2 = r.getParent();
 
-          if (Node.isVariableDeclaration(parent)) {
-            return parent.getInitializer();
+          if (Node.isVariableDeclaration(parent2)) {
+            return parent2.getInitializer();
           } else {
-            return parent;
+            return parent2;
           }
         })
         .find(isFunctionLike);
