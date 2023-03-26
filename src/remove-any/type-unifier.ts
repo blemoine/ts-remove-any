@@ -23,7 +23,9 @@ function allTypesOfRef(ref: Node): TypeModel[] {
   if (!parent) {
     return [];
   }
-
+  if (Node.isTemplateSpan(parent)) {
+    return [{ kind: "string" }];
+  }
   if (Node.isPrefixUnaryExpression(parent)) {
     const operator = parent.getOperatorToken();
     if (operator === SyntaxKind.PlusToken || operator === SyntaxKind.MinusToken) {

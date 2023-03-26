@@ -237,6 +237,25 @@ function callsite(n: any) {
     );
   });
 
+  it("should use deduce that template usage is a string", () => {
+    const sourceFile = createSourceFile(`
+function fnToIgnore(my_explicit_variable) {
+  const a = \`da \${my_explicit_variable}\`;
+}
+`);
+
+    const numberOfChanges = removeAny(sourceFile);
+
+    expect(sourceFile.print()).toStrictEqual(
+      `function fnToIgnore(my_explicit_variable: string) {
+    const a = \`da \${my_explicit_variable}\`;
+}
+`
+    );
+    expect(numberOfChanges.countChangesDone).toBe(1);
+    expect(numberOfChanges.countOfAnys).toBe(1);
+  });
+
   it("should use the usage type in function call  if possible", () => {
     const sourceFile = createSourceFile(`
 function fnToIgnore(my_explicit_variable) {

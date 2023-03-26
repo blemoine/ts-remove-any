@@ -19,6 +19,7 @@ interface RemoveAnyOptions {
 
 function getParameterComputedType(parametersFn: ParameterDeclaration, { explicit }: RemoveAnyOptions): ComputedType {
   const destructuredType = computeDestructuredTypes(parametersFn);
+
   if (destructuredType) {
     return { kind: "type_found", type: destructuredType };
   }
