@@ -18,6 +18,7 @@ import {
   getText,
   TypeModel,
 } from "../type-model/type-model";
+import { allTypesOfRefs } from "../type-unifier";
 
 export interface CallableType {
   parameterTypes: TypeModel[];
@@ -33,7 +34,14 @@ export function getCallablesTypes(functionDeclaration: RuntimeCallable | Functio
   const argumentsTypes: TypeModel[][] = (referencableNode?.findReferencesAsNodes() ?? [])
     .map<TypeModel[][]>((ref) => {
       const parent = ref.getParent();
-      if (Node.isTypeReference(parent)) {
+      if (Node.isVariableDeclaration(parent)) {
+        // the function is used as a variable ;
+        const prout = createTypeModelFromNode(parent);
+
+        if (prout.kind === "function") {
+          return [Object.values(prout.parameters())];
+        }
+      } else if (Node.isTypeReference(parent)) {
         const greatParent = parent.getParent();
         if (Node.isParameterDeclaration(greatParent)) {
           return greatParent
