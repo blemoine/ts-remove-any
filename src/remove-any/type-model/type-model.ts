@@ -247,12 +247,11 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
       original: type,
     };
   } else if (type.isObject()) {
-    const alias = getAlias(type);
-
-    if (!alias && type.getProperties().length > 25) {
+    if (type.getProperties().length > 25) {
       // we have a stack problem here
       return { kind: "unsupported", value: () => type.getText() };
     }
+    const alias = getAlias(type);
 
     return {
       kind: "object",
