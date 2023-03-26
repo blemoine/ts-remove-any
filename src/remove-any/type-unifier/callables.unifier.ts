@@ -18,7 +18,6 @@ import {
   getText,
   TypeModel,
 } from "../type-model/type-model";
-import { allTypesOfRefs } from "../type-unifier";
 
 export interface CallableType {
   parameterTypes: TypeModel[];
@@ -28,20 +27,44 @@ export interface CallableType {
 
 type RuntimeCallable = FunctionDeclaration | ArrowFunction | MethodDeclaration | ConstructorDeclaration;
 
+function prout(node: Node): TypeModel | null {
+  if (Node.isVariableDeclaration(node)) {
+    // the function is used as a variable ;
+    return createTypeModelFromNode(node);
+  } else if (Node.isPropertyAssignment(node)) {
+    const propertyName = node.getName();
+    const greatParent = node.getParent();
+
+    const typeModel = prout(greatParent.getParent());
+    if (typeModel?.kind === "object") {
+      return typeModel.value()[propertyName];
+    }
+    /*
+    if (typeModel.kind === "object") {
+      const typeOfProperty = typeModel.value()[propertyName];
+      if (typeOfProperty.kind === "function") {
+        return [Object.values(typeOfProperty.parameters())];
+      }
+    }
+
+     */
+  }
+  return null;
+}
 export function getCallablesTypes(functionDeclaration: RuntimeCallable | FunctionTypeNode): CallableType {
   const referencableNode = getReferencableNodeFromCallableType(functionDeclaration);
 
   const argumentsTypes: TypeModel[][] = (referencableNode?.findReferencesAsNodes() ?? [])
     .map<TypeModel[][]>((ref) => {
       const parent = ref.getParent();
-      if (Node.isVariableDeclaration(parent)) {
-        // the function is used as a variable ;
-        const prout = createTypeModelFromNode(parent);
 
-        if (prout.kind === "function") {
-          return [Object.values(prout.parameters())];
+      if (parent) {
+        const typeOfVariable = prout(parent);
+        if (typeOfVariable?.kind === "function") {
+          return [Object.values(typeOfVariable.parameters())];
         }
-      } else if (Node.isTypeReference(parent)) {
+      }
+      if (Node.isTypeReference(parent)) {
         const greatParent = parent.getParent();
         if (Node.isParameterDeclaration(greatParent)) {
           return greatParent

@@ -480,6 +480,68 @@ const ParentComponent = () => {
     expect(numberOfChanges.countChangesDone).toBe(1);
     expect(numberOfChanges.countOfAnys).toBe(1);
   });
+
+  it("should type function used in alias", () => {
+    const sourceFile = createSourceFile(`
+type Options = (s:string) => void; 
+const fn = (s) => { };
+const a: Options = fn;
+`);
+
+    removeAny(sourceFile, { verbosity: 2 });
+    expect(sourceFile.print()).toStrictEqual(
+      `type Options = (s: string) => void;
+const fn = (s: string) => { };
+const a: Options = fn;
+`
+    );
+  });
+
+  it("should type function used in property assignment", () => {
+    const sourceFile = createSourceFile(`
+type Options = {test: (s:string) => void}; 
+const fn = (s) => { };
+const a: Options = {test: fn};
+`);
+
+    removeAny(sourceFile, { verbosity: 2 });
+    expect(sourceFile.print()).toStrictEqual(
+      `type Options = {
+    test: (s: string) => void;
+};
+const fn = (s: string) => { };
+const a: Options = { test: fn };
+`
+    );
+  });
+
+  it.skip("should type function used as reference", () => {
+    const sourceFile = createSourceFile(`
+type Options = { inner: (s:string) => void };
+type Options2 = {test: { inner2: (n: number, b: boolean) => void }};      
+function parentFn(options: Options, options2: Options2) {} 
+const fn = (s) => {};
+const fn2 = (s, b) => {};
+parentFn({inner: fn}, {test:{inner2: fn2}});
+`);
+
+    removeAny(sourceFile, { verbosity: 2 });
+    expect(sourceFile.print()).toStrictEqual(
+      `type Options = {
+    inner: (s: string) => void;
+};
+type Options2 = {
+    test: {
+        inner2: (n: number, b: boolean) => void;
+    };
+};
+function parentFn(options: Options, options2: Options2) { }
+const fn = (s: string) => { };
+const fn2 = (s: number, b: boolean) => { };
+parentFn({ inner: fn }, { test: { inner2: fn2 } });
+`
+    );
+  });
 });
 
 function createSourceFile(code: string): SourceFile {

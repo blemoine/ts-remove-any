@@ -778,6 +778,26 @@ function use(gen: Gen<string, number>) {
     );
   });
 
+  it.skip("should type function used as reference", () => {
+    const sourceFile = createSourceFile(`
+type Options = { inner: (s:string) => void };      
+function parent(options: Options) {} 
+function fn(s) {};
+parent({inner: fn});
+`);
+
+    removeAny(sourceFile, { verbosity: 2 });
+    expect(sourceFile.print()).toStrictEqual(
+      `type Options = {
+    inner: (s: string) => void;
+};
+function parent(options: Options) { }
+function fn(s) { };
+parent({ inner: fn });
+`
+    );
+  });
+
   it("should type with a type having generic parameters for type alias", () => {
     const sourceFile = createSourceFile(`
 type Gen<A, B> = {
