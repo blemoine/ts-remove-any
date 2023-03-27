@@ -3,3 +3,5 @@
   Math.parseInt(x) // x is a supertype of string
   }
   da('value') // x is a subtype of 'value'
+
+* sem-route-page-test `app` in `definRoute`

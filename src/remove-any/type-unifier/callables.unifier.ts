@@ -27,34 +27,6 @@ export interface CallableType {
 
 type RuntimeCallable = FunctionDeclaration | ArrowFunction | MethodDeclaration | ConstructorDeclaration;
 
-function typeOfVariableAssignment(node: Node): TypeModel | null {
-  if (Node.isCallExpression(node)) {
-    return createTypeModelFromNode(node.getExpression());
-  } else if (Node.isVariableDeclaration(node)) {
-    // the function is used as a variable ;
-    return createTypeModelFromNode(node);
-  } else if (Node.isPropertyAssignment(node)) {
-    const objectLiteralExpression = node.getParent();
-
-    const ancestor = objectLiteralExpression.getParent();
-    const typeModel = typeOfVariableAssignment(ancestor);
-    const propertyName = node.getName();
-    if (typeModel?.kind === "object") {
-      return typeModel.value()[propertyName];
-    } else if (typeModel?.kind === "function") {
-      if (Node.isCallExpression(ancestor)) {
-        const propertyIndex = ancestor.getArguments().findIndex((a) => a === objectLiteralExpression);
-
-        const intermediate = Object.values(typeModel.parameters())[propertyIndex];
-
-        if (intermediate?.kind === "object") {
-          return intermediate.value()[propertyName];
-        }
-      }
-    }
-  }
-  return null;
-}
 export function getCallablesTypes(functionDeclaration: RuntimeCallable | FunctionTypeNode): CallableType {
   const referencableNode = getReferencableNodeFromCallableType(functionDeclaration);
 
@@ -64,6 +36,7 @@ export function getCallablesTypes(functionDeclaration: RuntimeCallable | Functio
 
       if (parent && !Node.isCallExpression(parent)) {
         const typeOfVariable = typeOfVariableAssignment(parent);
+
         if (typeOfVariable?.kind === "function") {
           return [Object.values(typeOfVariable.parameters())];
         }
@@ -107,7 +80,7 @@ export function getCallablesTypes(functionDeclaration: RuntimeCallable | Functio
           })
           .filter(([, types]) => getText(types).length > 0)
       );
-
+  console.log(functionDeclaration.getText(), getText(argumentsTypes[0][0]));
   return {
     parameterTypes,
     argumentsTypes: argumentsTypes.map((a) => a.slice(0, parameterTypes.length)),
@@ -245,4 +218,33 @@ function getReferencableNodeFromCallableType(
   } else {
     cannotHappen(functionDeclaration);
   }
+}
+
+function typeOfVariableAssignment(node: Node): TypeModel | null {
+  if (Node.isCallExpression(node)) {
+    return createTypeModelFromNode(node.getExpression());
+  } else if (Node.isVariableDeclaration(node)) {
+    // the function is used as a variable ;
+    return createTypeModelFromNode(node);
+  } else if (Node.isPropertyAssignment(node) || Node.isShorthandPropertyAssignment(node)) {
+    const objectLiteralExpression = node.getParent();
+
+    const ancestor = objectLiteralExpression.getParent();
+    const typeModel = typeOfVariableAssignment(ancestor);
+    const propertyName = node.getName();
+    if (typeModel?.kind === "object") {
+      return typeModel.value()[propertyName];
+    } else if (typeModel?.kind === "function") {
+      if (Node.isCallExpression(ancestor)) {
+        const propertyIndex = ancestor.getArguments().findIndex((a) => a === objectLiteralExpression);
+
+        const intermediate = Object.values(typeModel.parameters())[propertyIndex];
+
+        if (intermediate?.kind === "object") {
+          return intermediate.value()[propertyName];
+        }
+      }
+    }
+  }
+  return null;
 }
