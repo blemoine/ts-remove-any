@@ -515,7 +515,7 @@ const a: Options = { test: fn };
     );
   });
 
-  it.skip("should type function used as reference", () => {
+  it("should type function used as reference", () => {
     const sourceFile = createSourceFile(`
 type Options = { inner: (s:string) => void };
 type Options2 = {test: { inner2: (n: number, b: boolean) => void }};      

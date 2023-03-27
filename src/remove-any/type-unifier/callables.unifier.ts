@@ -27,27 +27,31 @@ export interface CallableType {
 
 type RuntimeCallable = FunctionDeclaration | ArrowFunction | MethodDeclaration | ConstructorDeclaration;
 
-function prout(node: Node): TypeModel | null {
-  if (Node.isVariableDeclaration(node)) {
+function typeOfVariableAssignment(node: Node): TypeModel | null {
+  if (Node.isCallExpression(node)) {
+    return createTypeModelFromNode(node.getExpression());
+  } else if (Node.isVariableDeclaration(node)) {
     // the function is used as a variable ;
     return createTypeModelFromNode(node);
   } else if (Node.isPropertyAssignment(node)) {
-    const propertyName = node.getName();
-    const greatParent = node.getParent();
+    const objectLiteralExpression = node.getParent();
 
-    const typeModel = prout(greatParent.getParent());
+    const ancestor = objectLiteralExpression.getParent();
+    const typeModel = typeOfVariableAssignment(ancestor);
+    const propertyName = node.getName();
     if (typeModel?.kind === "object") {
       return typeModel.value()[propertyName];
-    }
-    /*
-    if (typeModel.kind === "object") {
-      const typeOfProperty = typeModel.value()[propertyName];
-      if (typeOfProperty.kind === "function") {
-        return [Object.values(typeOfProperty.parameters())];
+    } else if (typeModel?.kind === "function") {
+      if (Node.isCallExpression(ancestor)) {
+        const propertyIndex = ancestor.getArguments().findIndex((a) => a === objectLiteralExpression);
+
+        const intermediate = Object.values(typeModel.parameters())[propertyIndex];
+
+        if (intermediate?.kind === "object") {
+          return intermediate.value()[propertyName];
+        }
       }
     }
-
-     */
   }
   return null;
 }
@@ -58,8 +62,8 @@ export function getCallablesTypes(functionDeclaration: RuntimeCallable | Functio
     .map<TypeModel[][]>((ref) => {
       const parent = ref.getParent();
 
-      if (parent) {
-        const typeOfVariable = prout(parent);
+      if (parent && !Node.isCallExpression(parent)) {
+        const typeOfVariable = typeOfVariableAssignment(parent);
         if (typeOfVariable?.kind === "function") {
           return [Object.values(typeOfVariable.parameters())];
         }

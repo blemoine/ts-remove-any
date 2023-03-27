@@ -778,12 +778,12 @@ function use(gen: Gen<string, number>) {
     );
   });
 
-  it.skip("should type function used as reference", () => {
+  it("should type function used as reference", () => {
     const sourceFile = createSourceFile(`
 type Options = { inner: (s:string) => void };      
-function parent(options: Options) {} 
-function fn(s) {};
-parent({inner: fn});
+function parentFn(options: Options) {} 
+function fn(s) {}
+parentFn({inner: fn});
 `);
 
     removeAny(sourceFile, { verbosity: 2 });
@@ -791,9 +791,9 @@ parent({inner: fn});
       `type Options = {
     inner: (s: string) => void;
 };
-function parent(options: Options) { }
-function fn(s) { };
-parent({ inner: fn });
+function parentFn(options: Options) { }
+function fn(s: string) { }
+parentFn({ inner: fn });
 `
     );
   });
