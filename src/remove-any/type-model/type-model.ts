@@ -182,8 +182,15 @@ function createIntersectionModels(
   return deduplicateTypes([...otherTypeModels, ...aliasedObjectTypeModels, ...mergedObjectTypeModels]);
 }
 
-function getAlias(type: Type): string | undefined {
-  return type.getText();
+function getAlias(type: Type, node: Node): string | undefined {
+  const project = node.getSourceFile().getProject();
+  const rootDir = project.getCompilerOptions().rootDir;
+  const projectDir = rootDir ? project.getDirectory(rootDir)?.getPath() : null;
+  if (!projectDir) {
+    return type.getText();
+  }
+
+  return type.getText()?.replace(projectDir + "/node_modules/", "");
 }
 
 export function createTypeModelFromType(type: Type, node: Node): TypeModel {
@@ -251,8 +258,7 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
       // we have a stack problem here
       return { kind: "unsupported", value: () => type.getText() };
     }
-    const alias = getAlias(type);
-
+    const alias = getAlias(type, node);
     return {
       kind: "object",
       value: () =>
@@ -263,7 +269,7 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
       original: type,
     };
   } else if (type.isUnion()) {
-    const alias = getAlias(type);
+    const alias = getAlias(type, node);
 
     return {
       kind: "union",
@@ -286,7 +292,7 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
       original: type,
     };
   } else if (type.isIntersection()) {
-    const alias = getAlias(type);
+    const alias = getAlias(type, node);
 
     return {
       kind: "intersection",

@@ -80,7 +80,7 @@ export function getCallablesTypes(functionDeclaration: RuntimeCallable | Functio
           })
           .filter(([, types]) => getText(types).length > 0)
       );
-  console.log(functionDeclaration.getText(), getText(argumentsTypes[0][0]));
+
   return {
     parameterTypes,
     argumentsTypes: argumentsTypes.map((a) => a.slice(0, parameterTypes.length)),
