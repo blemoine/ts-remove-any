@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.51](https://github.com/blemoine/ts-remove-any/compare/v0.1.50...v0.1.51) (2023-03-28)
+
+
+### Features
+
+* add support for function references ([a577b38](https://github.com/blemoine/ts-remove-any/commit/a577b38d915ce5a5ad2c55fa869650b4fc434242))
+* add support for shorthand properties ([9d51aa2](https://github.com/blemoine/ts-remove-any/commit/9d51aa2d5b81d91bdb14142621b1ac868b8d0ea6))
+* add support for type used as alias ([593c664](https://github.com/blemoine/ts-remove-any/commit/593c664280fbe79f6a007784665d9b22bc21e439))
+* better support for variable used by reference ([2f94f70](https://github.com/blemoine/ts-remove-any/commit/2f94f704fbc29681bf8fb069cad2d6670e2b1885))
+* ignore object with a lot of properties ([5ec3bef](https://github.com/blemoine/ts-remove-any/commit/5ec3bef35e75e8cb0e281480e4183414903dcac5))
+* remove local path in import ([18c5d39](https://github.com/blemoine/ts-remove-any/commit/18c5d39ab34ff66a2e93cea92e1630b4cd6dd52f))
+
 ### [0.1.50](https://github.com/blemoine/ts-remove-any/compare/v0.1.49...v0.1.50) (2023-03-26)
 
 
