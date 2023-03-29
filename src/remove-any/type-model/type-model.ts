@@ -201,6 +201,7 @@ function getAlias(type: Type, node: Node): Alias | undefined {
   let importPath: string | null;
   let name: string;
   let isDefault: boolean;
+
   if (importsValues) {
     const project = node.getSourceFile().getProject();
     const rootDir = project.getCompilerOptions().rootDir;
@@ -210,12 +211,21 @@ function getAlias(type: Type, node: Node): Alias | undefined {
     name = importsValues[2].slice(1); // removing the starting '.'
     if (name === "default" && !importsValues[3]) {
       isDefault = true;
-      name =
-        type
-          .getSymbol()
-          ?.getDeclarations()
-          .find(combineGuards(Node.isInterfaceDeclaration, Node.isTypeAliasDeclaration))
-          ?.getName() ?? "default";
+
+      const declarations = type.getSymbol()?.getDeclarations();
+      let defaultName = declarations
+        ?.find(combineGuards(Node.isInterfaceDeclaration, Node.isTypeAliasDeclaration))
+        ?.getName();
+      if (!defaultName && declarations) {
+        const typeliteral = declarations.find(Node.isTypeLiteral);
+        if (typeliteral) {
+          const parent = typeliteral.getParent();
+          if (Node.isTypeAliasDeclaration(parent)) {
+            defaultName = parent.getName();
+          }
+        }
+      }
+      name = defaultName ?? "default";
     } else {
       isDefault = false;
     }

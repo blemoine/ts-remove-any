@@ -2,6 +2,7 @@ import {
   ArrowFunction,
   CallExpression,
   FunctionDeclaration,
+  ImportDeclarationStructure,
   JsxOpeningElement,
   JsxSelfClosingElement,
   NewExpression,
@@ -310,20 +311,21 @@ export type ComputedType =
   | { kind: "no_type_found" };
 
 export function setTypeOnNode(node: TypedNode & Node, newType: string | Alias): RevertableOperation {
+  const sourceFile = node.getSourceFile();
+  let importStructure: ImportDeclarationStructure | null = null;
   if (typeof newType !== "string") {
     if (!newType.importPath) {
       node.setType(newType.name);
     } else {
-      const sourceFile = node.getSourceFile();
-
       const importName = newType.importPath;
-      sourceFile.addImportDeclaration({
+      importStructure = {
         moduleSpecifier: importName,
         isTypeOnly: true,
         defaultImport: newType.isDefault ? newType.name : undefined,
         kind: StructureKind.ImportDeclaration,
         namedImports: newType.isDefault ? undefined : [newType.name],
-      });
+      } as const;
+      sourceFile.addImportDeclaration(importStructure);
       node.setType(newType.name);
     }
   } else {
@@ -335,6 +337,28 @@ export function setTypeOnNode(node: TypedNode & Node, newType: string | Alias): 
     countOfAnys: 1,
     revert() {
       node.removeType();
+      if (importStructure) {
+        const importDeclaration = sourceFile.getImportDeclaration(
+          (d) => d.getModuleSpecifier().getLiteralValue() === importStructure?.moduleSpecifier
+        );
+        if (importDeclaration) {
+          if (importStructure.defaultImport) {
+            importDeclaration.removeDefaultImport();
+          } else {
+            importDeclaration
+              .getNamedImports()
+              .find(
+                (n) =>
+                  importStructure?.namedImports &&
+                  n.getName() ===
+                    (Array.isArray(importStructure.namedImports)
+                      ? importStructure.namedImports[0]
+                      : importStructure.namedImports)
+              )
+              ?.remove();
+          }
+        }
+      }
     },
   };
 }

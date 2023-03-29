@@ -38,7 +38,7 @@ function doSomething(u: User) {
     );
   });
 
-  it("should add an import with default if needed", () => {
+  it("should add an import with default interface if needed", () => {
     const project = new Project();
 
     project.createSourceFile(
@@ -48,6 +48,43 @@ export default interface User {
     name: string; 
 }
 export function getName(u: User) {
+    return u.name;
+}`
+    );
+
+    const sourceFile = project.createSourceFile(
+      "/tmp/main.ts",
+      `
+import { getName } from '/tmp/ref_interface';
+
+function doSomething(u) {
+    getName(u);
+}
+`
+    );
+
+    removeAny(sourceFile, { verbosity: 2 });
+    expect(sourceFile.print()).toStrictEqual(
+      `import { getName } from '/tmp/ref_interface';
+import type User from "/tmp/ref_interface";
+function doSomething(u: User) {
+    getName(u);
+}
+`
+    );
+  });
+
+  it("should add an import with default type if needed", () => {
+    const project = new Project();
+
+    project.createSourceFile(
+      "/tmp/ref_interface.ts",
+      `
+type User = {
+    name: string; 
+};
+export default User;
+export function getName(u: User): string {
     return u.name;
 }`
     );
