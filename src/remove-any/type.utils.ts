@@ -313,10 +313,11 @@ export type ComputedType =
 export function setTypeOnNode(node: TypedNode & Node, newType: string | Alias): RevertableOperation {
   const sourceFile = node.getSourceFile();
   try {
-    let importStructure: ImportDeclarationStructure | null = null;
+    let addedImport: { moduleSpecifier: string; name: string; isDefault: boolean; isNew: boolean } | null;
     if (typeof newType !== "string") {
       if (!newType.importPath || (newType.isDefault && !newType.name)) {
         node.setType(newType.name);
+        addedImport = null;
       } else {
         const importName = newType.importPath;
 
@@ -324,19 +325,28 @@ export function setTypeOnNode(node: TypedNode & Node, newType: string | Alias): 
         const rootDir = project.getCompilerOptions().rootDir;
         const projectDir = rootDir ? project.getDirectory(rootDir)?.getPath() : null;
 
-        importStructure = {
-          moduleSpecifier: projectDir ? importName.replace(projectDir, "") : importName,
+        const moduleSpecifier = projectDir ? importName.replace(projectDir, "") : importName;
+        const importStructure = {
+          moduleSpecifier,
           isTypeOnly: true,
           defaultImport: newType.isDefault ? newType.name : undefined,
           kind: StructureKind.ImportDeclaration,
           namedImports: newType.isDefault ? undefined : [newType.name],
         } as const;
 
+        addedImport = {
+          moduleSpecifier,
+          isDefault: newType.isDefault,
+          name: newType.name,
+          isNew: true,
+        };
+
         sourceFile.addImportDeclaration(importStructure);
         node.setType(newType.name);
       }
     } else {
       node.setType(newType);
+      addedImport = null;
     }
 
     return {
@@ -344,30 +354,20 @@ export function setTypeOnNode(node: TypedNode & Node, newType: string | Alias): 
       countOfAnys: 1,
       revert() {
         node.removeType();
-        if (importStructure) {
-          const importDeclaration = sourceFile.getImportDeclaration(
-            (d) => d.getModuleSpecifier().getLiteralValue() === importStructure?.moduleSpecifier
-          );
-          if (importDeclaration) {
-            if (importStructure.defaultImport) {
-              //   importDeclaration.removeDefaultImport();
-            } else {
-              /*
-              importDeclaration
-                .getNamedImports()
-                .find(
-                  (n) =>
-                    importStructure?.namedImports &&
-                    n.getName() ===
-                      (Array.isArray(importStructure.namedImports)
-                        ? importStructure.namedImports[0]
-                        : importStructure.namedImports)
-                )
-                ?.remove();
-                
-               */
+        if (addedImport) {
+          const importDeclarations = sourceFile.getImportDeclarations();
+          importDeclarations.forEach((importDeclaration) => {
+            if (importDeclaration.getModuleSpecifier().getLiteralValue() === addedImport?.moduleSpecifier) {
+              importDeclaration.getNamedImports().forEach((namedImport) => {
+                if (namedImport.getName() === addedImport?.name) {
+                  namedImport.remove();
+                }
+              });
+              if (importDeclaration.getNamedImports().length === 0 && addedImport.isNew) {
+                importDeclaration.remove();
+              }
             }
-          }
+          });
         }
       },
     };
