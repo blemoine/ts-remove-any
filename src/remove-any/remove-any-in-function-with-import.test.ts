@@ -38,6 +38,96 @@ function doSomething(u: User) {
     );
   });
 
+  it("should not add multiple times same import", () => {
+    const project = new Project();
+
+    project.createSourceFile(
+      "/tmp/ref_interface.ts",
+      `
+export interface User {
+    name: string; 
+}
+export function getName(u: User) {
+    return u.name;
+}`
+    );
+
+    const sourceFile = project.createSourceFile(
+      "/tmp/main.ts",
+      `
+import { getName } from '/tmp/ref_interface';
+
+function doSomething(u) {
+    getName(u);
+}
+function doSomethingElse(v) {
+    getName(v);
+}
+`
+    );
+
+    removeAny(sourceFile, { verbosity: 2 });
+    expect(sourceFile.print()).toStrictEqual(
+      `import { getName } from '/tmp/ref_interface';
+import type { User } from "/tmp/ref_interface";
+function doSomething(u: User) {
+    getName(u);
+}
+function doSomethingElse(v: User) {
+    getName(v);
+}
+`
+    );
+  });
+
+  it("should not add multiple times same default import", () => {
+    const project = new Project();
+
+    project.createSourceFile(
+      "/tmp/ref_interface.ts",
+      `
+export default interface User {
+    name: string; 
+}
+export function getName(u: User) {
+    return u.name;
+}`
+    );
+
+    const sourceFile = project.createSourceFile(
+      "/tmp/main.ts",
+      `
+import { getName } from '/tmp/ref_interface';
+
+function doSomething(u) {
+    getName(u);
+}
+function doSomethingElse(v) {
+    getName(v);
+}
+function doSomethingElseAgain(v) {
+    getName(v);
+}
+`
+    );
+
+    removeAny(sourceFile, { verbosity: 2 });
+    expect(sourceFile.print()).toStrictEqual(
+      `import { getName } from '/tmp/ref_interface';
+import type User from "/tmp/ref_interface";
+function doSomething(u: User) {
+    getName(u);
+}
+function doSomethingElse(v: User) {
+    getName(v);
+}
+function doSomethingElseAgain(v: User) {
+    getName(v);
+}
+`
+    );
+  });
+
   it("should add an import with default interface if needed", () => {
     const project = new Project();
 
@@ -173,7 +263,7 @@ function doSomething(u) {
 `
     );
 
-    removeAny(sourceFile, { verbosity: 2 });
+    removeAny(sourceFile);
     expect(sourceFile.print()).toStrictEqual(
       `import { getName } from '/tmp/ref_interface';
 function doSomething(u) {
@@ -184,23 +274,23 @@ function doSomething(u) {
     );
   });
 
-    it("should revert a default import if it breaks the code", () => {
-        const project = new Project();
+  it("should revert a default import if it breaks the code", () => {
+    const project = new Project();
 
-        project.createSourceFile(
-            "/tmp/ref_interface.ts",
-            `
+    project.createSourceFile(
+      "/tmp/ref_interface.ts",
+      `
 export default interface User {
     name: string; 
 }
 export function getName(u: User) {
     return u.name;
 }`
-        );
+    );
 
-        const sourceFile = project.createSourceFile(
-            "/tmp/main.ts",
-            `
+    const sourceFile = project.createSourceFile(
+      "/tmp/main.ts",
+      `
 import { getName } from '/tmp/ref_interface';
 
 function doSomething(u) {
@@ -208,16 +298,16 @@ function doSomething(u) {
     u.age = 12;
 }
 `
-        );
+    );
 
-        removeAny(sourceFile, { verbosity: 2 });
-        expect(sourceFile.print()).toStrictEqual(
-            `import { getName } from '/tmp/ref_interface';
+    removeAny(sourceFile);
+    expect(sourceFile.print()).toStrictEqual(
+      `import { getName } from '/tmp/ref_interface';
 function doSomething(u) {
     getName(u);
     u.age = 12;
 }
 `
-        );
-    })
+    );
+  });
 });

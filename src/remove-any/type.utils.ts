@@ -312,6 +312,7 @@ export type ComputedType =
 
 export function setTypeOnNode(node: TypedNode & Node, newType: string | Alias): RevertableOperation {
   const sourceFile = node.getSourceFile();
+
   try {
     let addedImport: { moduleSpecifier: string; name: string; isDefault: boolean; isNew: boolean } | null;
     if (typeof newType !== "string") {
@@ -326,22 +327,41 @@ export function setTypeOnNode(node: TypedNode & Node, newType: string | Alias): 
         const projectDir = rootDir ? project.getDirectory(rootDir)?.getPath() : null;
 
         const moduleSpecifier = projectDir ? importName.replace(projectDir, "") : importName;
-        const importStructure = {
-          moduleSpecifier,
-          isTypeOnly: true,
-          defaultImport: newType.isDefault ? newType.name : undefined,
-          kind: StructureKind.ImportDeclaration,
-          namedImports: newType.isDefault ? undefined : [newType.name],
-        } as const;
 
-        addedImport = {
-          moduleSpecifier,
-          isDefault: newType.isDefault,
-          name: newType.name,
-          isNew: true,
-        };
+        const existingImport = sourceFile.getImportDeclaration(
+          (d) => d.getModuleSpecifier().getLiteralValue() === moduleSpecifier && d.isTypeOnly()
+        );
 
-        sourceFile.addImportDeclaration(importStructure);
+        if (!existingImport) {
+          const importStructure = {
+            moduleSpecifier,
+            isTypeOnly: true,
+            defaultImport: newType.isDefault ? newType.name : undefined,
+            kind: StructureKind.ImportDeclaration,
+            namedImports: newType.isDefault ? undefined : [newType.name],
+          } as const;
+
+          addedImport = {
+            moduleSpecifier,
+            isDefault: newType.isDefault,
+            name: newType.name,
+            isNew: true,
+          };
+
+          sourceFile.addImportDeclaration(importStructure);
+        } else {
+          if (!newType.isDefault) {
+            if (!existingImport.getNamedImports().some((i) => i.getName() === newType.name)) {
+              existingImport.addNamedImport(newType.name);
+              addedImport = {
+                moduleSpecifier,
+                isDefault: newType.isDefault,
+                name: newType.name,
+                isNew: false,
+              };
+            }
+          }
+        }
         node.setType(newType.name);
       }
     } else {
