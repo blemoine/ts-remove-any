@@ -515,23 +515,23 @@ const a: Options = { test: fn };
     );
   });
 
-    it("should type function used in shorthand property assignment", () => {
-        const sourceFile = createSourceFile(`
+  it("should type function used in shorthand property assignment", () => {
+    const sourceFile = createSourceFile(`
 type Options = {test: (s:string) => void}; 
 const test = (s) => { };
 const a: Options = {test};
 `);
 
-        removeAny(sourceFile, { verbosity: 2 });
-        expect(sourceFile.print()).toStrictEqual(
-            `type Options = {
+    removeAny(sourceFile, { verbosity: 2 });
+    expect(sourceFile.print()).toStrictEqual(
+      `type Options = {
     test: (s: string) => void;
 };
 const test = (s: string) => { };
 const a: Options = { test };
 `
-        );
-    })
+    );
+  });
 
   it("should type function used as reference", () => {
     const sourceFile = createSourceFile(`

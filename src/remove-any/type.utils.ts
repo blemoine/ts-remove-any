@@ -7,11 +7,12 @@ import {
   NewExpression,
   Node,
   ParameterDeclaration,
+  StructureKind,
   Type,
   TypedNode,
 } from "ts-morph";
 import { isNotNil } from "../utils/is-not-nil";
-import { RevertableOperation } from "./revert-operation";
+import { noopRevertableOperation, RevertableOperation } from "./revert-operation";
 import {
   createTypeModelFromNode,
   createTypeModelFromType,
@@ -60,7 +61,6 @@ export function filterUnusableTypes(typesFromRefs: TypesFromRefs[]): TypesFromRe
         !text.includes("any>") &&
         !text.includes(" any,") &&
         !text.includes(": any") &&
-        !text.includes("import(") &&
         t.kind !== "never" &&
         !text.includes("never[]") &&
         !text.includes(": never")
@@ -302,8 +302,24 @@ function getParametersOfCallSignature(node: Node): TypeOrSpread[] {
 
 export type ComputedType = { kind: "type_found"; type: string } | { kind: "no_any" } | { kind: "no_type_found" };
 
-export function setTypeOnNode(node: TypedNode, newType: string): RevertableOperation {
-  node.setType(newType);
+export function setTypeOnNode(node: TypedNode & Node, newType: string): RevertableOperation {
+  if (newType.startsWith("import(")) {
+    const import_part = newType.match(/import\("(.+?)"\)\.([a-zA-Z0-9-_]+)/);
+    if (!import_part) {
+      return noopRevertableOperation;
+    } else {
+      node.getSourceFile().addImportDeclaration({
+        moduleSpecifier: import_part[1],
+        isTypeOnly: true,
+        kind: StructureKind.ImportDeclaration,
+        namedImports: [import_part[2]],
+      });
+      node.setType(import_part[2]);
+    }
+  } else {
+    node.setType(newType);
+  }
+
   return {
     countChangesDone: 1,
     countOfAnys: 1,

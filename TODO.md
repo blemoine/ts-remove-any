@@ -4,4 +4,5 @@
   }
   da('value') // x is a subtype of 'value'
 
-* sem-route-page-test `app` in `definRoute`
+
+* upgrade ts-morph and TS
