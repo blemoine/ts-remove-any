@@ -2,32 +2,39 @@ import { Node, Type } from "ts-morph";
 import { isNotNil } from "../../utils/is-not-nil";
 import { partition } from "../../utils/array.utils";
 import { NonEmptyList } from "../../utils/non-empty-list";
+import { combineGuards } from "../../utils/type-guard.utils";
 
 interface IntersectionTypeModel {
   kind: "intersection";
   value: () => TypeModel[];
-  alias?: string;
+  alias?: Alias;
   original?: Type;
 }
 interface UnionTypeModel {
   kind: "union";
   value: () => TypeModel[];
-  alias?: string;
+  alias?: Alias;
   original?: Type;
 }
 interface FunctionTypeModel {
   kind: "function";
   parameters: () => Record<string, TypeModel>;
   returnType: TypeModel;
-  alias?: string;
+  alias?: Alias;
   original?: Type;
 }
 interface ObjectTypeModel {
   kind: "object";
   value: () => Record<string, TypeModel>;
-  alias?: string;
+  alias?: Alias;
   original?: Type;
 }
+export type Alias = {
+  importPath: string | null;
+  isDefault: boolean;
+  name: string;
+};
+
 function isObjectTypeModel(typeModel: TypeModel): typeModel is ObjectTypeModel {
   return typeModel.kind === "object";
 }
@@ -53,7 +60,7 @@ export type TypeModel =
   | IntersectionTypeModel
   | { kind: "unsupported"; value: () => string };
 
-export function getText(typeModel: TypeModel): string {
+export function getText(typeModel: TypeModel): string | Alias {
   switch (typeModel.kind) {
     case "":
       return "";
@@ -85,26 +92,26 @@ export function getText(typeModel: TypeModel): string {
       }
       return `${typeModel.readonly ? "readonly " : ""}[${typeModel
         .value()
-        .map((t) => getText(t))
+        .map((t) => getSerializedText(t))
         .join(", ")}]`;
     case "array":
       if (typeModel.alias) {
         return typeModel.alias;
       }
-      return `${typeModel.readonly ? "readonly " : ""}${getText(typeModel.value())}[]`;
+      return `${typeModel.readonly ? "readonly " : ""}${getSerializedText(typeModel.value())}[]`;
     case "function":
       if (typeModel.alias) {
         return typeModel.alias;
       }
       return `(${Object.entries(typeModel.parameters())
-        .map(([name, type]) => `${name}: ${getText(type)}`)
-        .join(", ")}) => ${getText(typeModel.returnType)}`;
+        .map(([name, type]) => `${name}: ${getSerializedText(type)}`)
+        .join(", ")}) => ${getSerializedText(typeModel.returnType)}`;
     case "object":
       if (typeModel.alias) {
         return typeModel.alias;
       }
       return `{${Object.entries(typeModel.value())
-        .map(([name, type]) => `"${name}": ${getText(type)}`)
+        .map(([name, type]) => `"${name}": ${getSerializedText(type)}`)
         .join("; ")}}`;
     case "union":
       if (typeModel.alias) {
@@ -113,7 +120,7 @@ export function getText(typeModel: TypeModel): string {
       return typeModel
         .value()
         .map((type) => {
-          const text = getText(type);
+          const text = getSerializedText(type);
           if (type.kind === "function") {
             return "(" + text + ")";
           }
@@ -126,11 +133,16 @@ export function getText(typeModel: TypeModel): string {
       }
       return typeModel
         .value()
-        .map((type) => getText(type))
+        .map((type) => getSerializedText(type))
         .join(" & ");
     case "unsupported":
       return typeModel.value();
   }
+}
+
+function getSerializedText(type: TypeModel): string {
+  const text = getText(type);
+  return typeof text === "string" ? text : serializeAlias(text);
 }
 
 export function createTypeModelFromNode(node: Node): TypeModel {
@@ -182,15 +194,38 @@ function createIntersectionModels(
   return deduplicateTypes([...otherTypeModels, ...aliasedObjectTypeModels, ...mergedObjectTypeModels]);
 }
 
-function getAlias(type: Type, node: Node): string | undefined {
-  const project = node.getSourceFile().getProject();
-  const rootDir = project.getCompilerOptions().rootDir;
-  const projectDir = rootDir ? project.getDirectory(rootDir)?.getPath() : null;
-  if (!projectDir) {
-    return type.getText();
+function getAlias(type: Type, node: Node): Alias | undefined {
+  const typeText = type.getText();
+
+  const importsValues = typeText.match(/import\("(.+?)"\)(\.[a-zA-Z0-9-_]+)+/);
+  let importPath: string | null;
+  let name: string;
+  let isDefault: boolean;
+  if (importsValues) {
+    const project = node.getSourceFile().getProject();
+    const rootDir = project.getCompilerOptions().rootDir;
+    const projectDir = rootDir ? project.getDirectory(rootDir)?.getPath() : null;
+
+    importPath = importsValues[1].replace(projectDir + "/node_modules/", "");
+    name = importsValues[2].slice(1); // removing the starting '.'
+    if (name === "default" && !importsValues[3]) {
+      isDefault = true;
+      name =
+        type
+          .getSymbol()
+          ?.getDeclarations()
+          .find(combineGuards(Node.isInterfaceDeclaration, Node.isTypeAliasDeclaration))
+          ?.getName() ?? "default";
+    } else {
+      isDefault = false;
+    }
+  } else {
+    importPath = null;
+    name = typeText;
+    isDefault = false;
   }
 
-  return type.getText()?.replace(projectDir + "/node_modules/", "");
+  return { importPath, name, isDefault };
 }
 
 export function createTypeModelFromType(type: Type, node: Node): TypeModel {
@@ -250,7 +285,7 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
             .map((p) => [p.getName(), createTypeModelFromType(p.getTypeAtLocation(node), node)])
         ),
       returnType: createTypeModelFromType(firstCallSignature.getReturnType(), node),
-      alias: symbolName,
+      alias: symbolName ? { importPath: null, isDefault: false, name: symbolName } : undefined,
       original: type,
     };
   } else if (type.isObject()) {
@@ -259,13 +294,14 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
       return { kind: "unsupported", value: () => type.getText() };
     }
     const alias = getAlias(type, node);
+
     return {
       kind: "object",
       value: () =>
         Object.fromEntries(
           type.getProperties().map((p) => [p.getName(), createTypeModelFromType(p.getTypeAtLocation(node), node)])
         ),
-      alias: alias?.startsWith("{") ? undefined : alias,
+      alias: alias && serializeAlias(alias)?.startsWith("{") ? undefined : alias,
       original: type,
     };
   } else if (type.isUnion()) {
@@ -288,7 +324,7 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
         }
         return unionTypes.map((t) => createTypeModelFromType(t, node));
       },
-      alias: alias?.startsWith("{") ? undefined : alias,
+      alias: alias && serializeAlias(alias)?.startsWith("{") ? undefined : alias,
       original: type,
     };
   } else if (type.isIntersection()) {
@@ -300,7 +336,7 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
         const typeModels = type.getIntersectionTypes().map((t) => createTypeModelFromType(t, node));
         return createIntersectionModels(typeModels);
       },
-      alias: alias?.startsWith("{") ? undefined : alias,
+      alias: alias && serializeAlias(alias)?.startsWith("{") ? undefined : alias,
       original: type,
     };
   } else {
@@ -334,7 +370,9 @@ export function deduplicateTypes(types: (TypeModel | null | undefined)[]): TypeM
     ...types
       .filter(isNotNil)
       .reduce((map, type) => {
-        const typeText = getText(type);
+        const text = getText(type);
+
+        const typeText = typeof text === "string" ? text : serializeAlias(text);
         if (!map.has(typeText)) {
           map.set(typeText, type);
         }
@@ -416,4 +454,11 @@ function getSuperTypeWithName(t1: TypeModel, t2: TypeModel): TypeModel {
   } else {
     return { kind: "intersection", value: () => createIntersectionModels([t1, t2]) };
   }
+}
+
+export function serializeAlias(alias: Alias): string {
+  if (!alias.importPath) {
+    return alias.name;
+  }
+  return `import("${alias.importPath}")${alias.isDefault ? ".default" : "."}${alias.name}`;
 }

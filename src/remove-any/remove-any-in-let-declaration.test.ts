@@ -1,5 +1,6 @@
 import { Project, SourceFile } from "ts-morph";
 import { removeAny } from "./remove-any";
+import { JsxEmit } from "typescript";
 
 describe("remove in let declaration", () => {
   it("should add a type in let declaration", () => {
@@ -117,6 +118,10 @@ const ParentComponent = () => {
 });
 
 function createSourceFile(code: string): SourceFile {
-  const project = new Project();
+  const project = new Project({
+    compilerOptions: {
+      jsx: JsxEmit.ReactJSX,
+    },
+  });
   return project.createSourceFile("/tmp/not_used.tsx", code);
 }

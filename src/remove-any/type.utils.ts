@@ -12,11 +12,13 @@ import {
   TypedNode,
 } from "ts-morph";
 import { isNotNil } from "../utils/is-not-nil";
-import { noopRevertableOperation, RevertableOperation } from "./revert-operation";
+import { RevertableOperation } from "./revert-operation";
 import {
+  Alias,
   createTypeModelFromNode,
   createTypeModelFromType,
   getText,
+  serializeAlias,
   TypeModel,
   unionTypeModel,
 } from "./type-model/type-model";
@@ -49,7 +51,8 @@ export function isImplicitAnyArray(node: TypedNode & Node) {
 export function filterUnusableTypes(typesFromRefs: TypesFromRefs[]): TypesFromRefs {
   const types = typesFromRefs.flatMap(({ types }) =>
     types.filter(isNotNil).filter((t) => {
-      const text = getText(t);
+      const baseText = getText(t);
+      const text = typeof baseText === "string" ? baseText : serializeAlias(baseText);
 
       if ("alias" in t && text.startsWith('"')) {
         return false;
@@ -71,7 +74,7 @@ export function filterUnusableTypes(typesFromRefs: TypesFromRefs[]): TypesFromRe
   return { types };
 }
 
-function computeTypesFromList(callsiteTypes: TypeModel[]): string | null {
+function computeTypesFromList(callsiteTypes: TypeModel[]): string | Alias | null {
   if (callsiteTypes.length === 0) {
     return null;
   }
@@ -104,7 +107,7 @@ function computeTypesFromList(callsiteTypes: TypeModel[]): string | null {
   return null;
 }
 
-export function computeTypesFromRefs({ types }: TypesFromRefs): string | null {
+export function computeTypesFromRefs({ types }: TypesFromRefs): string | Alias | null {
   return computeTypesFromList(types);
 }
 
@@ -212,7 +215,8 @@ export function computeDestructuredTypes(parametersFn: ParameterDeclaration): st
     if (propertyTypePairs.length > 0) {
       return `{${propertyTypePairs
         .map(({ propertyName, type }) => {
-          return `${propertyName}: ${type}`;
+          const typeText: string = typeof type === "string" ? type : serializeAlias(type);
+          return `${propertyName}: ${typeText}`;
         })
         .join(",")}}`;
     }
@@ -300,21 +304,27 @@ function getParametersOfCallSignature(node: Node): TypeOrSpread[] {
   return [];
 }
 
-export type ComputedType = { kind: "type_found"; type: string } | { kind: "no_any" } | { kind: "no_type_found" };
+export type ComputedType =
+  | { kind: "type_found"; type: string | Alias }
+  | { kind: "no_any" }
+  | { kind: "no_type_found" };
 
-export function setTypeOnNode(node: TypedNode & Node, newType: string): RevertableOperation {
-  if (newType.startsWith("import(")) {
-    const import_part = newType.match(/import\("(.+?)"\)\.([a-zA-Z0-9-_]+)/);
-    if (!import_part) {
-      return noopRevertableOperation;
+export function setTypeOnNode(node: TypedNode & Node, newType: string | Alias): RevertableOperation {
+  if (typeof newType !== "string") {
+    if (!newType.importPath) {
+      node.setType(newType.name);
     } else {
-      node.getSourceFile().addImportDeclaration({
-        moduleSpecifier: import_part[1],
+      const sourceFile = node.getSourceFile();
+
+      const importName = newType.importPath;
+      sourceFile.addImportDeclaration({
+        moduleSpecifier: importName,
         isTypeOnly: true,
+        defaultImport: newType.isDefault ? newType.name : undefined,
         kind: StructureKind.ImportDeclaration,
-        namedImports: [import_part[2]],
+        namedImports: newType.isDefault ? undefined : [newType.name],
       });
-      node.setType(import_part[2]);
+      node.setType(newType.name);
     }
   } else {
     node.setType(newType);

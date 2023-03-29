@@ -1,5 +1,6 @@
 import { Project, SourceFile } from "ts-morph";
 import { removeAny } from "./remove-any";
+import { JsxEmit } from "typescript";
 
 describe("remove-any", () => {
   it("should find the type for react props", () => {
@@ -107,6 +108,10 @@ function fnToIgnore({my_explicit_variable}) {
 });
 
 function createSourceFile(code: string): SourceFile {
-  const project = new Project();
+  const project = new Project({
+    compilerOptions: {
+      jsx: JsxEmit.ReactJSX,
+    },
+  });
   return project.createSourceFile("/tmp/not_used.tsx", code);
 }

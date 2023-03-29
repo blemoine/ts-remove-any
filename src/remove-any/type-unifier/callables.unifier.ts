@@ -16,6 +16,7 @@ import {
   createTypeModelFromType,
   getSupertype,
   getText,
+  serializeAlias,
   TypeModel,
 } from "../type-model/type-model";
 
@@ -78,7 +79,11 @@ export function getCallablesTypes(functionDeclaration: RuntimeCallable | Functio
             }
             return [idx, { kind: "" }] as const;
           })
-          .filter(([, types]) => getText(types).length > 0)
+          .filter(([, types]) => {
+            const baseText = getText(types);
+            const text = typeof baseText === "string" ? baseText : serializeAlias(baseText);
+            return text.length > 0;
+          })
       );
 
   return {

@@ -6,3 +6,8 @@
 
 
 * upgrade ts-morph and TS
+
+For imports:
+  * they should be relative path (no /Users/xxx)
+  * we should not import something already available in the scope
+  * the revert should remove the import we've just add

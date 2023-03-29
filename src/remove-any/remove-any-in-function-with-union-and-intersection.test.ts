@@ -1,5 +1,6 @@
 import { removeAny } from "./remove-any";
 import { Project, SourceFile } from "ts-morph";
+import { JsxEmit } from "typescript";
 
 describe("remove-any", () => {
   it("should type with aliased union", () => {
@@ -181,6 +182,10 @@ function fn2(x: User) {
 });
 
 function createSourceFile(code: string): SourceFile {
-  const project = new Project();
+  const project = new Project({
+    compilerOptions: {
+      jsx: JsxEmit.ReactJSX,
+    },
+  });
   return project.createSourceFile("/tmp/not_used.tsx", code);
 }

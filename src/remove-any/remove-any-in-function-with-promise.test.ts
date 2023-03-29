@@ -1,5 +1,6 @@
 import { removeAny } from "./remove-any";
 import { Project, SourceFile } from "ts-morph";
+import { JsxEmit } from "typescript";
 
 describe("remove-any", () => {
   it("should not type catch of promises", () => {
@@ -20,6 +21,10 @@ function doSomething(p: Promise<string>) {
 });
 
 function createSourceFile(code: string): SourceFile {
-  const project = new Project();
+  const project = new Project({
+    compilerOptions: {
+      jsx: JsxEmit.ReactJSX,
+    },
+  });
   return project.createSourceFile("/tmp/not_used.tsx", code);
 }
