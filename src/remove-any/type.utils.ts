@@ -312,53 +312,67 @@ export type ComputedType =
 
 export function setTypeOnNode(node: TypedNode & Node, newType: string | Alias): RevertableOperation {
   const sourceFile = node.getSourceFile();
-  let importStructure: ImportDeclarationStructure | null = null;
-  if (typeof newType !== "string") {
-    if (!newType.importPath) {
-      node.setType(newType.name);
-    } else {
-      const importName = newType.importPath;
-      importStructure = {
-        moduleSpecifier: importName,
-        isTypeOnly: true,
-        defaultImport: newType.isDefault ? newType.name : undefined,
-        kind: StructureKind.ImportDeclaration,
-        namedImports: newType.isDefault ? undefined : [newType.name],
-      } as const;
-      sourceFile.addImportDeclaration(importStructure);
-      node.setType(newType.name);
-    }
-  } else {
-    node.setType(newType);
-  }
+  try {
+    let importStructure: ImportDeclarationStructure | null = null;
+    if (typeof newType !== "string") {
+      if (!newType.importPath || (newType.isDefault && !newType.name)) {
+        node.setType(newType.name);
+      } else {
+        const importName = newType.importPath;
 
-  return {
-    countChangesDone: 1,
-    countOfAnys: 1,
-    revert() {
-      node.removeType();
-      if (importStructure) {
-        const importDeclaration = sourceFile.getImportDeclaration(
-          (d) => d.getModuleSpecifier().getLiteralValue() === importStructure?.moduleSpecifier
-        );
-        if (importDeclaration) {
-          if (importStructure.defaultImport) {
-            importDeclaration.removeDefaultImport();
-          } else {
-            importDeclaration
-              .getNamedImports()
-              .find(
-                (n) =>
-                  importStructure?.namedImports &&
-                  n.getName() ===
-                    (Array.isArray(importStructure.namedImports)
-                      ? importStructure.namedImports[0]
-                      : importStructure.namedImports)
-              )
-              ?.remove();
+        const project = sourceFile.getProject();
+        const rootDir = project.getCompilerOptions().rootDir;
+        const projectDir = rootDir ? project.getDirectory(rootDir)?.getPath() : null;
+
+        importStructure = {
+          moduleSpecifier: projectDir ? importName.replace(projectDir, "") : importName,
+          isTypeOnly: true,
+          defaultImport: newType.isDefault ? newType.name : undefined,
+          kind: StructureKind.ImportDeclaration,
+          namedImports: newType.isDefault ? undefined : [newType.name],
+        } as const;
+
+        sourceFile.addImportDeclaration(importStructure);
+        node.setType(newType.name);
+      }
+    } else {
+      node.setType(newType);
+    }
+
+    return {
+      countChangesDone: 1,
+      countOfAnys: 1,
+      revert() {
+        node.removeType();
+        if (importStructure) {
+          const importDeclaration = sourceFile.getImportDeclaration(
+            (d) => d.getModuleSpecifier().getLiteralValue() === importStructure?.moduleSpecifier
+          );
+          if (importDeclaration) {
+            if (importStructure.defaultImport) {
+              //   importDeclaration.removeDefaultImport();
+            } else {
+              /*
+              importDeclaration
+                .getNamedImports()
+                .find(
+                  (n) =>
+                    importStructure?.namedImports &&
+                    n.getName() ===
+                      (Array.isArray(importStructure.namedImports)
+                        ? importStructure.namedImports[0]
+                        : importStructure.namedImports)
+                )
+                ?.remove();
+                
+               */
+            }
           }
         }
-      }
-    },
-  };
+      },
+    };
+  } catch (e) {
+    console.error(`Error in source file ${sourceFile.getBaseName()}`, e);
+    throw e;
+  }
 }

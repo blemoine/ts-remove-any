@@ -214,7 +214,12 @@ function getAlias(type: Type, node: Node): Alias | undefined {
 
       const declarations = type.getSymbol()?.getDeclarations();
       let defaultName = declarations
-        ?.find(combineGuards(Node.isInterfaceDeclaration, Node.isTypeAliasDeclaration))
+        ?.find(
+          combineGuards(
+            combineGuards(Node.isInterfaceDeclaration, Node.isTypeAliasDeclaration),
+            Node.isClassDeclaration
+          )
+        )
         ?.getName();
       if (!defaultName && declarations) {
         const typeliteral = declarations.find(Node.isTypeLiteral);
