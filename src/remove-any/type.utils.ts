@@ -327,11 +327,12 @@ export function setTypeOnNode(node: TypedNode & Node, newType: string | Alias): 
 
         const moduleSpecifier = projectDir ? importName.replace(projectDir, "") : importName;
 
-        const existingImport = sourceFile.getImportDeclaration(
-          (d) => d.getModuleSpecifier().getLiteralValue() === moduleSpecifier
-        );
+        const existingImport = sourceFile.getImportDeclaration((d) => {
+          return d.getModuleSpecifier().getLiteralValue() === moduleSpecifier;
+        });
 
         let typeName = newType.name;
+
         if (!existingImport) {
           const importStructure = {
             moduleSpecifier,
@@ -362,6 +363,7 @@ export function setTypeOnNode(node: TypedNode & Node, newType: string | Alias): 
             }
           } else {
             const defaultImportName = existingImport.getDefaultImport()?.getText();
+
             if (defaultImportName) {
               typeName = defaultImportName;
             } else {
@@ -392,16 +394,20 @@ export function setTypeOnNode(node: TypedNode & Node, newType: string | Alias): 
           importDeclarations.forEach((importDeclaration) => {
             if (importDeclaration.getModuleSpecifier().getLiteralValue() === addedImport?.moduleSpecifier) {
               if (addedImport.isDefault) {
-                importDeclaration.setDefaultImport("");
+                if (importDeclaration.getNamedImports().length > 0) {
+                  importDeclaration.setDefaultImport("");
+                } else {
+                  importDeclaration.remove();
+                }
               } else {
                 importDeclaration.getNamedImports().forEach((namedImport) => {
                   if (namedImport.getName() === addedImport?.name) {
                     namedImport.remove();
                   }
                 });
-              }
-              if (importDeclaration.getNamedImports().length === 0 && addedImport.isNew) {
-                importDeclaration.remove();
+                if (importDeclaration.getNamedImports().length === 0 && addedImport.isNew) {
+                  importDeclaration.remove();
+                }
               }
             }
           });

@@ -222,15 +222,16 @@ function getAlias(type: Type, node: Node): Alias | undefined {
         )
         ?.getName();
       if (!defaultName && declarations) {
-        const typeliteral = declarations.find(Node.isTypeLiteral);
-        if (typeliteral) {
-          const parent = typeliteral.getParent();
+        const typeLiteral = declarations.find(Node.isTypeLiteral);
+        if (typeLiteral) {
+          const parent = typeLiteral.getParent();
           if (Node.isTypeAliasDeclaration(parent)) {
             defaultName = parent.getName();
           }
         }
       }
-      name = defaultName ?? "default";
+
+      name = defaultName ?? sanitizeForName(importPath);
     } else {
       isDefault = false;
     }
@@ -241,6 +242,10 @@ function getAlias(type: Type, node: Node): Alias | undefined {
   }
 
   return { importPath, name, isDefault };
+}
+
+function sanitizeForName(str: string): string {
+  return (str.split("/").at(-1) ?? "RANDOM_NAME").replace(/[^a-zA-Z0-9_]/g, "");
 }
 
 export function createTypeModelFromType(type: Type, node: Node): TypeModel {
