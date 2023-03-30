@@ -328,9 +328,10 @@ export function setTypeOnNode(node: TypedNode & Node, newType: string | Alias): 
         const moduleSpecifier = projectDir ? importName.replace(projectDir, "") : importName;
 
         const existingImport = sourceFile.getImportDeclaration(
-          (d) => d.getModuleSpecifier().getLiteralValue() === moduleSpecifier && d.isTypeOnly()
+          (d) => d.getModuleSpecifier().getLiteralValue() === moduleSpecifier
         );
 
+        let typeName = newType.name;
         if (!existingImport) {
           const importStructure = {
             moduleSpecifier,
@@ -359,9 +360,22 @@ export function setTypeOnNode(node: TypedNode & Node, newType: string | Alias): 
                 isNew: false,
               };
             }
+          } else {
+            const defaultImportName = existingImport.getDefaultImport()?.getText();
+            if (defaultImportName) {
+              typeName = defaultImportName;
+            } else {
+              existingImport.setDefaultImport(newType.name);
+              addedImport = {
+                moduleSpecifier,
+                isDefault: true,
+                name: newType.name,
+                isNew: false,
+              };
+            }
           }
         }
-        node.setType(newType.name);
+        node.setType(typeName);
       }
     } else {
       node.setType(newType);
@@ -377,11 +391,15 @@ export function setTypeOnNode(node: TypedNode & Node, newType: string | Alias): 
           const importDeclarations = sourceFile.getImportDeclarations();
           importDeclarations.forEach((importDeclaration) => {
             if (importDeclaration.getModuleSpecifier().getLiteralValue() === addedImport?.moduleSpecifier) {
-              importDeclaration.getNamedImports().forEach((namedImport) => {
-                if (namedImport.getName() === addedImport?.name) {
-                  namedImport.remove();
-                }
-              });
+              if (addedImport.isDefault) {
+                importDeclaration.setDefaultImport("");
+              } else {
+                importDeclaration.getNamedImports().forEach((namedImport) => {
+                  if (namedImport.getName() === addedImport?.name) {
+                    namedImport.remove();
+                  }
+                });
+              }
               if (importDeclaration.getNamedImports().length === 0 && addedImport.isNew) {
                 importDeclaration.remove();
               }

@@ -29,8 +29,7 @@ function doSomething(u) {
 
     removeAny(sourceFile, { verbosity: 2 });
     expect(sourceFile.print()).toStrictEqual(
-      `import { getName } from '/tmp/ref_interface';
-import type { User } from "/tmp/ref_interface";
+      `import { getName, User } from '/tmp/ref_interface';
 function doSomething(u: User) {
     getName(u);
 }
@@ -68,8 +67,7 @@ function doSomethingElse(v) {
 
     removeAny(sourceFile, { verbosity: 2 });
     expect(sourceFile.print()).toStrictEqual(
-      `import { getName } from '/tmp/ref_interface';
-import type { User } from "/tmp/ref_interface";
+      `import { getName, User } from '/tmp/ref_interface';
 function doSomething(u: User) {
     getName(u);
 }
@@ -113,8 +111,7 @@ function doSomethingElseAgain(v) {
 
     removeAny(sourceFile, { verbosity: 2 });
     expect(sourceFile.print()).toStrictEqual(
-      `import { getName } from '/tmp/ref_interface';
-import type User from "/tmp/ref_interface";
+      `import User, { getName } from '/tmp/ref_interface';
 function doSomething(u: User) {
     getName(u);
 }
@@ -155,11 +152,43 @@ function doSomething(u) {
 
     removeAny(sourceFile, { verbosity: 2 });
     expect(sourceFile.print()).toStrictEqual(
-      `import { getName } from '/tmp/ref_interface';
-import type User from "/tmp/ref_interface";
+      `import User, { getName } from '/tmp/ref_interface';
 function doSomething(u: User) {
     getName(u);
 }
+`
+    );
+  });
+
+  it("should reuse a default import", () => {
+    const project = new Project();
+
+    project.createSourceFile(
+      "/tmp/ref_interface.ts",
+      `
+export default interface User {
+    name: string; 
+}`
+    );
+
+    const sourceFile = project.createSourceFile(
+      "/tmp/main.ts",
+      `
+import Something from '/tmp/ref_interface';
+
+let a: Something = { name: 'something' };
+
+function doSomething(b) { }
+doSomething(a);
+`
+    );
+
+    removeAny(sourceFile, { verbosity: 2 });
+    expect(sourceFile.print()).toStrictEqual(
+      `import Something from '/tmp/ref_interface';
+let a: Something = { name: 'something' };
+function doSomething(b: Something) { }
+doSomething(a);
 `
     );
   });
@@ -192,8 +221,7 @@ function doSomething(u) {
 
     removeAny(sourceFile, { verbosity: 2 });
     expect(sourceFile.print()).toStrictEqual(
-      `import { getName } from '/tmp/ref_interface';
-import type User from "/tmp/ref_interface";
+      `import User, { getName } from '/tmp/ref_interface';
 function doSomething(u: User) {
     getName(u);
 }
@@ -228,8 +256,7 @@ function doSomething(u) {
 
     removeAny(sourceFile, { verbosity: 2 });
     expect(sourceFile.print()).toStrictEqual(
-      `import { getName } from '/tmp/ref_interface';
-import type User from "/tmp/ref_interface";
+      `import User, { getName } from '/tmp/ref_interface';
 function doSomething(u: User) {
     getName(u);
 }
