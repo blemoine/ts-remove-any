@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.52](https://github.com/blemoine/ts-remove-any/compare/v0.1.51...v0.1.52) (2023-03-30)
+
+
+### Features
+
+* add base support for import ([fd247e0](https://github.com/blemoine/ts-remove-any/commit/fd247e0d235a7fb3be4b65e59294dc695c1985c2))
+* add better support for import ([4047478](https://github.com/blemoine/ts-remove-any/commit/4047478e4cd33d97aa31194e271f3cc3b6d8092e))
+* add better support for import ([f83199f](https://github.com/blemoine/ts-remove-any/commit/f83199ffce764d8b356c79eaf9b5db44d8a2967e))
+* add better support for import ([52f49a6](https://github.com/blemoine/ts-remove-any/commit/52f49a6e7086767fb19ecb5285e7b3cdad60faa0))
+* add better support for imports ([dda8cf8](https://github.com/blemoine/ts-remove-any/commit/dda8cf8a095e76cdf96aed820f6d999387d53f4a))
+* add support for class import ([bb34732](https://github.com/blemoine/ts-remove-any/commit/bb347324c8bf0ca0b21089b439d1438939ca261f))
+* better handling of imports ([24e3705](https://github.com/blemoine/ts-remove-any/commit/24e3705027cbf988064a411fea8a48bd0204610f))
+* deduplicate imports ([22b85a3](https://github.com/blemoine/ts-remove-any/commit/22b85a38635a141b9795fc77028b8e446c378d2a))
+* revert for import ([8b01b3c](https://github.com/blemoine/ts-remove-any/commit/8b01b3ca5f58fc5acc6a17fe21802b895a340a1b))
+
 ### [0.1.51](https://github.com/blemoine/ts-remove-any/compare/v0.1.50...v0.1.51) (2023-03-28)
 
 
