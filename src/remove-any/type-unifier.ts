@@ -23,6 +23,7 @@ function allTypesOfRef(ref: Node): TypeModel[] {
   if (!parent) {
     return [];
   }
+
   if (Node.isTemplateSpan(parent)) {
     return [{ kind: "string" }];
   }
@@ -90,7 +91,6 @@ function allTypesOfRef(ref: Node): TypeModel[] {
         .find(isFunctionLike);
       if (functionDeclaration) {
         const callablesTypes = getCallablesTypes(functionDeclaration);
-
         return getCallableTypesOfParameter(callablesTypes, parameterIdx);
       }
     }
@@ -177,8 +177,13 @@ const isFunctionLike = combineGuards(
 );
 
 function getCallableTypesOfParameter(callablesType: CallableType, parameterIdx: number): TypeModel[] {
+  const parameterDeclaredType = callablesType.parameterTypes[parameterIdx];
+  if (parameterDeclaredType && parameterDeclaredType.kind !== "any" && parameterDeclaredType.kind !== "never") {
+    return [parameterDeclaredType];
+  }
+
   return [
-    callablesType.parameterTypes[parameterIdx],
+    parameterDeclaredType,
     ...callablesType.argumentsTypes.map((p) => p[parameterIdx]),
     ...[callablesType.usageInFunction[parameterIdx]],
   ].filter(isNotNil);

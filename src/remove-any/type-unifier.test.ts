@@ -29,7 +29,7 @@ test(1, myVariable);
 
     const typesOfUsage = allTypesOfRefs(variableDeclaration);
 
-    expect(typesOfUsage.types.map((s) => getText(s))).toStrictEqual(expect.arrayContaining(["any", "string"]));
+    expect(typesOfUsage.types.map((s) => getText(s))).toStrictEqual(expect.arrayContaining(["string"]));
   });
 
   it("should return argument and parameter types of arrow function", () => {
@@ -44,7 +44,7 @@ test(1, '', myVariable);
 
     const typesOfUsage = allTypesOfRefs(variableDeclaration);
 
-    expect(typesOfUsage.types.map((s) => getText(s))).toStrictEqual(expect.arrayContaining(["any", "boolean"]));
+    expect(typesOfUsage.types.map((s) => getText(s))).toStrictEqual(expect.arrayContaining(["boolean"]));
   });
 
   it("should return argument and parameter types of method call", () => {
@@ -60,7 +60,7 @@ test.myMethod(1, '', myVariable);
 
     const typesOfUsage = allTypesOfRefs(variableDeclaration);
 
-    expect(typesOfUsage.types.map((s) => getText(s))).toStrictEqual(expect.arrayContaining(["any", "string[]"]));
+    expect(typesOfUsage.types.map((s) => getText(s))).toStrictEqual(expect.arrayContaining(["string[]"]));
   });
 
   it("should return the type of return if used in a return position", () => {
@@ -89,7 +89,7 @@ const test = new Test(1, '', myVariable);
 
     const typesOfUsage = allTypesOfRefs(variableDeclaration);
 
-    expect(typesOfUsage.types.map((s) => getText(s))).toStrictEqual(expect.arrayContaining(["any", "boolean"]));
+    expect(typesOfUsage.types.map((s) => getText(s))).toStrictEqual(expect.arrayContaining(["boolean"]));
   });
 
   it("should return the type of variable assignment", () => {
@@ -322,7 +322,7 @@ fn(x);
 
     const typesOfUsage = allTypesOfRefs(paramaterDeclaration);
 
-    expect(typesOfUsage.types.map((s) => getText(s))).toStrictEqual(expect.arrayContaining(["any[]", "number[]"]));
+    expect(typesOfUsage.types.map((s) => getText(s))).toStrictEqual(expect.arrayContaining(["number[]"]));
   });
 });
 

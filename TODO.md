@@ -7,6 +7,8 @@
 
 * upgrade ts-morph and TS
 
+* trip-stops-helper
+
 For imports:
   * they should be relative path (no /Users/xxx)
   * we should not import something already available in the scope

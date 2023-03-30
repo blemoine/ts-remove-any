@@ -207,7 +207,7 @@ function getAlias(type: Type, node: Node): Alias | undefined {
     const rootDir = project.getCompilerOptions().rootDir;
     const projectDir = rootDir ? project.getDirectory(rootDir)?.getPath() : null;
 
-    importPath = importsValues[1].replace(projectDir + "/node_modules/", "");
+    importPath = importsValues[1].replace(projectDir ?? "", "").replace(/^\/node_modules\//, "");
     name = importsValues[2].slice(1); // removing the starting '.'
     if (name === "default" && !importsValues[3]) {
       isDefault = true;

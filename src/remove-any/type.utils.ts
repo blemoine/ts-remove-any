@@ -2,7 +2,6 @@ import {
   ArrowFunction,
   CallExpression,
   FunctionDeclaration,
-  ImportDeclarationStructure,
   JsxOpeningElement,
   JsxSelfClosingElement,
   NewExpression,
