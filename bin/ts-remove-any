@@ -1,5 +1,3 @@
 #!/usr/bin/env node
 
-
-require('patch-package/index')
-require('../dist/index.js')
+require("../dist/index.js");
