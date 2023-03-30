@@ -48,13 +48,6 @@ each time `ts-remove-any` removes some `any`s, new types are available to analys
 
 This is not done automatically as you may want to check intermediate results between run, to ensure types generated are valid.
 
----
-
-[This bug](https://github.com/dsherret/ts-morph/pull/1380) in ts-morph is blocking some transformation if you're using
-`ts-remove-any` from npx.
-The other solution is [to clone the repository](github.com/blemoine/ts-remove-any), execute `npm install` and
-then `npx ts-node src/index.ts`
-That way a patch will be applied, and you will benefit from the latest feature of `ts-remove-any`
 
 ## Release procedure
 
