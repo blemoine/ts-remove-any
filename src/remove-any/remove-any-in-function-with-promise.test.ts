@@ -19,21 +19,21 @@ function doSomething(p: Promise<string>) {
     );
   });
 
-    it("should not type catch of promises", () => {
-        const sourceFile = createSourceFile(`
+  it("should not type catch of promises", () => {
+    const sourceFile = createSourceFile(`
 function doSomething(p: Promise<string>) {
     p.catch(function (e) { Number.parseInt(e) })
 }
 `);
 
-        removeAny(sourceFile, { verbosity: 2 });
-        expect(sourceFile.print()).toStrictEqual(
-            `function doSomething(p: Promise<string>) {
+    removeAny(sourceFile, { verbosity: 2 });
+    expect(sourceFile.print()).toStrictEqual(
+      `function doSomething(p: Promise<string>) {
     p.catch(function (e) { Number.parseInt(e); });
 }
 `
-        );
-    });
+    );
+  });
 });
 
 function createSourceFile(code: string): SourceFile {

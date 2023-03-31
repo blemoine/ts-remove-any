@@ -1,4 +1,4 @@
-import { Node, Type } from "ts-morph";
+import { CompilerOptions, Node, Project, Type } from "ts-morph";
 import { isNotNil } from "../../utils/is-not-nil";
 import { partition } from "../../utils/array.utils";
 import { NonEmptyList } from "../../utils/non-empty-list";
@@ -29,11 +29,11 @@ interface ObjectTypeModel {
   alias?: Alias;
   original?: Type;
 }
-export type Alias = {
+export interface Alias {
   importPath: string | null;
   isDefault: boolean;
   name: string;
-};
+}
 
 function isObjectTypeModel(typeModel: TypeModel): typeModel is ObjectTypeModel {
   return typeModel.kind === "object";
@@ -194,7 +194,7 @@ function createIntersectionModels(
   return deduplicateTypes([...otherTypeModels, ...aliasedObjectTypeModels, ...mergedObjectTypeModels]);
 }
 
-function getAlias(type: Type, node: Node): Alias | undefined {
+function getAlias(type: Type, project: Project): Alias | undefined {
   const typeText = type.getText();
 
   const importsValues = typeText.match(/import\("(.+?)"\)(\.[a-zA-Z0-9-_]+)+/);
@@ -203,7 +203,6 @@ function getAlias(type: Type, node: Node): Alias | undefined {
   let isDefault: boolean;
 
   if (importsValues) {
-    const project = node.getSourceFile().getProject();
     const rootDir = project.getCompilerOptions().rootDir;
     const projectDir = rootDir ? project.getDirectory(rootDir)?.getPath() : null;
 
@@ -249,6 +248,7 @@ function sanitizeForName(str: string): string {
 }
 
 export function createTypeModelFromType(type: Type, node: Node): TypeModel {
+  const project = node.getProject();
   if (type.isNumber()) {
     return { kind: "number", original: type };
   } else if (type.isString()) {
@@ -313,7 +313,7 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
       // we have a stack problem here
       return { kind: "unsupported", value: () => type.getText() };
     }
-    const alias = getAlias(type, node);
+    const alias = getAlias(type, project);
 
     return {
       kind: "object",
@@ -325,7 +325,7 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
       original: type,
     };
   } else if (type.isUnion()) {
-    const alias = getAlias(type, node);
+    const alias = getAlias(type, project);
 
     return {
       kind: "union",
@@ -348,7 +348,7 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
       original: type,
     };
   } else if (type.isIntersection()) {
-    const alias = getAlias(type, node);
+    const alias = getAlias(type, project);
 
     return {
       kind: "intersection",
