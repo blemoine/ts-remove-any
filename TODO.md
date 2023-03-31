@@ -4,4 +4,3 @@
   }
   da('value') // x is a subtype of 'value'
 
-* y'a des imports pas enlevé dans certains cas de revert -> api-error.test.ts

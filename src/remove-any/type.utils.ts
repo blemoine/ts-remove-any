@@ -381,88 +381,17 @@ export function setTypeOnNode(node: TypedNode & Node, newTypes: SerializedTypeMo
     });
     node.setType(typeName);
 
-    /*
-    if (typeof newType !== "string") {
-      if (!newType.importPath || (newType.isDefault && !newType.name)) {
-        node.setType(newType.name);
-        addedImport = null;
-      } else {
-        const importName = newType.importPath;
-
-        const project = sourceFile.getProject();
-        const rootDir = project.getCompilerOptions().rootDir;
-        const projectDir = rootDir ? project.getDirectory(rootDir)?.getPath() : null;
-
-        const moduleSpecifier = projectDir ? importName.replace(projectDir, "") : importName;
-
-        const existingImport = sourceFile.getImportDeclaration((d) => {
-          return d.getModuleSpecifier().getLiteralValue() === moduleSpecifier;
-        });
-
-        let typeName = newType.name;
-
-        if (!existingImport) {
-          const importStructure = {
-            moduleSpecifier,
-            isTypeOnly: true,
-            defaultImport: newType.isDefault ? newType.name : undefined,
-            kind: StructureKind.ImportDeclaration,
-            namedImports: newType.isDefault ? undefined : [newType.name],
-          } as const;
-
-          addedImport = {
-            moduleSpecifier,
-            isDefault: newType.isDefault,
-            name: newType.name,
-            isNew: true,
-          };
-
-          sourceFile.addImportDeclaration(importStructure);
-        } else {
-          if (!newType.isDefault) {
-            if (!existingImport.getNamedImports().some((i) => i.getName() === newType.name)) {
-              existingImport.addNamedImport(newType.name);
-              addedImport = {
-                moduleSpecifier,
-                isDefault: newType.isDefault,
-                name: newType.name,
-                isNew: false,
-              };
-            }
-          } else {
-            const defaultImportName = existingImport.getDefaultImport()?.getText();
-
-            if (defaultImportName) {
-              typeName = defaultImportName;
-            } else {
-              existingImport.setDefaultImport(newType.name);
-              addedImport = {
-                moduleSpecifier,
-                isDefault: true,
-                name: newType.name,
-                isNew: false,
-              };
-            }
-          }
-        }
-        node.setType(typeName);
-      }
-    } else {
-      node.setType(newType);
-      addedImport = null;
-    }
-    
-     */
-
     return {
       countChangesDone: 1,
       countOfAnys: 1,
       revert() {
         node.removeType();
+
         addedImports.forEach((addedImport) => {
           const importDeclarations = sourceFile.getImportDeclarations();
           importDeclarations.forEach((importDeclaration) => {
-            if (importDeclaration.getModuleSpecifier().getLiteralValue() === addedImport?.moduleSpecifier) {
+            const importModuleSpecifier = importDeclaration.getModuleSpecifier().getLiteralValue();
+            if (importModuleSpecifier === addedImport?.moduleSpecifier) {
               if (addedImport.isDefault) {
                 if (importDeclaration.getNamedImports().length > 0) {
                   importDeclaration.setDefaultImport("");
@@ -475,7 +404,10 @@ export function setTypeOnNode(node: TypedNode & Node, newTypes: SerializedTypeMo
                     namedImport.remove();
                   }
                 });
-                if (importDeclaration.getNamedImports().length === 0 && addedImport.isNew) {
+                if (
+                  importDeclaration.getNamedImports().length === 0 &&
+                  addedImports.some((i) => i.isNew && i.moduleSpecifier === importModuleSpecifier)
+                ) {
                   importDeclaration.remove();
                 }
               }
