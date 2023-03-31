@@ -11,6 +11,7 @@ import {
 import { noopRevertableOperation, RevertableOperation } from "./revert-operation";
 import { cannotHappen } from "../utils/cannot-happen";
 import { allTypesOfRefs } from "./type-unifier";
+import { serializeAlias } from "./type-model/type-model";
 
 interface RemoveAnyOptions {
   explicit: boolean;
@@ -49,7 +50,11 @@ export function removeAnyInParametersFn(
     try {
       if (options.dryRun) {
         const filePath = parametersFn.getSourceFile().getBaseName();
-        console.info(`${filePath} parameter \`${parametersFn.getText()}\` would got type \`${newType.type}\``);
+        console.info(
+          `${filePath} parameter \`${parametersFn.getText()}\` would got type \`${
+            typeof newType.type === "string" ? newType.type : serializeAlias(newType.type)
+          }\``
+        );
 
         return {
           countChangesDone: 0,

@@ -99,7 +99,7 @@ function revertableOperation(
 }
 
 function isPromiseCatch(node: Node | undefined): boolean {
-  if (Node.isArrowFunction(node) || Node.isFunctionDeclaration(node)) {
+  if (Node.isArrowFunction(node) || Node.isFunctionDeclaration(node) || Node.isFunctionExpression(node)) {
     return isPromiseCatch(node.getParent());
   }
   if (Node.isCallExpression(node)) {
