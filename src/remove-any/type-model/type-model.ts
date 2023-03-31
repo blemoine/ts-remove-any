@@ -52,8 +52,8 @@ export type TypeModel =
   | { kind: "any"; original?: Type }
   | { kind: "undefined"; original?: Type }
   | { kind: "never"; original?: Type }
-  | { kind: "array"; value: () => TypeModel; readonly: boolean; alias?: string; original?: Type }
-  | { kind: "tuple"; value: () => TypeModel[]; readonly: boolean; alias?: string; original?: Type }
+  | { kind: "array"; value: () => TypeModel; readonly: boolean; alias?: Alias; original?: Type }
+  | { kind: "tuple"; value: () => TypeModel[]; readonly: boolean; alias?: Alias; original?: Type }
   | FunctionTypeModel
   | ObjectTypeModel
   | UnionTypeModel
@@ -149,29 +149,7 @@ export function createTypeModelFromNode(node: Node): TypeModel {
   return createTypeModelFromType(node.getType(), node);
 }
 
-function createIntersectionModels(
-  typeModels: (
-    | { kind: "" }
-    | { kind: "number"; original?: Type }
-    | { kind: "number-literal"; value: number; original?: Type }
-    | { kind: "string"; original?: Type }
-    | { kind: "string-literal"; value: string; original?: Type }
-    | { kind: "boolean"; original?: Type }
-    | { kind: "boolean-literal"; value: boolean; original?: Type }
-    | { kind: "unknown"; original?: Type }
-    | { kind: "null"; original?: Type }
-    | { kind: "any"; original?: Type }
-    | { kind: "undefined"; original?: Type }
-    | { kind: "never"; original?: Type }
-    | { kind: "array"; value: () => TypeModel; readonly: boolean; alias?: string; original?: Type }
-    | { kind: "tuple"; value: () => TypeModel[]; readonly: boolean; alias?: string; original?: Type }
-    | FunctionTypeModel
-    | ObjectTypeModel
-    | UnionTypeModel
-    | IntersectionTypeModel
-    | { kind: "unsupported"; value: () => string }
-  )[]
-) {
+function createIntersectionModels(typeModels: TypeModel[]) {
   const [objectTypeModels, otherTypeModels] = partition(typeModels, isObjectTypeModel);
   const [aliasedObjectTypeModels, nonAliasedObjectTypeModels] = partition(
     objectTypeModels,
@@ -279,7 +257,7 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
       kind: "tuple",
       value: () => type.getTupleElements().map((t) => createTypeModelFromType(t, node)),
       readonly: compilerType && "readonly" in compilerType ? !!compilerType.readonly : false,
-      alias: symbolName,
+      alias: symbolName ? { name: symbolName, isDefault: false, importPath: null } : undefined,
       original: type,
     };
   } else if (type.isArray()) {
@@ -289,7 +267,7 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
       kind: "array",
       value: () => createTypeModelFromType(type.getTypeArguments()[0], node),
       readonly: type.isReadonlyArray(),
-      alias: symbolName,
+      alias: symbolName ? { name: symbolName, isDefault: false, importPath: null } : undefined,
       original: type,
     };
   } else if (type.getCallSignatures().length > 0) {
