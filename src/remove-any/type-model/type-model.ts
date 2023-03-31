@@ -1,4 +1,4 @@
-import { CompilerOptions, Node, Project, Type } from "ts-morph";
+import { Node, Project, Type } from "ts-morph";
 import { isNotNil } from "../../utils/is-not-nil";
 import { partition } from "../../utils/array.utils";
 import { NonEmptyList } from "../../utils/non-empty-list";
@@ -35,6 +35,11 @@ export interface Alias {
   name: string;
 }
 
+export interface SerializedTypeModel {
+  imports: Alias[];
+  name: string;
+}
+
 function isObjectTypeModel(typeModel: TypeModel): typeModel is ObjectTypeModel {
   return typeModel.kind === "object";
 }
@@ -60,89 +65,132 @@ export type TypeModel =
   | IntersectionTypeModel
   | { kind: "unsupported"; value: () => string };
 
-export function getText(typeModel: TypeModel): string | Alias {
+export function getSerializedTypeModel(typeModel: TypeModel): SerializedTypeModel {
   switch (typeModel.kind) {
     case "":
-      return "";
     case "number":
-      return "number";
-    case "number-literal":
-      return `${typeModel.value}`;
     case "string":
-      return "string";
-    case "string-literal":
-      return typeModel.value;
     case "boolean":
-      return "boolean";
-    case "boolean-literal":
-      return `${typeModel.value}`;
     case "unknown":
-      return "unknown";
     case "null":
-      return "null";
     case "undefined":
-      return "undefined";
     case "never":
-      return "never";
     case "any":
-      return "any";
-    case "tuple":
-      if (typeModel.alias) {
-        return typeModel.alias;
-      }
-      return `${typeModel.readonly ? "readonly " : ""}[${typeModel
-        .value()
-        .map((t) => getSerializedText(t))
-        .join(", ")}]`;
-    case "array":
-      if (typeModel.alias) {
-        return typeModel.alias;
-      }
-      return `${typeModel.readonly ? "readonly " : ""}${getSerializedText(typeModel.value())}[]`;
-    case "function":
-      if (typeModel.alias) {
-        return typeModel.alias;
-      }
-      return `(${Object.entries(typeModel.parameters())
-        .map(([name, type]) => `${name}: ${getSerializedText(type)}`)
-        .join(", ")}) => ${getSerializedText(typeModel.returnType)}`;
-    case "object":
-      if (typeModel.alias) {
-        return typeModel.alias;
-      }
-      return `{${Object.entries(typeModel.value())
-        .map(([name, type]) => `"${name}": ${getSerializedText(type)}`)
-        .join("; ")}}`;
-    case "union":
-      if (typeModel.alias) {
-        return typeModel.alias;
-      }
-      return typeModel
-        .value()
-        .map((type) => {
-          const text = getSerializedText(type);
-          if (type.kind === "function") {
-            return "(" + text + ")";
-          }
-          return text;
-        })
-        .join(" | ");
-    case "intersection":
-      if (typeModel.alias) {
-        return typeModel.alias;
-      }
-      return typeModel
-        .value()
-        .map((type) => getSerializedText(type))
-        .join(" & ");
-    case "unsupported":
-      return typeModel.value();
-  }
-}
+      return { imports: [], name: typeModel.kind };
+    case "number-literal":
+      return { imports: [], name: `${typeModel.value}` };
 
-function getSerializedText(type: TypeModel): string {
-  const text = getText(type);
-  return typeof text === "string" ? text : serializeAlias(text);
+    case "string-literal":
+      return { imports: [], name: typeModel.value };
+
+    case "boolean-literal":
+      return { imports: [], name: `${typeModel.value}` };
+
+    case "tuple": {
+      const alias = typeModel.alias;
+      if (alias) {
+        return { imports: [alias], name: alias.name };
+      } else {
+        const readonly = typeModel.readonly;
+        const typesInTuple = typeModel.value().map((t) => getSerializedTypeModel(t));
+
+        return {
+          imports: typesInTuple.flatMap((t) => t.imports),
+          name: `${readonly ? "readonly " : ""}[${typesInTuple.map((t) => t.name).join(", ")}]`,
+        };
+      }
+    }
+    case "array": {
+      const alias = typeModel.alias;
+      if (alias) {
+        return { imports: [alias], name: alias.name };
+      } else {
+        const readonly = typeModel.readonly;
+        const typeInArray = getSerializedTypeModel(typeModel.value());
+
+        return {
+          imports: typeInArray.imports,
+          name: `${readonly ? "readonly " : ""}${typeInArray.name}[]`,
+        };
+      }
+    }
+    case "function": {
+      const alias = typeModel.alias;
+      if (alias) {
+        return { imports: [alias], name: alias.name };
+      } else {
+        const functionParameters = Object.entries(typeModel.parameters()).map(
+          ([name, type]) => [name, getSerializedTypeModel(type)] as const
+        );
+        const functionReturnType = getSerializedTypeModel(typeModel.returnType);
+
+        return {
+          imports: [...functionParameters.flatMap(([, type]) => type.imports), ...functionReturnType.imports],
+          name: `(${functionParameters.map(([name, type]) => `${name}: ${type.name}`).join(", ")}) => ${
+            functionReturnType.name
+          }`,
+        };
+      }
+    }
+
+    case "object": {
+      const alias = typeModel.alias;
+      if (alias) {
+        return { imports: [alias], name: alias.name };
+      } else {
+        const objectAttributes = Object.entries(typeModel.value()).map(
+          ([name, type]) => [name, getSerializedTypeModel(type)] as const
+        );
+
+        return {
+          imports: objectAttributes.flatMap(([, type]) => type.imports),
+          name: `{${objectAttributes.map(([name, type]) => `"${name}": ${type.name}`).join("; ")}}`,
+        };
+      }
+    }
+    case "union": {
+      const alias = typeModel.alias;
+      if (alias) {
+        return { imports: [alias], name: alias.name };
+      } else {
+        const typesInUnion = typeModel.value().map((t) => getSerializedTypeModel(t));
+
+        return {
+          imports: typesInUnion.flatMap((t) => t.imports),
+          name: typesInUnion
+            .map((type) => {
+              const text = type.name;
+              if (text.includes("=>")) {
+                return "(" + text + ")";
+              }
+              return text;
+            })
+            .join(" | "),
+        };
+      }
+    }
+    case "intersection": {
+      const alias = typeModel.alias;
+      if (alias) {
+        return { imports: [alias], name: alias.name };
+      } else {
+        const typesInUnion = typeModel.value().map((t) => getSerializedTypeModel(t));
+
+        return {
+          imports: typesInUnion.flatMap((t) => t.imports),
+          name: typesInUnion
+            .map((type) => {
+              const text = type.name;
+              return "(" + text + ")";
+            })
+            .join(" & "),
+        };
+      }
+    }
+    case "unsupported": {
+      return { imports: [], name: typeModel.value() };
+    }
+  }
 }
 
 export function createTypeModelFromNode(node: Node): TypeModel {
@@ -299,7 +347,7 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
         Object.fromEntries(
           type.getProperties().map((p) => [p.getName(), createTypeModelFromType(p.getTypeAtLocation(node), node)])
         ),
-      alias: alias && serializeAlias(alias)?.startsWith("{") ? undefined : alias,
+      alias: alias?.name?.startsWith("{") ? undefined : alias,
       original: type,
     };
   } else if (type.isUnion()) {
@@ -322,7 +370,7 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
         }
         return unionTypes.map((t) => createTypeModelFromType(t, node));
       },
-      alias: alias && serializeAlias(alias)?.startsWith("{") ? undefined : alias,
+      alias: alias?.name?.startsWith("{") ? undefined : alias,
       original: type,
     };
   } else if (type.isIntersection()) {
@@ -334,7 +382,7 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
         const typeModels = type.getIntersectionTypes().map((t) => createTypeModelFromType(t, node));
         return createIntersectionModels(typeModels);
       },
-      alias: alias && serializeAlias(alias)?.startsWith("{") ? undefined : alias,
+      alias: alias?.name?.startsWith("{") ? undefined : alias,
       original: type,
     };
   } else {
@@ -368,9 +416,9 @@ export function deduplicateTypes(types: (TypeModel | null | undefined)[]): TypeM
     ...types
       .filter(isNotNil)
       .reduce((map, type) => {
-        const text = getText(type);
+        const text = JSON.stringify(getSerializedTypeModel(type));
 
-        const typeText = typeof text === "string" ? text : serializeAlias(text);
+        const typeText = text;
         if (!map.has(typeText)) {
           map.set(typeText, type);
         }
@@ -452,11 +500,4 @@ function getSuperTypeWithName(t1: TypeModel, t2: TypeModel): TypeModel {
   } else {
     return { kind: "intersection", value: () => createIntersectionModels([t1, t2]) };
   }
-}
-
-export function serializeAlias(alias: Alias): string {
-  if (!alias.importPath) {
-    return alias.name;
-  }
-  return `import("${alias.importPath}")${alias.isDefault ? ".default" : "."}${alias.name}`;
 }

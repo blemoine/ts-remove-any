@@ -1,6 +1,10 @@
 import { ArrowFunction, Project, SourceFile } from "ts-morph";
 import { allTypesOfRefs } from "./type-unifier";
-import { getText } from "./type-model/type-model";
+import { getSerializedTypeModel, TypeModel } from "./type-model/type-model";
+
+function getText(t: TypeModel): string {
+  return getSerializedTypeModel(t).name;
+}
 
 describe("allTypesOfRefs", () => {
   it("should return both side of assignment", () => {

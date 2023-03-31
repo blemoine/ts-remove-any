@@ -14,9 +14,8 @@ import { isNonEmptyList } from "../../utils/non-empty-list";
 import {
   createTypeModelFromNode,
   createTypeModelFromType,
+  getSerializedTypeModel,
   getSupertype,
-  getText,
-  serializeAlias,
   TypeModel,
 } from "../type-model/type-model";
 
@@ -79,9 +78,8 @@ export function getCallablesTypes(functionDeclaration: RuntimeCallable | Functio
             }
             return [idx, { kind: "" }] as const;
           })
-          .filter(([, types]) => {
-            const baseText = getText(types);
-            const text = typeof baseText === "string" ? baseText : serializeAlias(baseText);
+          .filter(([, type]) => {
+            const text = getSerializedTypeModel(type).name;
             return text.length > 0;
           })
       );

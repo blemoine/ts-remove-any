@@ -34,7 +34,7 @@ export function removeAnyInLetDeclaration(
   if (newType) {
     if (dryRun) {
       const filePath = variableDeclaration.getSourceFile().getBaseName();
-      console.info(`${filePath} variable \`${variableDeclaration.getText()}\` would got type \`${newType}\``);
+      console.info(`${filePath} variable \`${variableDeclaration.getText()}\` would got type \`${newType.name}\``);
 
       return {
         countChangesDone: 0,

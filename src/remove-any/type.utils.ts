@@ -14,11 +14,10 @@ import {
 import { isNotNil } from "../utils/is-not-nil";
 import { RevertableOperation } from "./revert-operation";
 import {
-  Alias,
   createTypeModelFromNode,
   createTypeModelFromType,
-  getText,
-  serializeAlias,
+  getSerializedTypeModel,
+  SerializedTypeModel,
   TypeModel,
   unionTypeModel,
 } from "./type-model/type-model";
@@ -51,8 +50,7 @@ export function isImplicitAnyArray(node: TypedNode & Node) {
 export function filterUnusableTypes(typesFromRefs: TypesFromRefs[]): TypesFromRefs {
   const types = typesFromRefs.flatMap(({ types }) =>
     types.filter(isNotNil).filter((t) => {
-      const baseText = getText(t);
-      const text = typeof baseText === "string" ? baseText : serializeAlias(baseText);
+      const text = getSerializedTypeModel(t).name;
 
       if ("alias" in t && text.startsWith('"')) {
         return false;
@@ -74,12 +72,12 @@ export function filterUnusableTypes(typesFromRefs: TypesFromRefs[]): TypesFromRe
   return { types };
 }
 
-function computeTypesFromList(callsiteTypes: TypeModel[]): string | Alias | null {
+function computeTypesFromList(callsiteTypes: TypeModel[]): SerializedTypeModel | null {
   if (callsiteTypes.length === 0) {
     return null;
   }
   if (callsiteTypes.every((s) => s.kind === "boolean" || s.kind === "boolean-literal")) {
-    return "boolean";
+    return { imports: [], name: "boolean" };
   }
 
   if (callsiteTypes.length <= 4) {
@@ -87,27 +85,27 @@ function computeTypesFromList(callsiteTypes: TypeModel[]): string | Alias | null
       callsiteTypes.every((t) => t.kind === "number" || t.kind === "number-literal") &&
       callsiteTypes.some((t) => t.kind === "number")
     ) {
-      return "number";
+      return { imports: [], name: "number" };
     }
     if (
       callsiteTypes.every((t) => t.kind === "string" || t.kind === "string-literal") &&
       callsiteTypes.some((t) => t.kind === "string")
     ) {
-      return "string";
+      return { imports: [], name: "string" };
     }
 
-    return getText(callsiteTypes.reduce(unionTypeModel));
+    return getSerializedTypeModel(callsiteTypes.reduce(unionTypeModel));
   }
 
   if (callsiteTypes.every((t) => t.kind === "number" || t.kind === "number-literal")) {
-    return "number";
+    return { imports: [], name: "number" };
   } else if (callsiteTypes.every((t) => t.kind === "string" || t.kind === "string-literal")) {
-    return "string";
+    return { imports: [], name: "string" };
   }
   return null;
 }
 
-export function computeTypesFromRefs({ types }: TypesFromRefs): string | Alias | null {
+export function computeTypesFromRefs({ types }: TypesFromRefs): SerializedTypeModel | null {
   return computeTypesFromList(types);
 }
 
@@ -179,7 +177,7 @@ export function findTypeFromRefUsage(ref: Node): TypesFromRefs {
   };
 }
 
-export function computeDestructuredTypes(parametersFn: ParameterDeclaration): string | null {
+export function computeDestructuredTypes(parametersFn: ParameterDeclaration): SerializedTypeModel | null {
   if (parametersFn.getTypeNode()) {
     return null;
   }
@@ -213,12 +211,14 @@ export function computeDestructuredTypes(parametersFn: ParameterDeclaration): st
     });
 
     if (propertyTypePairs.length > 0) {
-      return `{${propertyTypePairs
-        .map(({ propertyName, type }) => {
-          const typeText: string = typeof type === "string" ? type : serializeAlias(type);
-          return `${propertyName}: ${typeText}`;
-        })
-        .join(",")}}`;
+      return {
+        name: `{${propertyTypePairs
+          .map(({ propertyName, type }) => {
+            return `${propertyName}: ${type.name}`;
+          })
+          .join(",")}}`,
+        imports: propertyTypePairs.flatMap(({ type }) => type.imports),
+      };
     }
   }
   return null;
@@ -305,15 +305,82 @@ function getParametersOfCallSignature(node: Node): TypeOrSpread[] {
 }
 
 export type ComputedType =
-  | { kind: "type_found"; type: string | Alias }
+  | { kind: "type_found"; type: SerializedTypeModel }
   | { kind: "no_any" }
   | { kind: "no_type_found" };
 
-export function setTypeOnNode(node: TypedNode & Node, newType: string | Alias): RevertableOperation {
+export function setTypeOnNode(node: TypedNode & Node, newTypes: SerializedTypeModel): RevertableOperation {
   const sourceFile = node.getSourceFile();
 
   try {
-    let addedImport: { moduleSpecifier: string; name: string; isDefault: boolean; isNew: boolean } | null;
+    const addedImports: { moduleSpecifier: string; name: string; isDefault: boolean; isNew: boolean }[] = [];
+    let typeName = newTypes.name;
+
+    newTypes.imports.forEach((newType) => {
+      if (!newType.importPath || (newType.isDefault && !newType.name)) {
+        node.setType(newType.name);
+      } else {
+        const importName = newType.importPath;
+
+        const project = sourceFile.getProject();
+        const rootDir = project.getCompilerOptions().rootDir;
+        const projectDir = rootDir ? project.getDirectory(rootDir)?.getPath() : null;
+
+        const moduleSpecifier = projectDir ? importName.replace(projectDir, "") : importName;
+
+        const existingImport = sourceFile.getImportDeclaration((d) => {
+          return d.getModuleSpecifier().getLiteralValue() === moduleSpecifier;
+        });
+
+        if (!existingImport) {
+          const importStructure = {
+            moduleSpecifier,
+            isTypeOnly: true,
+            defaultImport: newType.isDefault ? newType.name : undefined,
+            kind: StructureKind.ImportDeclaration,
+            namedImports: newType.isDefault ? undefined : [newType.name],
+          } as const;
+
+          addedImports.push({
+            moduleSpecifier,
+            isDefault: newType.isDefault,
+            name: newType.name,
+            isNew: true,
+          });
+
+          sourceFile.addImportDeclaration(importStructure);
+        } else {
+          if (!newType.isDefault) {
+            if (!existingImport.getNamedImports().some((i) => i.getName() === newType.name)) {
+              existingImport.addNamedImport(newType.name);
+              addedImports.push({
+                moduleSpecifier,
+                isDefault: newType.isDefault,
+                name: newType.name,
+                isNew: false,
+              });
+            }
+          } else {
+            const defaultImportName = existingImport.getDefaultImport()?.getText();
+
+            if (defaultImportName) {
+              typeName = defaultImportName;
+            } else {
+              existingImport.setDefaultImport(newType.name);
+              addedImports.push({
+                moduleSpecifier,
+                isDefault: true,
+                name: newType.name,
+                isNew: false,
+              });
+            }
+          }
+        }
+      }
+    });
+    node.setType(typeName);
+
+    /*
     if (typeof newType !== "string") {
       if (!newType.importPath || (newType.isDefault && !newType.name)) {
         node.setType(newType.name);
@@ -383,13 +450,15 @@ export function setTypeOnNode(node: TypedNode & Node, newType: string | Alias): 
       node.setType(newType);
       addedImport = null;
     }
+    
+     */
 
     return {
       countChangesDone: 1,
       countOfAnys: 1,
       revert() {
         node.removeType();
-        if (addedImport) {
+        addedImports.forEach((addedImport) => {
           const importDeclarations = sourceFile.getImportDeclarations();
           importDeclarations.forEach((importDeclaration) => {
             if (importDeclaration.getModuleSpecifier().getLiteralValue() === addedImport?.moduleSpecifier) {
@@ -411,7 +480,7 @@ export function setTypeOnNode(node: TypedNode & Node, newType: string | Alias): 
               }
             }
           });
-        }
+        });
       },
     };
   } catch (e) {

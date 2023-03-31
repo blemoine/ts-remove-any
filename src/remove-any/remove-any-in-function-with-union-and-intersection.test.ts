@@ -67,10 +67,10 @@ function fn2(x: {name: string} & {age: number}) {
 
     removeAny(sourceFile, { verbosity: 2 });
     expect(sourceFile.print()).toStrictEqual(
-      `function fnToIgnore(my_explicit_variable: {
+      `function fnToIgnore(my_explicit_variable: ({
     "name": string;
     "age": number;
-}) {
+})) {
 }
 function fn2(x: {
     name: string;
@@ -97,10 +97,10 @@ function fn3(x: {date: Date}) {
 
     removeAny(sourceFile, { verbosity: 2 });
     expect(sourceFile.print()).toStrictEqual(
-      `function fnToIgnore(my_explicit_variable: {
+      `function fnToIgnore(my_explicit_variable: ({
     "name": string;
     "age": number;
-} | {
+}) | {
     "date": Date;
 }) {
 }

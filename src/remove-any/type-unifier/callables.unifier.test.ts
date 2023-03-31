@@ -1,6 +1,10 @@
 import { ArrowFunction, ConstructorDeclaration, MethodDeclaration, Project, SourceFile, Node } from "ts-morph";
 import { getCallablesTypes } from "./callables.unifier";
-import { getText } from "../type-model/type-model";
+import { getSerializedTypeModel, TypeModel } from "../type-model/type-model";
+
+function getText(t: TypeModel): string {
+  return getSerializedTypeModel(t).name;
+}
 
 describe("getCallablesTypes", () => {
   describe("for plain functions", () => {
