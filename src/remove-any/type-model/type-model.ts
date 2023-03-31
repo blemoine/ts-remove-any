@@ -351,12 +351,15 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
       original: type,
     };
   } else if (type.isUnion()) {
+    const unionTypes = type.getUnionTypes();
+    if (unionTypes.length === 1) {
+      return createTypeModelFromType(unionTypes[0], node);
+    }
     const alias = getAlias(type, project);
 
     return {
       kind: "union",
       value: () => {
-        const unionTypes = type.getUnionTypes();
         if (
           unionTypes.some((t) => (t.isBooleanLiteral() ? t.getText() === "true" : false)) &&
           unionTypes.some((t) => (t.isBooleanLiteral() ? t.getText() === "false" : false))
@@ -374,6 +377,10 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
       original: type,
     };
   } else if (type.isIntersection()) {
+    const intersectionTypes = type.getIntersectionTypes();
+    if (intersectionTypes.length === 1) {
+      return createTypeModelFromType(intersectionTypes[0], node);
+    }
     const alias = getAlias(type, project);
 
     return {

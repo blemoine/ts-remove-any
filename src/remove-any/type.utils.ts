@@ -58,6 +58,7 @@ export function filterUnusableTypes(typesFromRefs: TypesFromRefs[]): TypesFromRe
       return (
         t.kind !== "any" &&
         !text.includes("any[]") &&
+        !text.includes("(any)") &&
         !text.includes("<any") &&
         !text.includes("any>") &&
         !text.includes(" any,") &&
