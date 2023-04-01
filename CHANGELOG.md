@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.54](https://github.com/blemoine/ts-remove-any/compare/v0.1.53...v0.1.54) (2023-04-01)
+
+
+### Features
+
+* add alias everywhere ([98e4456](https://github.com/blemoine/ts-remove-any/commit/98e445687a21dcf79c1d23e7056a735b6ff02924))
+* add better support for imports ([ebe32de](https://github.com/blemoine/ts-remove-any/commit/ebe32de70a1397061e057e3376722bd13bf59072))
+* add some support for enums ([fb49c91](https://github.com/blemoine/ts-remove-any/commit/fb49c919eb7d165a5c1be38888f98c8af17fcf8d))
+* better handling of import revert ([401bc07](https://github.com/blemoine/ts-remove-any/commit/401bc0718ad61c6d669c7482226140e67467064a))
+* don't add () on intersection ([a367e10](https://github.com/blemoine/ts-remove-any/commit/a367e108293b5964c1e5b0857ab4a9e0cf3715a8))
+* ignore catch in promises ([649e2da](https://github.com/blemoine/ts-remove-any/commit/649e2da4fc14059ff08f95acbd68d361c2871083))
+* remove parenthesized any ([148f7e2](https://github.com/blemoine/ts-remove-any/commit/148f7e25ee2c9209e7693bf074f5ec8b033b55d4))
+* use a better import model ([9bab1c4](https://github.com/blemoine/ts-remove-any/commit/9bab1c409f90bc24e23595ce541a06687e53cab9))
+
 ### [0.1.53](https://github.com/blemoine/ts-remove-any/compare/v0.1.52...v0.1.53) (2023-03-30)
 
 ### [0.1.52](https://github.com/blemoine/ts-remove-any/compare/v0.1.51...v0.1.52) (2023-03-30)
