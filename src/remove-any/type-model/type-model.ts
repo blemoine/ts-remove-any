@@ -190,7 +190,10 @@ export function getSerializedTypeModel(typeModel: TypeModel): SerializedTypeMode
           name: typesInUnion
             .map((type) => {
               const text = type.name;
-              return "(" + text + ")";
+              if (text.includes("=>")) {
+                return "(" + text + ")";
+              }
+              return text;
             })
             .join(" & "),
         };
