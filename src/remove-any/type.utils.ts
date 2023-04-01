@@ -52,7 +52,7 @@ export function filterUnusableTypes(typesFromRefs: TypesFromRefs[]): TypesFromRe
     types.filter(isNotNil).filter((t) => {
       const text = getSerializedTypeModel(t).name;
 
-      if ("alias" in t && text.startsWith('"')) {
+      if ("alias" in t && !!t.alias && text.startsWith('"')) {
         return false;
       }
       return (
@@ -318,6 +318,8 @@ export function setTypeOnNode(node: TypedNode & Node, newTypes: SerializedTypeMo
     let typeName = newTypes.name;
 
     newTypes.imports.forEach((newType) => {
+      const importValueName = newType.name.split(".")[0];
+
       if (!newType.importPath || (newType.isDefault && !newType.name)) {
         node.setType(newType.name);
       } else {
@@ -337,27 +339,27 @@ export function setTypeOnNode(node: TypedNode & Node, newTypes: SerializedTypeMo
           const importStructure = {
             moduleSpecifier,
             isTypeOnly: true,
-            defaultImport: newType.isDefault ? newType.name : undefined,
+            defaultImport: newType.isDefault ? importValueName : undefined,
             kind: StructureKind.ImportDeclaration,
-            namedImports: newType.isDefault ? undefined : [newType.name],
+            namedImports: newType.isDefault ? undefined : [importValueName],
           } as const;
 
           addedImports.push({
             moduleSpecifier,
             isDefault: newType.isDefault,
-            name: newType.name,
+            name: importValueName,
             isNew: true,
           });
 
           sourceFile.addImportDeclaration(importStructure);
         } else {
           if (!newType.isDefault) {
-            if (!existingImport.getNamedImports().some((i) => i.getName() === newType.name)) {
-              existingImport.addNamedImport(newType.name);
+            if (!existingImport.getNamedImports().some((i) => i.getName() === importValueName)) {
+              existingImport.addNamedImport(importValueName);
               addedImports.push({
                 moduleSpecifier,
                 isDefault: newType.isDefault,
-                name: newType.name,
+                name: importValueName,
                 isNew: false,
               });
             }
@@ -367,11 +369,11 @@ export function setTypeOnNode(node: TypedNode & Node, newTypes: SerializedTypeMo
             if (defaultImportName) {
               typeName = defaultImportName;
             } else {
-              existingImport.setDefaultImport(newType.name);
+              existingImport.setDefaultImport(importValueName);
               addedImports.push({
                 moduleSpecifier,
                 isDefault: true,
-                name: newType.name,
+                name: importValueName,
                 isNew: false,
               });
             }

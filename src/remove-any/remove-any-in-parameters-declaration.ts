@@ -33,6 +33,7 @@ function getParameterComputedType(parametersFn: ParameterDeclaration, { explicit
   const callsiteTypes = allTypesOfRefs(parametersFn);
 
   const result = computeTypesFromRefs(filterUnusableTypes([callsiteTypes]));
+
   if (result) {
     return { kind: "type_found", type: result };
   }

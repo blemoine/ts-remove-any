@@ -47,9 +47,9 @@ function isObjectTypeModel(typeModel: TypeModel): typeModel is ObjectTypeModel {
 export type TypeModel =
   | { kind: "" }
   | { kind: "number"; original?: Type }
-  | { kind: "number-literal"; value: number; original?: Type }
+  | { kind: "number-literal"; value: number; original?: Type; alias?: Alias }
   | { kind: "string"; original?: Type }
-  | { kind: "string-literal"; value: string; original?: Type }
+  | { kind: "string-literal"; value: string; original?: Type; alias?: Alias }
   | { kind: "boolean"; original?: Type }
   | { kind: "boolean-literal"; value: boolean; original?: Type }
   | { kind: "unknown"; original?: Type }
@@ -77,12 +77,21 @@ export function getSerializedTypeModel(typeModel: TypeModel): SerializedTypeMode
     case "never":
     case "any":
       return { imports: [], name: typeModel.kind };
-    case "number-literal":
+    case "number-literal": {
+      const alias = typeModel.alias;
+      if (alias) {
+        return { imports: [alias], name: alias.name };
+      }
       return { imports: [], name: `${typeModel.value}` };
+    }
+    case "string-literal": {
+      const alias = typeModel.alias;
 
-    case "string-literal":
+      if (alias) {
+        return { imports: [alias], name: alias.name };
+      }
       return { imports: [], name: typeModel.value };
-
+    }
     case "boolean-literal":
       return { imports: [], name: `${typeModel.value}` };
 
@@ -228,7 +237,7 @@ function createIntersectionModels(typeModels: TypeModel[]) {
 function getAlias(type: Type, project: Project): Alias | undefined {
   const typeText = type.getText();
 
-  const importsValues = typeText.match(/import\("(.+?)"\)(\.[a-zA-Z0-9-_]+)+/);
+  const importsValues = typeText.match(/import\("(.+?)"\)(\.[a-zA-Z0-9-_.]+)/);
   let importPath: string | null;
   let name: string;
   let isDefault: boolean;
@@ -245,6 +254,7 @@ function getAlias(type: Type, project: Project): Alias | undefined {
       importPath = importPath.slice("@types/".length);
     }
     name = importsValues[2].slice(1); // removing the starting '.'
+
     if (name === "default" && !importsValues[3]) {
       isDefault = true;
 
@@ -295,9 +305,23 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
   } else if (type.isBooleanLiteral()) {
     return { kind: "boolean-literal", value: type.getText() === "true", original: type };
   } else if (type.isNumberLiteral()) {
-    return { kind: "number-literal", value: Number(type.getText()), original: type };
+    const alias = getAlias(type, project);
+
+    return {
+      kind: "number-literal",
+      value: Number(type.getText()),
+      original: type,
+      alias: alias?.importPath ? alias : undefined,
+    };
   } else if (type.isStringLiteral()) {
-    return { kind: "string-literal", value: type.getText(), original: type };
+    const alias = getAlias(type, project);
+
+    return {
+      kind: "string-literal",
+      value: type.getText(),
+      original: type,
+      alias: alias?.importPath ? alias : undefined,
+    };
   } else if (type.isNull()) {
     return { kind: "null", original: type };
   } else if (type.isNever()) {

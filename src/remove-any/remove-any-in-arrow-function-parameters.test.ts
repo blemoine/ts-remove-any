@@ -147,7 +147,7 @@ fnToIgnore('2');
 fnToIgnore('5');
 `);
 
-    removeAny(sourceFile);
+    removeAny(sourceFile, { verbosity: 2 });
     expect(sourceFile.print()).toStrictEqual(
       `const fnToIgnore = (my_explicit_variable: string) => {
     return { value: my_explicit_variable };
