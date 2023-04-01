@@ -63,7 +63,7 @@ export type TypeModel =
   | ObjectTypeModel
   | UnionTypeModel
   | IntersectionTypeModel
-  | { kind: "unsupported"; value: () => string };
+  | { kind: "unsupported"; value: () => string; alias?: Alias };
 
 export function getSerializedTypeModel(typeModel: TypeModel): SerializedTypeModel {
   switch (typeModel.kind) {
@@ -188,7 +188,12 @@ export function getSerializedTypeModel(typeModel: TypeModel): SerializedTypeMode
       }
     }
     case "unsupported": {
-      return { imports: [], name: typeModel.value() };
+      const alias = typeModel.alias;
+      if (alias) {
+        return { imports: [alias], name: alias.name };
+      } else {
+        return { imports: [], name: typeModel.value() };
+      }
     }
   }
 }
@@ -233,6 +238,12 @@ function getAlias(type: Type, project: Project): Alias | undefined {
     const projectDir = rootDir ? project.getDirectory(rootDir)?.getPath() : null;
 
     importPath = importsValues[1].replace(projectDir ?? "", "").replace(/^\/node_modules\//, "");
+    if (importPath.endsWith("/index")) {
+      importPath = importPath.slice(0, -"/index".length);
+    }
+    if (importPath.startsWith("@types/")) {
+      importPath = importPath.slice("@types/".length);
+    }
     name = importsValues[2].slice(1); // removing the starting '.'
     if (name === "default" && !importsValues[3]) {
       isDefault = true;
@@ -335,11 +346,12 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
       original: type,
     };
   } else if (type.isObject()) {
+    const alias = getAlias(type, project);
     if (type.getProperties().length > 25) {
       // we have a stack problem here
-      return { kind: "unsupported", value: () => type.getText() };
+
+      return { kind: "unsupported", value: () => type.getText(), alias };
     }
-    const alias = getAlias(type, project);
 
     return {
       kind: "object",
@@ -393,7 +405,8 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
       original: type,
     };
   } else {
-    return { kind: "unsupported", value: () => type.getText() };
+    const alias = getAlias(type, project);
+    return { kind: "unsupported", value: () => type.getText(), alias };
   }
 }
 
