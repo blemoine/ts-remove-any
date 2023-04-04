@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.56](https://github.com/blemoine/ts-remove-any/compare/v0.1.55...v0.1.56) (2023-04-04)
+
+
+### Features
+
+* better support for classes and spread ([8fe463e](https://github.com/blemoine/ts-remove-any/commit/8fe463ecb56d3ff0d4c3fb1dbdaed6155f3d2e8c))
+
 ### [0.1.55](https://github.com/blemoine/ts-remove-any/compare/v0.1.54...v0.1.55) (2023-04-04)
 
 
