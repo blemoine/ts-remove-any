@@ -1,4 +1,4 @@
-import { ParameterDeclaration, SourceFile, VariableDeclaration, Node } from "ts-morph";
+import {ParameterDeclaration, SourceFile, VariableDeclaration, Node, PropertyDeclaration} from "ts-morph";
 import { sum } from "../utils/array.utils";
 import { removeAnyInLetDeclaration } from "./remove-any-in-let-declaration";
 import { RevertableOperation } from "./revert-operation";
@@ -23,7 +23,7 @@ export function removeAny(
   const explicit = options?.explicit ?? false;
   const dryRun = options?.dryRun ?? false;
 
-  const variableDeclarations: VariableDeclaration[] = [];
+  const variableDeclarations: (VariableDeclaration | PropertyDeclaration)[] = [];
   const parametersDeclaration: ParameterDeclaration[] = [];
 
   sourceFile.forEachDescendant((node) => {
@@ -35,6 +35,8 @@ export function removeAny(
     if (Node.isParameterDeclaration(node)) {
       parametersDeclaration.push(node);
     } else if (Node.isVariableDeclaration(node)) {
+      variableDeclarations.push(node);
+    } else if(Node.isPropertyDeclaration(node)) {
       variableDeclarations.push(node);
     }
   });

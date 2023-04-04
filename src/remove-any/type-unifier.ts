@@ -89,9 +89,18 @@ function allTypesOfRef(ref: Node): TypeModel[] {
           }
         })
         .find(isFunctionLike);
+
       if (functionDeclaration) {
         const callablesTypes = getCallablesTypes(functionDeclaration);
         return getCallableTypesOfParameter(callablesTypes, parameterIdx);
+      } else {
+        const callSignatures = callable.getType().getCallSignatures();
+        if (callSignatures.length > 0) {
+          const parameter = callSignatures[0].getParameters()[parameterIdx];
+          if (parameter) {
+            return [createTypeModelFromType(parameter.getTypeAtLocation(parent), parent)];
+          }
+        }
       }
     }
   }
@@ -166,6 +175,10 @@ function allTypesOfRef(ref: Node): TypeModel[] {
 
     const callablesTypes = getCallablesTypes(parent);
     return getCallableTypesOfParameter(callablesTypes, parameterIdx);
+  }
+
+  if (Node.isPropertyAccessExpression(parent)) {
+    return allTypesOfRef(parent);
   }
 
   return [];

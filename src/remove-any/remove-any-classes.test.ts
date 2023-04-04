@@ -21,6 +21,27 @@ new A('test');
     );
   });
 
+  it("should find remove any in attributes", () => {
+    const sourceFile = createSourceFile(`
+class A {
+    public value;
+}
+
+const a = new A();
+Number.parseInt(a.value);
+    `);
+
+    removeAny(sourceFile, { verbosity: 2 });
+    expect(sourceFile.print()).toStrictEqual(
+      `class A {
+    public value: string;
+}
+const a = new A();
+Number.parseInt(a.value);
+`
+    );
+  });
+
   it("should find remove any in method based on call", () => {
     const sourceFile = createSourceFile(`
 class A {

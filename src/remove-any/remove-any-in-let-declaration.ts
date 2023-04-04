@@ -1,4 +1,4 @@
-import { VariableDeclaration } from "ts-morph";
+import { PropertyDeclaration, VariableDeclaration } from "ts-morph";
 import {
   computeTypesFromRefs,
   filterUnusableTypes,
@@ -17,7 +17,7 @@ interface RemoveAnyOptions {
 }
 
 export function removeAnyInLetDeclaration(
-  variableDeclaration: VariableDeclaration,
+  variableDeclaration: VariableDeclaration | PropertyDeclaration,
   { explicit, dryRun }: RemoveAnyOptions
 ): RevertableOperation {
   if (!explicit && !isImplicitAny(variableDeclaration) && !isImplicitAnyArray(variableDeclaration)) {
@@ -26,7 +26,6 @@ export function removeAnyInLetDeclaration(
   if (explicit && !isAny(variableDeclaration) && !isAnyArray(variableDeclaration)) {
     return noopRevertableOperation;
   }
-
   const typesOfSets = allTypesOfRefs(variableDeclaration);
 
   const newType = computeTypesFromRefs(filterUnusableTypes([typesOfSets]));
