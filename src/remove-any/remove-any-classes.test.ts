@@ -21,7 +21,7 @@ new A('test');
     );
   });
 
-  it("should find remove any in attributes", () => {
+  it("should remove any in attributes", () => {
     const sourceFile = createSourceFile(`
 class A {
     public value;
@@ -38,6 +38,28 @@ Number.parseInt(a.value);
 }
 const a = new A();
 Number.parseInt(a.value);
+`
+    );
+  });
+
+  it("should remove any in attributes based on method", () => {
+    const sourceFile = createSourceFile(`
+class A {
+    private value;
+    doSomething() {
+        return Math.min(this.value, 0)
+    }
+}
+    `);
+
+    removeAny(sourceFile, { verbosity: 2 });
+    expect(sourceFile.print()).toStrictEqual(
+      `class A {
+    private value: number;
+    doSomething() {
+        return Math.min(this.value, 0);
+    }
+}
 `
     );
   });

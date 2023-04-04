@@ -285,7 +285,7 @@ type TypeOrSpread = { kind: "type"; type: Type } | { kind: "spread"; type: Type 
 // if node has a type of something callable, get the parameters of the type associated
 // could be a function, an arrow function, a method
 // eg. `n: (a: string, b:number) => void`  => [string, number]
-function getParametersOfCallSignature(node: Node): TypeOrSpread[] {
+export function getParametersOfCallSignature(node: Node): TypeOrSpread[] {
   const signatures = node.getType().getCallSignatures();
   if (signatures?.length > 0) {
     const parameters = signatures[0].getParameters();

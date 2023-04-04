@@ -530,7 +530,7 @@ export function HiddenInput(props) {
 }
 `);
 
-    const numberOfChanges = removeAny(sourceFile);
+    const numberOfChanges = removeAny(sourceFile, { verbosity: 2 });
 
     expect(sourceFile.print()).toStrictEqual(
       `const Input = (props: {

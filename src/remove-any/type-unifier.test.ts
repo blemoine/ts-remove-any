@@ -164,7 +164,7 @@ function (x) {
 
     const typesOfUsage = allTypesOfRefs(paramaterDeclaration);
 
-    expect(typesOfUsage.types.map((s) => getText(s))).toStrictEqual(["any", "string"]);
+    expect(typesOfUsage.types.map((s) => getText(s))).toStrictEqual(["string", "any"]);
   });
 
   it("should return the type of arguments of arrow function", () => {
@@ -179,7 +179,7 @@ const arr = (x) => Number.parseInt(x)
 
     const typesOfUsage = allTypesOfRefs(paramaterDeclaration);
 
-    expect(typesOfUsage.types.map((s) => getText(s))).toStrictEqual(["any", "string"]);
+    expect(typesOfUsage.types.map((s) => getText(s))).toStrictEqual(["string", "any"]);
   });
 
   it("should return the type of arguments of function when called", () => {

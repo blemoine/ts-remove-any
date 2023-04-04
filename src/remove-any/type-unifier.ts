@@ -1,10 +1,11 @@
 import { Node, ParameterDeclaration, ReferenceFindableNode } from "ts-morph";
 import { isNotNil } from "../utils/is-not-nil";
-import { getPropsTypeOfJsx, TypesFromRefs } from "./type.utils";
+import { getParametersOfCallSignature, getPropsTypeOfJsx, TypesFromRefs } from "./type.utils";
 import { combineGuards } from "../utils/type-guard.utils";
 import { CallableType, getCallablesTypes } from "./type-unifier/callables.unifier";
 import { SyntaxKind } from "typescript";
 import { createTypeModelFromNode, createTypeModelFromType, deduplicateTypes, TypeModel } from "./type-model/type-model";
+import { cannotHappen } from "../utils/cannot-happen";
 
 export function allTypesOfRefs(node: Node & ReferenceFindableNode): TypesFromRefs {
   const referencesAsNodes = node.findReferencesAsNodes();
@@ -96,10 +97,8 @@ function allTypesOfRef(ref: Node): TypeModel[] {
       } else {
         const callSignatures = callable.getType().getCallSignatures();
         if (callSignatures.length > 0) {
-          const parameter = callSignatures[0].getParameters()[parameterIdx];
-          if (parameter) {
-            return [createTypeModelFromType(parameter.getTypeAtLocation(parent), parent)];
-          }
+          const parameter = getParametersOfCallSignature(callable)[parameterIdx];
+          return [createTypeModelFromType(parameter.type, parent)];
         }
       }
     }
@@ -177,7 +176,7 @@ function allTypesOfRef(ref: Node): TypeModel[] {
     return getCallableTypesOfParameter(callablesTypes, parameterIdx);
   }
 
-  if (Node.isPropertyAccessExpression(parent)) {
+  if (Node.isPropertyAccessExpression(parent) && parent.getExpression() !== ref) {
     return allTypesOfRef(parent);
   }
 
