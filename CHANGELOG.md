@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.55](https://github.com/blemoine/ts-remove-any/compare/v0.1.54...v0.1.55) (2023-04-04)
+
+
+### Features
+
+* better revert of explicit any ([38d7b70](https://github.com/blemoine/ts-remove-any/commit/38d7b70eef9ec82e1188ae8776b71a38f5b1aa04))
+* better support for class attributes ([0da114d](https://github.com/blemoine/ts-remove-any/commit/0da114de7a1ef0792311ae1beb6ffffea3daa51b))
+
 ### [0.1.54](https://github.com/blemoine/ts-remove-any/compare/v0.1.53...v0.1.54) (2023-04-01)
 
 
