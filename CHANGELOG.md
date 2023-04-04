@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.58](https://github.com/blemoine/ts-remove-any/compare/v0.1.57...v0.1.58) (2023-04-04)
+
+
+### Bug Fixes
+
+* unifier when the function has no type ([c6390de](https://github.com/blemoine/ts-remove-any/commit/c6390de73b5334007ce86470e0129e54c3a699ee))
+
 ### [0.1.57](https://github.com/blemoine/ts-remove-any/compare/v0.1.56...v0.1.57) (2023-04-04)
 
 
