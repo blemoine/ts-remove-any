@@ -98,7 +98,9 @@ function allTypesOfRef(ref: Node): TypeModel[] {
         const callSignatures = callable.getType().getCallSignatures();
         if (callSignatures.length > 0) {
           const parameter = getParametersOfCallSignature(callable)[parameterIdx];
-          return [createTypeModelFromType(parameter.type, parent)];
+          if (parameter) {
+            return [createTypeModelFromType(parameter.type, parent)];
+          }
         }
       }
     }
