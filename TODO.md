@@ -5,4 +5,5 @@
   da('value') // x is a subtype of 'value'
 
 
-* get-trip-price-delta -> duplication in unioin type
+* Keep the existing declared type if anything wrong in `-e`
+* parameter of classes are not well supported

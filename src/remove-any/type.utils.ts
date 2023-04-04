@@ -312,7 +312,7 @@ export type ComputedType =
 
 export function setTypeOnNode(node: TypedNode & Node, newTypes: SerializedTypeModel): RevertableOperation {
   const sourceFile = node.getSourceFile();
-
+  const nodeDeclaredType = node.getTypeNode()?.getText();
   try {
     const addedImports: { moduleSpecifier: string; name: string; isDefault: boolean; isNew: boolean }[] = [];
     let typeName = newTypes.name;
@@ -387,7 +387,11 @@ export function setTypeOnNode(node: TypedNode & Node, newTypes: SerializedTypeMo
       countChangesDone: 1,
       countOfAnys: 1,
       revert() {
-        node.removeType();
+        if (nodeDeclaredType) {
+          node.setType(nodeDeclaredType);
+        } else {
+          node.removeType();
+        }
 
         addedImports.forEach((addedImport) => {
           const importDeclarations = sourceFile.getImportDeclarations();
