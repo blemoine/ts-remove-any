@@ -12,7 +12,7 @@ import {
   TypedNode,
 } from "ts-morph";
 import { isNotNil } from "../utils/is-not-nil";
-import { RevertableOperation } from "./revert-operation";
+import { noopRevertableOperation, RevertableOperation } from "./revert-operation";
 import {
   createTypeModelFromNode,
   createTypeModelFromType,
@@ -424,6 +424,6 @@ export function setTypeOnNode(node: TypedNode & Node, newTypes: SerializedTypeMo
     };
   } catch (e) {
     console.error(`Error in source file ${sourceFile.getBaseName()}`, e);
-    throw e;
+    return noopRevertableOperation;
   }
 }
