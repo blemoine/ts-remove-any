@@ -1,4 +1,4 @@
-import { Node, ParameterDeclaration, ReferenceFindableNode } from "ts-morph";
+import { Node, ParameterDeclaration, ReferenceFindableNode, Type } from "ts-morph";
 import { isNotNil } from "../utils/is-not-nil";
 import { getParametersOfCallSignature, getPropsTypeOfJsx, TypesFromRefs } from "./type.utils";
 import { combineGuards } from "../utils/type-guard.utils";
@@ -6,11 +6,14 @@ import { CallableType, getCallablesTypes } from "./type-unifier/callables.unifie
 import { SyntaxKind } from "typescript";
 import { createTypeModelFromNode, createTypeModelFromType, deduplicateTypes, TypeModel } from "./type-model/type-model";
 import { cannotHappen } from "../utils/cannot-happen";
+import { TypeEquation } from "./equation.model";
 
 export function allTypesOfRefs(node: Node & ReferenceFindableNode): TypesFromRefs {
   const referencesAsNodes = node.findReferencesAsNodes();
-  const typesFromReference = referencesAsNodes.flatMap((ref) => allTypesOfRef(ref));
-  const typesFromLambda = node instanceof ParameterDeclaration ? allTypesOfRef(node) : [];
+  const typesFromReference = referencesAsNodes.flatMap((ref) => allTypesOfRef(ref)).map((equation) => equation.type);
+  const typesFromLambda = (node instanceof ParameterDeclaration ? allTypesOfRef(node) : []).map(
+    (equation) => equation.type
+  );
 
   if (referencesAsNodes.length === 0 && typesFromLambda.length === 1 && typesFromLambda[0].kind === "any") {
     return { types: [{ kind: "unknown" }] };
@@ -19,23 +22,26 @@ export function allTypesOfRefs(node: Node & ReferenceFindableNode): TypesFromRef
   return { types: deduplicateTypes([...typesFromReference, ...typesFromLambda]) };
 }
 
-function allTypesOfRef(ref: Node): TypeModel[] {
+function allTypesOfRef(ref: Node): TypeEquation[] {
+  const createTypeEquation = (type: TypeModel) => new TypeEquation(ref.getText(), "equal", type);
+  const createTypeEquationFromType = (type: Type) => createTypeEquation(createTypeModelFromType(type, ref));
+  const createTypeEquationFromNode = (node: Node) => createTypeEquation(createTypeModelFromNode(node));
   const parent = ref.getParent();
   if (!parent) {
     return [];
   }
 
   if (Node.isTemplateSpan(parent)) {
-    return [{ kind: "string" }];
+    return [createTypeEquation({ kind: "string" })];
   }
   if (Node.isPrefixUnaryExpression(parent)) {
     const operator = parent.getOperatorToken();
     if (operator === SyntaxKind.PlusToken || operator === SyntaxKind.MinusToken) {
       const operand = parent.getOperand();
       if (operand.getType().isNumberLiteral()) {
-        return [createTypeModelFromType(operand.getType(), ref)];
+        return [createTypeEquationFromType(operand.getType())];
       } else {
-        return [{ kind: "number" }];
+        return [createTypeEquation({ kind: "number" })];
       }
     }
   }
@@ -45,14 +51,14 @@ function allTypesOfRef(ref: Node): TypeModel[] {
     const right = parent.getRight();
 
     if (operator === "=") {
-      return [createTypeModelFromType(left.getType(), ref), createTypeModelFromType(right.getType(), ref)];
+      return [createTypeEquationFromType(left.getType()), createTypeEquationFromType(right.getType())];
     } else if (operator === "-" || operator === "**" || operator === "*" || operator === "/") {
       if (left === ref && left.getType().isNumberLiteral()) {
-        return [createTypeModelFromType(left.getType(), ref)];
+        return [createTypeEquationFromType(left.getType())];
       } else if (right === ref && right.getType().isNumberLiteral()) {
-        return [createTypeModelFromType(right.getType(), ref)];
+        return [createTypeEquationFromType(right.getType())];
       } else {
-        return [{ kind: "number" }];
+        return [createTypeEquation({ kind: "number" })];
       }
     }
   }
@@ -62,14 +68,14 @@ function allTypesOfRef(ref: Node): TypeModel[] {
     if (Node.isJsxOpeningElement(jsxElement) || Node.isJsxSelfClosingElement(jsxElement)) {
       const propertiesOfProps = getPropsTypeOfJsx(jsxElement);
       if (propertiesOfProps) {
-        return [createTypeModelFromNode(ref), createTypeModelFromType(propertiesOfProps, ref)];
+        return [createTypeEquationFromNode(ref), createTypeEquationFromType(propertiesOfProps)];
       }
     }
   }
   if (Node.isJsxExpression(parent)) {
     const contextualType = parent.getContextualType();
     if (contextualType) {
-      return [createTypeModelFromNode(ref), createTypeModelFromType(contextualType, ref)];
+      return [createTypeEquationFromNode(ref), createTypeEquationFromType(contextualType)];
     }
   }
 
@@ -99,7 +105,7 @@ function allTypesOfRef(ref: Node): TypeModel[] {
         if (callSignatures.length > 0) {
           const parameter = getParametersOfCallSignature(callable)[parameterIdx];
           if (parameter) {
-            return [createTypeModelFromType(parameter.type, parent)];
+            return [createTypeEquation(createTypeModelFromType(parameter.type, parent))];
           }
         }
       }
@@ -129,17 +135,19 @@ function allTypesOfRef(ref: Node): TypeModel[] {
     const closestFunctionDeclaration = parent.getAncestors().find(isFunctionLike);
 
     if (closestFunctionDeclaration) {
-      return [createTypeModelFromNode(ref), createTypeModelFromType(closestFunctionDeclaration.getReturnType(), ref)];
+      return [createTypeEquationFromNode(ref), createTypeEquationFromType(closestFunctionDeclaration.getReturnType())];
     }
   }
 
   if (Node.isVariableDeclaration(parent)) {
-    return [createTypeModelFromNode(ref), createTypeModelFromType(parent.getType(), ref)];
+    return [createTypeEquationFromNode(ref), createTypeEquationFromType(parent.getType())];
   }
   if (Node.isArrayLiteralExpression(parent)) {
     const typesOfRefInArray = allTypesOfRef(parent);
-    if (typesOfRefInArray.every((t) => t.kind === "array")) {
-      return typesOfRefInArray.map((t) => (t.kind === "array" ? t.value() : null)).filter(isNotNil);
+    if (typesOfRefInArray.every((equation) => equation.type.kind === "array")) {
+      return typesOfRefInArray
+        .map((equation) => (equation.type.kind === "array" ? createTypeEquation(equation.type.value()) : null))
+        .filter(isNotNil);
     }
   }
   if (Node.isPropertyAssignment(parent)) {
@@ -151,12 +159,12 @@ function allTypesOfRef(ref: Node): TypeModel[] {
         const propertyName = propertyNameNode.getText();
 
         return wrapperTypes
-          .map((t) => {
-            if (t.kind !== "object") {
+          .map((equation) => {
+            if (equation.type.kind !== "object") {
               return null;
             }
 
-            return t.value()[propertyName];
+            return createTypeEquation(equation.type.value()[propertyName]);
           })
           .filter(isNotNil);
       }
@@ -183,22 +191,24 @@ function allTypesOfRef(ref: Node): TypeModel[] {
   }
 
   return [];
+
+  function getCallableTypesOfParameter(callablesType: CallableType, parameterIdx: number): TypeEquation[] {
+    const parameterDeclaredType = callablesType.parameterTypes[parameterIdx];
+    if (parameterDeclaredType && parameterDeclaredType.kind !== "any" && parameterDeclaredType.kind !== "never") {
+      return [createTypeEquation(parameterDeclaredType)];
+    }
+
+    return [
+      parameterDeclaredType,
+      ...callablesType.argumentsTypes.map((p) => p[parameterIdx]),
+      ...[callablesType.usageInFunction[parameterIdx]],
+    ]
+      .map((t) => createTypeEquation(t))
+      .filter(isNotNil);
+  }
 }
 
 const isFunctionLike = combineGuards(
   combineGuards(Node.isFunctionDeclaration, Node.isMethodDeclaration),
   Node.isArrowFunction
 );
-
-function getCallableTypesOfParameter(callablesType: CallableType, parameterIdx: number): TypeModel[] {
-  const parameterDeclaredType = callablesType.parameterTypes[parameterIdx];
-  if (parameterDeclaredType && parameterDeclaredType.kind !== "any" && parameterDeclaredType.kind !== "never") {
-    return [parameterDeclaredType];
-  }
-
-  return [
-    parameterDeclaredType,
-    ...callablesType.argumentsTypes.map((p) => p[parameterIdx]),
-    ...[callablesType.usageInFunction[parameterIdx]],
-  ].filter(isNotNil);
-}
