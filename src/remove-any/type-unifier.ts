@@ -6,7 +6,7 @@ import { CallableType, getCallablesTypes } from "./type-unifier/callables.unifie
 import { SyntaxKind } from "typescript";
 import { createTypeModelFromNode, createTypeModelFromType, deduplicateTypes, TypeModel } from "./type-model/type-model";
 import { cannotHappen } from "../utils/cannot-happen";
-import { TypeEquation } from "./equation.model";
+import { TypeEquation, TypeEquationRelation } from "./equation.model";
 
 export function allTypesOfRefs(node: Node & ReferenceFindableNode): TypesFromRefs {
   const referencesAsNodes = node.findReferencesAsNodes();
@@ -23,16 +23,18 @@ export function allTypesOfRefs(node: Node & ReferenceFindableNode): TypesFromRef
 }
 
 function allTypesOfRef(ref: Node): TypeEquation[] {
-  const createTypeEquation = (type: TypeModel) => new TypeEquation(ref.getText(), "equal", type);
-  const createTypeEquationFromType = (type: Type) => createTypeEquation(createTypeModelFromType(type, ref));
-  const createTypeEquationFromNode = (node: Node) => createTypeEquation(createTypeModelFromNode(node));
+  const createTypeEquation = (relation: TypeEquationRelation, type: TypeModel) =>
+    new TypeEquation(ref.getText(), relation, type);
+  const createEqualTypeEquation = (type: TypeModel) => createTypeEquation("equal", type);
+  const createTypeEquationFromType = (type: Type) => createEqualTypeEquation(createTypeModelFromType(type, ref));
+  const createTypeEquationFromNode = (node: Node) => createEqualTypeEquation(createTypeModelFromNode(node));
   const parent = ref.getParent();
   if (!parent) {
     return [];
   }
 
   if (Node.isTemplateSpan(parent)) {
-    return [createTypeEquation({ kind: "string" })];
+    return [createEqualTypeEquation({ kind: "string" })];
   }
   if (Node.isPrefixUnaryExpression(parent)) {
     const operator = parent.getOperatorToken();
@@ -41,7 +43,7 @@ function allTypesOfRef(ref: Node): TypeEquation[] {
       if (operand.getType().isNumberLiteral()) {
         return [createTypeEquationFromType(operand.getType())];
       } else {
-        return [createTypeEquation({ kind: "number" })];
+        return [createEqualTypeEquation({ kind: "number" })];
       }
     }
   }
@@ -58,7 +60,7 @@ function allTypesOfRef(ref: Node): TypeEquation[] {
       } else if (right === ref && right.getType().isNumberLiteral()) {
         return [createTypeEquationFromType(right.getType())];
       } else {
-        return [createTypeEquation({ kind: "number" })];
+        return [createEqualTypeEquation({ kind: "number" })];
       }
     }
   }
@@ -105,7 +107,7 @@ function allTypesOfRef(ref: Node): TypeEquation[] {
         if (callSignatures.length > 0) {
           const parameter = getParametersOfCallSignature(callable)[parameterIdx];
           if (parameter) {
-            return [createTypeEquation(createTypeModelFromType(parameter.type, parent))];
+            return [createEqualTypeEquation(createTypeModelFromType(parameter.type, parent))];
           }
         }
       }
@@ -146,7 +148,7 @@ function allTypesOfRef(ref: Node): TypeEquation[] {
     const typesOfRefInArray = allTypesOfRef(parent);
     if (typesOfRefInArray.every((equation) => equation.type.kind === "array")) {
       return typesOfRefInArray
-        .map((equation) => (equation.type.kind === "array" ? createTypeEquation(equation.type.value()) : null))
+        .map((equation) => (equation.type.kind === "array" ? createEqualTypeEquation(equation.type.value()) : null))
         .filter(isNotNil);
     }
   }
@@ -164,7 +166,7 @@ function allTypesOfRef(ref: Node): TypeEquation[] {
               return null;
             }
 
-            return createTypeEquation(equation.type.value()[propertyName]);
+            return createEqualTypeEquation(equation.type.value()[propertyName]);
           })
           .filter(isNotNil);
       }
@@ -195,16 +197,14 @@ function allTypesOfRef(ref: Node): TypeEquation[] {
   function getCallableTypesOfParameter(callablesType: CallableType, parameterIdx: number): TypeEquation[] {
     const parameterDeclaredType = callablesType.parameterTypes[parameterIdx];
     if (parameterDeclaredType && parameterDeclaredType.kind !== "any" && parameterDeclaredType.kind !== "never") {
-      return [createTypeEquation(parameterDeclaredType)];
+      return [createEqualTypeEquation(parameterDeclaredType)];
     }
 
     return [
-      parameterDeclaredType,
-      ...callablesType.argumentsTypes.map((p) => p[parameterIdx]),
-      ...[callablesType.usageInFunction[parameterIdx]],
-    ]
-      .map((t) => createTypeEquation(t))
-      .filter(isNotNil);
+      createEqualTypeEquation(parameterDeclaredType),
+      ...callablesType.argumentsTypes.map((p) => p[parameterIdx]).map((type) => createTypeEquation("supertype", type)),
+      ...[createTypeEquation("subtype", callablesType.usageInFunction[parameterIdx])],
+    ].filter(isNotNil);
   }
 }
 
