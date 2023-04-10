@@ -197,6 +197,11 @@ export function allTypesOfRef(ref: Node): TypeEquation[] {
       return allTypesOfRef(parent);
     } else {
       const attributeName = parent.getNameNode().getText();
+      if (isFunctionLike(parent.getParent())) {
+        // This is a workaround to avoid infinite loop and stack error:
+        // allTypesOfRef may call getCallableTypes that will call allTypesOfRef
+        return [];
+      }
       const usagesFromRef = allTypesOfRef(parent).map((e) => e.type);
       if (usagesFromRef.length > 0) {
         return usagesFromRef.map((usageFromRef) =>
