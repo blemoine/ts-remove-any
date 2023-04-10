@@ -1,25 +1,28 @@
 import { Node, ParameterDeclaration, ReferenceFindableNode, Type } from "ts-morph";
 import { isNotNil } from "../utils/is-not-nil";
-import { getParametersOfCallSignature, getPropsTypeOfJsx, TypesFromRefs } from "./type.utils";
+import { getParametersOfCallSignature, getPropsTypeOfJsx } from "./type.utils";
 import { combineGuards } from "../utils/type-guard.utils";
 import { CallableType, getCallablesTypes } from "./type-unifier/callables.unifier";
 import { SyntaxKind } from "typescript";
-import { createTypeModelFromNode, createTypeModelFromType, deduplicateTypes, TypeModel } from "./type-model/type-model";
-import { cannotHappen } from "../utils/cannot-happen";
+import {
+  createTypeModelFromNode,
+  createTypeModelFromType,
+  deduplicateTypesEquations,
+  TypeModel,
+} from "./type-model/type-model";
 import { TypeEquation, TypeEquationRelation } from "./equation.model";
 
-export function allTypesOfRefs(node: Node & ReferenceFindableNode): TypesFromRefs {
+export function allTypesOfRefs(node: Node & ReferenceFindableNode): TypeEquation[] {
   const referencesAsNodes = node.findReferencesAsNodes();
-  const typesFromReference = referencesAsNodes.flatMap((ref) => allTypesOfRef(ref)).map((equation) => equation.type);
-  const typesFromLambda = (node instanceof ParameterDeclaration ? allTypesOfRef(node) : []).map(
-    (equation) => equation.type
-  );
+  const typesFromReference = referencesAsNodes.flatMap((ref) => allTypesOfRef(ref));
+  const typesFromLambda = node instanceof ParameterDeclaration ? allTypesOfRef(node) : [];
 
-  if (referencesAsNodes.length === 0 && typesFromLambda.length === 1 && typesFromLambda[0].kind === "any") {
-    return { types: [{ kind: "unknown" }] };
+  if (referencesAsNodes.length === 0 && typesFromLambda.length === 1 && typesFromLambda[0].type.kind === "any") {
+    // The parameter is node used anywhere.
+    return [new TypeEquation(node.getText(), "equal", { kind: "unknown" })];
   }
 
-  return { types: deduplicateTypes([...typesFromReference, ...typesFromLambda]) };
+  return deduplicateTypesEquations([...typesFromReference, ...typesFromLambda]);
 }
 
 function allTypesOfRef(ref: Node): TypeEquation[] {

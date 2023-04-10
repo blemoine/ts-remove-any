@@ -28,7 +28,7 @@ export function removeAnyInLetDeclaration(
   }
   const typesOfSets = allTypesOfRefs(variableDeclaration);
 
-  const newType = computeTypesFromRefs(filterUnusableTypes([typesOfSets]));
+  const newType = computeTypesFromRefs(filterUnusableTypes(typesOfSets));
 
   if (newType) {
     if (dryRun) {

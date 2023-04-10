@@ -1,8 +1,9 @@
 import { Node, Project, Type } from "ts-morph";
 import { isNotNil } from "../../utils/is-not-nil";
-import { partition } from "../../utils/array.utils";
+import { deduplicate, partition } from "../../utils/array.utils";
 import { NonEmptyList } from "../../utils/non-empty-list";
 import { combineGuards } from "../../utils/type-guard.utils";
+import { TypeEquation } from "../equation.model";
 
 interface IntersectionTypeModel {
   kind: "intersection";
@@ -458,21 +459,38 @@ export function unionTypeModel(t1: TypeModel, t2: TypeModel): UnionTypeModel {
   };
 }
 
-export function deduplicateTypes(types: (TypeModel | null | undefined)[]): TypeModel[] {
-  return [
-    ...types
-      .filter(isNotNil)
-      .reduce((map, type) => {
-        const text = JSON.stringify(getSerializedTypeModel(type));
+function deduplicateTypes(types: (TypeModel | null | undefined)[]): TypeModel[] {
+  return deduplicate(types.filter(isNotNil), (type: TypeModel) => JSON.stringify(getSerializedTypeModel(type)));
+}
 
-        const typeText = text;
-        if (!map.has(typeText)) {
-          map.set(typeText, type);
+export function deduplicateTypesEquations(types: (TypeEquation | null | undefined)[]): TypeEquation[] {
+  return types.reduce<TypeEquation[]>((acc, equation) => {
+    if (!equation || !equation.type) {
+      return acc;
+    }
+
+    const key = JSON.stringify(getSerializedTypeModel(equation.type));
+    const existingEquation = acc.find(
+      (existingEquation) => JSON.stringify(getSerializedTypeModel(existingEquation.type)) === key
+    );
+    if (!existingEquation) {
+      acc.push(equation);
+    } else {
+      if (existingEquation.relation !== "equal") {
+        if (
+          equation.relation === "equal" ||
+          (equation.relation === "subtype" && existingEquation.relation === "supertype") ||
+          (equation.relation === "supertype" && existingEquation.relation === "subtype")
+        ) {
+          return acc
+            .filter((existingEquation) => JSON.stringify(getSerializedTypeModel(existingEquation.type)) === key)
+            .concat(equation);
         }
-        return map;
-      }, new Map<string, TypeModel>())
-      .values(),
-  ];
+      }
+    }
+
+    return acc;
+  }, []);
 }
 
 export function mergeObjectTypeModel(

@@ -22,6 +22,7 @@ import {
   unionTypeModel,
 } from "./type-model/type-model";
 import { allTypesOfRefs } from "./type-unifier";
+import { TypeEquation } from "./equation.model";
 
 export function isImplicitAny(node: TypedNode & Node): boolean {
   const declaredType = node.getTypeNode();
@@ -47,33 +48,31 @@ export function isImplicitAnyArray(node: TypedNode & Node) {
   return isAnyArray(node) && !declaredType;
 }
 
-export function filterUnusableTypes(typesFromRefs: TypesFromRefs[]): TypesFromRefs {
-  const types = typesFromRefs.flatMap(({ types }) =>
-    types.filter(isNotNil).filter((t) => {
-      const text = getSerializedTypeModel(t).name;
+export function filterUnusableTypes(typesFromRefs: TypeEquation[]): TypeEquation[] {
+  return typesFromRefs.filter((t) => {
+    const typeModel = t.type;
+    const text = getSerializedTypeModel(typeModel).name;
 
-      if ("alias" in t && !!t.alias && text.startsWith('"')) {
-        return false;
-      }
-      return (
-        t.kind !== "any" &&
-        !text.includes("any[]") &&
-        !text.includes("(any)") &&
-        !text.includes("<any") &&
-        !text.includes("any>") &&
-        !text.includes(" any,") &&
-        !text.includes(": any") &&
-        t.kind !== "never" &&
-        !text.includes("never[]") &&
-        !text.includes(": never")
-      );
-    })
-  );
-
-  return { types };
+    if ("alias" in typeModel && !!typeModel.alias && text.startsWith('"')) {
+      return false;
+    }
+    return (
+      typeModel.kind !== "any" &&
+      !text.includes("any[]") &&
+      !text.includes("(any)") &&
+      !text.includes("<any") &&
+      !text.includes("any>") &&
+      !text.includes(" any,") &&
+      !text.includes(": any") &&
+      typeModel.kind !== "never" &&
+      !text.includes("never[]") &&
+      !text.includes(": never")
+    );
+  });
 }
 
-function computeTypesFromList(callsiteTypes: TypeModel[]): SerializedTypeModel | null {
+function computeTypesFromList(equations: TypeEquation[]): SerializedTypeModel | null {
+  const callsiteTypes = equations.map((e) => e.type);
   if (callsiteTypes.length === 0) {
     return null;
   }
@@ -106,8 +105,8 @@ function computeTypesFromList(callsiteTypes: TypeModel[]): SerializedTypeModel |
   return null;
 }
 
-export function computeTypesFromRefs({ types }: TypesFromRefs): SerializedTypeModel | null {
-  return computeTypesFromList(types);
+export function computeTypesFromRefs(equations: TypeEquation[]): SerializedTypeModel | null {
+  return computeTypesFromList(equations);
 }
 
 export interface TypesFromRefs {
@@ -195,9 +194,12 @@ export function computeDestructuredTypes(parametersFn: ParameterDeclaration): Se
 
             const typesFromUsage = element.findReferencesAsNodes().flatMap((ref) => {
               if (Node.isReferenceFindable(ref)) {
-                return { types: [...allTypesOfRefs(ref).types, ...findTypeFromRefUsage(ref).types] };
+                return [
+                  ...allTypesOfRefs(ref),
+                  ...findTypeFromRefUsage(ref).types.map((t) => new TypeEquation(parametersFn.getText(), "equal", t)),
+                ];
               }
-              return { types: [] };
+              return [];
             });
 
             const type = computeTypesFromRefs(filterUnusableTypes(typesFromUsage));
