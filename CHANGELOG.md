@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.60](https://github.com/blemoine/ts-remove-any/compare/v0.1.59...v0.1.60) (2023-04-10)
+
+
+### Bug Fixes
+
+* prevent infinite loop ([7514d8e](https://github.com/blemoine/ts-remove-any/commit/7514d8eba533395b7e84f683fee3f7ac623fbdcb))
+
 ### [0.1.59](https://github.com/blemoine/ts-remove-any/compare/v0.1.58...v0.1.59) (2023-04-10)
 
 
