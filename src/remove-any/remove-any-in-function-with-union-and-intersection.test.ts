@@ -120,8 +120,7 @@ function fn3(x: {
     );
   });
 
-  //TODO unskip
-  it.skip("should type with deep intersection", () => {
+  it("should type with deep intersection", () => {
     const sourceFile = createSourceFile(`
 function fnToIgnore(my) {
     fn2(my);

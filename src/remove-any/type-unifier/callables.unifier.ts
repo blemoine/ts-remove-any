@@ -18,6 +18,7 @@ import {
   getSupertype,
   TypeModel,
 } from "../type-model/type-model";
+import { allTypesOfRef } from "../type-unifier";
 
 export interface CallableType {
   parameterTypes: TypeModel[];
@@ -67,7 +68,9 @@ export function getCallablesTypes(functionDeclaration: RuntimeCallable | Functio
             const usagesOfParameter = p
               .findReferencesAsNodes()
               .filter((ref) => ref !== p)
-              .map((ref) => getUsageTypeFromRef(ref))
+              .flatMap((ref) => allTypesOfRef(ref))
+              .map((e) => e.type)
+              .filter((e) => e.kind !== "any")
               .filter(isNotNil);
 
             // The final usage is a super type of usagesOfParameter
@@ -89,47 +92,6 @@ export function getCallablesTypes(functionDeclaration: RuntimeCallable | Functio
     argumentsTypes: argumentsTypes.map((a) => a.slice(0, parameterTypes.length)),
     usageInFunction,
   };
-}
-
-function getUsageTypeFromRef(ref: Node): TypeModel | null {
-  const parent = ref.getParent();
-
-  if (Node.isCallExpression(parent)) {
-    const argIdx = parent.getArguments().findIndex((a) => a === ref);
-
-    const parameterTypesFromCallerSignature = getParameterTypesFromCallerSignature(parent);
-    const result = parameterTypesFromCallerSignature[argIdx]?.type;
-    if (!result) {
-      return null;
-    }
-
-    return createTypeModelFromType(result, ref);
-  }
-  if (Node.isJsxExpression(parent)) {
-    const greatParent = parent.getParent();
-    if (Node.isJsxAttribute(greatParent)) {
-      const attributeName = greatParent.getName();
-      const greatGreatParent = greatParent.getParent()?.getParent();
-
-      if (Node.isJsxSelfClosingElement(greatGreatParent) || Node.isJsxOpeningElement(greatGreatParent)) {
-        const selectedType = getPropsTypeOfJsxElement(greatGreatParent)[attributeName];
-        if (selectedType) {
-          return createTypeModelFromType(selectedType, ref);
-        }
-      }
-    }
-  }
-
-  if (Node.isPropertyAccessExpression(parent)) {
-    const attributeName = parent.getNameNode().getText();
-    const usageFromRef = parent ? getUsageTypeFromRef(parent) : null;
-
-    if (usageFromRef) {
-      return { kind: "object", value: () => ({ [attributeName]: usageFromRef }) };
-    }
-  }
-
-  return null;
 }
 
 // If ref is a parameter used in a call expression, get the type of the parameter

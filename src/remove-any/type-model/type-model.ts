@@ -5,7 +5,7 @@ import { NonEmptyList } from "../../utils/non-empty-list";
 import { combineGuards } from "../../utils/type-guard.utils";
 import { TypeEquation } from "../equation.model";
 
-interface IntersectionTypeModel {
+export interface IntersectionTypeModel {
   kind: "intersection";
   value: () => TypeModel[];
   alias?: Alias;
@@ -24,7 +24,7 @@ interface FunctionTypeModel {
   alias?: Alias;
   original?: Type;
 }
-interface ObjectTypeModel {
+export interface ObjectTypeModel {
   kind: "object";
   value: () => Record<string, TypeModel>;
   alias?: Alias;
@@ -535,8 +535,11 @@ function getSuperTypeWithName(t1: TypeModel, t2: TypeModel): TypeModel {
         kind: "intersection",
         value: () => {
           const t2Values = t2.value();
-          if (t2Values.length < 2) {
-            return t2Values;
+          if (t2Values.length === 0) {
+            return [t1];
+          }
+          if (t2Values.length === 1) {
+            return [getSuperTypeWithName(t1, t2Values[0])];
           }
           const [firstType, secondType] = t2Values;
           return createIntersectionModels([firstType, getSuperTypeWithName(t1, secondType)]);
@@ -550,8 +553,11 @@ function getSuperTypeWithName(t1: TypeModel, t2: TypeModel): TypeModel {
       kind: "intersection",
       value: () => {
         const t1Values = t1.value();
-        if (t1Values.length < 2) {
-          return t1Values;
+        if (t1Values.length === 0) {
+          return [t2];
+        }
+        if (t1Values.length === 1) {
+          return [getSuperTypeWithName(t1Values[0], t2)];
         }
         const [firstType, secondType] = t1Values;
         return createIntersectionModels([firstType, getSuperTypeWithName(secondType, t2)]);
@@ -560,7 +566,7 @@ function getSuperTypeWithName(t1: TypeModel, t2: TypeModel): TypeModel {
   } else if (t1.kind === "union" && t2.kind === "union") {
     return {
       kind: "union",
-      value: () => [...t1.value(), ...t2.value()],
+      value: () => deduplicateTypes([...t1.value(), ...t2.value()]),
     };
   } else {
     return { kind: "intersection", value: () => createIntersectionModels([t1, t2]) };

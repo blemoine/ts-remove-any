@@ -24,20 +24,19 @@ fnToIgnore(1234);
   it("should rollback to how the type was declared beforehand if there is a problem", () => {
     const sourceFile = createSourceFile(`
 type TsFixMe = any;    
-function fnToIgnore(my_explicit_variable: TsFixMe): {value: boolean} {
+function fnToIgnore(my_explicit_variable: TsFixMe) {
   Number.parseInt(my_explicit_variable);
-  return { value: my_explicit_variable };
-}`);
+}
+fnToIgnore(2);
+`);
 
     removeAny(sourceFile, { explicit: true });
     expect(sourceFile.print()).toStrictEqual(
       `type TsFixMe = any;
-function fnToIgnore(my_explicit_variable: TsFixMe): {
-    value: boolean;
-} {
+function fnToIgnore(my_explicit_variable: TsFixMe) {
     Number.parseInt(my_explicit_variable);
-    return { value: my_explicit_variable };
 }
+fnToIgnore(2);
 `
     );
   });

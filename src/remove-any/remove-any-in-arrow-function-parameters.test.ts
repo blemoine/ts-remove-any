@@ -224,8 +224,6 @@ function callsite(n: any) {
 `);
 
     const numberOfChanges = removeAny(sourceFile);
-    expect(numberOfChanges.countChangesDone).toBe(1);
-    expect(numberOfChanges.countOfAnys).toBe(1);
     expect(sourceFile.print()).toStrictEqual(
       `const fnToIgnore = (my_explicit_variable: number) => {
     const a: number = my_explicit_variable;
@@ -236,6 +234,8 @@ function callsite(n: any) {
 }
 `
     );
+    expect(numberOfChanges.countChangesDone).toBe(1);
+    expect(numberOfChanges.countOfAnys).toBe(1);
   });
 
   it("should use the usage type in function call  if possible", () => {

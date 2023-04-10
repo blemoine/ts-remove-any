@@ -14,18 +14,19 @@ import { TypeEquation, TypeEquationRelation } from "./equation.model";
 
 export function allTypesOfRefs(node: Node & ReferenceFindableNode): TypeEquation[] {
   const referencesAsNodes = node.findReferencesAsNodes();
-  const typesFromReference = referencesAsNodes.flatMap((ref) => allTypesOfRef(ref));
-  const typesFromLambda = node instanceof ParameterDeclaration ? allTypesOfRef(node) : [];
 
-  if (referencesAsNodes.length === 0 && typesFromLambda.length === 1 && typesFromLambda[0].type.kind === "any") {
+  const types =
+    node instanceof ParameterDeclaration ? allTypesOfRef(node) : referencesAsNodes.flatMap((ref) => allTypesOfRef(ref));
+
+  if (referencesAsNodes.length === 0 && types.length === 1 && types[0].type.kind === "any") {
     // The parameter is node used anywhere.
     return [new TypeEquation(node.getText(), "equal", { kind: "unknown" })];
   }
 
-  return deduplicateTypesEquations([...typesFromReference, ...typesFromLambda]);
+  return deduplicateTypesEquations(types);
 }
 
-function allTypesOfRef(ref: Node): TypeEquation[] {
+export function allTypesOfRef(ref: Node): TypeEquation[] {
   const createTypeEquation = (relation: TypeEquationRelation, type: TypeModel) =>
     new TypeEquation(ref.getText(), relation, type);
   const createEqualTypeEquation = (type: TypeModel) => createTypeEquation("equal", type);
@@ -191,8 +192,18 @@ function allTypesOfRef(ref: Node): TypeEquation[] {
     return getCallableTypesOfParameter(callablesTypes, parameterIdx);
   }
 
-  if (Node.isPropertyAccessExpression(parent) && parent.getExpression() !== ref) {
-    return allTypesOfRef(parent);
+  if (Node.isPropertyAccessExpression(parent)) {
+    if (parent.getExpression() !== ref) {
+      return allTypesOfRef(parent);
+    } else {
+      const attributeName = parent.getNameNode().getText();
+      const usagesFromRef = allTypesOfRef(parent).map((e) => e.type);
+      if (usagesFromRef.length > 0) {
+        return usagesFromRef.map((usageFromRef) =>
+          createEqualTypeEquation({ kind: "object", value: () => ({ [attributeName]: usageFromRef }) })
+        );
+      }
+    }
   }
 
   return [];

@@ -14,6 +14,6 @@ export class TypeEquation {
     const typeName = getSerializedTypeModel(this.type).name;
     const relation = this.relation === "equal" ? "equal to" : this.relation + " of ";
 
-    return `the type of ${nodeText} is ${relation} ${typeName}`;
+    return `the type of '${nodeText}' is ${relation} ${typeName}`;
   }
 }
