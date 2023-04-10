@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.59](https://github.com/blemoine/ts-remove-any/compare/v0.1.58...v0.1.59) (2023-04-10)
+
+
+### Features
+
+* add better support for type from usage ([e2bdb51](https://github.com/blemoine/ts-remove-any/commit/e2bdb51c194f0f584c2d3f08475767ab861694b1))
+* improve type definition for callables ([170a5e1](https://github.com/blemoine/ts-remove-any/commit/170a5e1b1ba1045ab87bc6feea52fea4eb45d252))
+* introduce equation model ([ccd88c4](https://github.com/blemoine/ts-remove-any/commit/ccd88c4751d624c54872b8a34402b0ecd47e9971))
+
 ### [0.1.58](https://github.com/blemoine/ts-remove-any/compare/v0.1.57...v0.1.58) (2023-04-04)
 
 
