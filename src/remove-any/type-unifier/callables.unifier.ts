@@ -22,8 +22,8 @@ import { allTypesOfRef } from "../type-unifier";
 
 export interface CallableType {
   parameterTypes: TypeModel[];
-  argumentsTypes: TypeModel[][];
-  usageInFunction: Record<number, TypeModel>; // this one exist because the parameterTypes may be `any`...
+  argumentsTypes: () => TypeModel[][];
+  usageInFunction: () => Record<number, TypeModel>; // this one exist because the parameterTypes may be `any`...
 }
 
 type RuntimeCallable = FunctionDeclaration | ArrowFunction | MethodDeclaration | ConstructorDeclaration;
@@ -31,65 +31,68 @@ type RuntimeCallable = FunctionDeclaration | ArrowFunction | MethodDeclaration |
 export function getCallablesTypes(functionDeclaration: RuntimeCallable | FunctionTypeNode): CallableType {
   const referencableNode = getReferencableNodeFromCallableType(functionDeclaration);
 
-  const argumentsTypes: TypeModel[][] = (referencableNode?.findReferencesAsNodes() ?? [])
-    .map<TypeModel[][]>((ref) => {
-      const parent = ref.getParent();
+  const argumentsTypes: () => TypeModel[][] = () =>
+    (referencableNode?.findReferencesAsNodes() ?? [])
+      .map<TypeModel[][]>((ref) => {
+        const parent = ref.getParent();
 
-      if (parent && !Node.isCallExpression(parent)) {
-        const typeOfVariable = typeOfVariableAssignment(parent);
+        if (parent && !Node.isCallExpression(parent)) {
+          const typeOfVariable = typeOfVariableAssignment(parent);
 
-        if (typeOfVariable?.kind === "function") {
-          return [Object.values(typeOfVariable.parameters())];
+          if (typeOfVariable?.kind === "function") {
+            return [Object.values(typeOfVariable.parameters())];
+          }
         }
-      }
-      if (Node.isTypeReference(parent)) {
-        const greatParent = parent.getParent();
-        if (Node.isParameterDeclaration(greatParent)) {
-          return greatParent
-            .findReferencesAsNodes()
-            .map((r) => getArgumentTypesFromRef(r))
-            .filter(isNotNil);
+        if (Node.isTypeReference(parent)) {
+          const greatParent = parent.getParent();
+          if (Node.isParameterDeclaration(greatParent)) {
+            return greatParent
+              .findReferencesAsNodes()
+              .map((r) => getArgumentTypesFromRef(r))
+              .filter(isNotNil);
+          }
         }
-      }
-      return [getArgumentTypesFromRef(ref)];
-    })
-    .flat(1)
-    .filter((l) => l.length > 0);
+        return [getArgumentTypesFromRef(ref)];
+      })
+      .flat(1)
+      .filter((l) => l.length > 0)
+      .map((a) => a.slice(0, parameterTypes.length));
 
   const parameterTypes = functionDeclaration.getParameters().map((p) => {
     return createTypeModelFromNode(p);
   });
-  const usageInFunction = Node.isFunctionTypeNode(functionDeclaration)
-    ? {}
-    : Object.fromEntries(
-        functionDeclaration
-          .getParameters()
-          .map<readonly [number, TypeModel]>((p, idx) => {
-            const usagesOfParameter = p
-              .findReferencesAsNodes()
-              .filter((ref) => ref !== p)
-              .flatMap((ref) => allTypesOfRef(ref))
-              .map((e) => e.type)
-              .filter((e) => e.kind !== "any")
-              .filter(isNotNil);
+  const usageInFunction = () =>
+    Node.isFunctionTypeNode(functionDeclaration)
+      ? {}
+      : Object.fromEntries(
+          functionDeclaration
+            .getParameters()
+            .map<readonly [number, TypeModel]>((p, idx) => {
+              const usagesOfParameter = p
+                .findReferencesAsNodes()
+                .filter((ref) => ref !== p)
+                .flatMap((ref) => allTypesOfRef(ref))
+                .map((e) => e.type)
+                .filter((e) => !!e && e.kind !== "any")
+                .filter(isNotNil);
 
-            // The final usage is a super type of usagesOfParameter
-            if (isNonEmptyList(usagesOfParameter)) {
-              const supertype = getSupertype(usagesOfParameter);
+              // The final usage is a super type of usagesOfParameter
+              if (isNonEmptyList(usagesOfParameter)) {
+                const supertype = getSupertype(usagesOfParameter);
 
-              return [idx, supertype] as const;
-            }
-            return [idx, { kind: "" }] as const;
-          })
-          .filter(([, type]) => {
-            const text = getSerializedTypeModel(type).name;
-            return text.length > 0;
-          })
-      );
+                return [idx, supertype] as const;
+              }
+              return [idx, { kind: "" }] as const;
+            })
+            .filter(([, type]) => {
+              const text = getSerializedTypeModel(type).name;
+              return text.length > 0;
+            })
+        );
 
   return {
     parameterTypes,
-    argumentsTypes: argumentsTypes.map((a) => a.slice(0, parameterTypes.length)),
+    argumentsTypes,
     usageInFunction,
   };
 }

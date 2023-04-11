@@ -30,6 +30,11 @@ npx ts-remove-any
 Don't forget to run your formatter (eg. `prettier`) and typechecker (eg. `tsc`) afterward, `ts-remove-any` may reformat your code, and leave
 some type errors.
 
+The execution can be quite slow; if you wan to monitor the advancement of the execution, add the verbose flag.
+```
+npx ts-remove-any -v
+```
+
 More options are available, and can be found from the cli help.
 
 | Option | Effect                                                                                                                                                                                   |
@@ -40,6 +45,13 @@ More options are available, and can be found from the cli help.
 | -r     | don't revert the code in case of errors. <br/>`ts-remove-any` may generate invalid types, this option will ensure that we keep those types. They may be used as a basis for a manual fix |
 | -d     | dry-run, don't apply any change, but display a log of the changes that would be made                                                                                                     |
 | --help | display a contextual help                                                                                                                                                                |
+
+
+You may have to increase the memory available to node, as this project uses a lot of memory.
+It can done with the following command:
+```
+NODE_OPTIONS=--max-old-space-size=8192 npx ts-remove-any
+```
 
 ---
 

@@ -15,6 +15,7 @@ import { allTypesOfRefs } from "./type-unifier";
 interface RemoveAnyOptions {
   explicit: boolean;
   dryRun: boolean;
+  verbosity: number;
 }
 
 function getParameterComputedType(parametersFn: ParameterDeclaration, { explicit }: RemoveAnyOptions): ComputedType {
@@ -43,6 +44,14 @@ export function removeAnyInParametersFn(
   parametersFn: ParameterDeclaration,
   options: RemoveAnyOptions
 ): RevertableOperation {
+  if (!options.explicit && parametersFn.getTypeNode()) {
+    return noopRevertableOperation;
+  }
+  if (options.verbosity >= 2) {
+    console.info(
+      `Try to find type of '${parametersFn.getText()}', line: ${parametersFn.getStartLineNumber()}`
+    );
+  }
   const newType = getParameterComputedType(parametersFn, options);
 
   if (newType.kind === "type_found") {

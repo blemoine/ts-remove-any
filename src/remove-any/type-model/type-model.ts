@@ -4,6 +4,7 @@ import { deduplicate, partition } from "../../utils/array.utils";
 import { NonEmptyList } from "../../utils/non-empty-list";
 import { combineGuards } from "../../utils/type-guard.utils";
 import { TypeEquation } from "../equation.model";
+import * as crypto from "crypto";
 
 export interface IntersectionTypeModel {
   kind: "intersection";
@@ -67,6 +68,10 @@ export type TypeModel =
   | { kind: "unsupported"; value: () => string; alias?: Alias };
 
 export function getSerializedTypeModel(typeModel: TypeModel): SerializedTypeModel {
+  if (!typeModel) {
+    return { imports: [], name: "" };
+  }
+
   switch (typeModel.kind) {
     case "":
     case "number":
@@ -184,11 +189,11 @@ export function getSerializedTypeModel(typeModel: TypeModel): SerializedTypeMode
       if (alias) {
         return { imports: [alias], name: alias.name };
       } else {
-        const typesInUnion = typeModel.value().map((t) => getSerializedTypeModel(t));
+        const typesInIntersection = typeModel.value().map((t) => getSerializedTypeModel(t));
 
         return {
-          imports: typesInUnion.flatMap((t) => t.imports),
-          name: typesInUnion
+          imports: typesInIntersection.flatMap((t) => t.imports),
+          name: typesInIntersection
             .map((type) => {
               const text = type.name;
               if (text.includes("=>")) {
@@ -460,7 +465,16 @@ export function unionTypeModel(t1: TypeModel, t2: TypeModel): UnionTypeModel {
 }
 
 function deduplicateTypes(types: (TypeModel | null | undefined)[]): TypeModel[] {
-  return deduplicate(types.filter(isNotNil), (type: TypeModel) => JSON.stringify(getSerializedTypeModel(type)));
+  return deduplicate(types.filter(isNotNil), (type: TypeModel) => {
+    if (type.kind === "intersection" || type.kind === "union") {
+      if (!type.alias) {
+        // TODO probably better to try to find the id from the original type if possible
+        return crypto.randomUUID();
+      }
+    }
+
+    return JSON.stringify(getSerializedTypeModel(type));
+  });
 }
 
 export function deduplicateTypesEquations(types: (TypeEquation | null | undefined)[]): TypeEquation[] {

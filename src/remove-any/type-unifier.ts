@@ -12,7 +12,10 @@ import {
 } from "./type-model/type-model";
 import { TypeEquation, TypeEquationRelation } from "./equation.model";
 
+const typeCacheMap = new Map<Node, TypeEquation[]>();
+
 export function allTypesOfRefs(node: Node & ReferenceFindableNode): TypeEquation[] {
+  typeCacheMap.clear();
   const referencesAsNodes = node.findReferencesAsNodes();
 
   const types =
@@ -26,7 +29,21 @@ export function allTypesOfRefs(node: Node & ReferenceFindableNode): TypeEquation
   return deduplicateTypesEquations(types);
 }
 
-export function allTypesOfRef(ref: Node): TypeEquation[] {
+function cacheTypes(fn: (ref: Node) => TypeEquation[]): (ref: Node) => TypeEquation[] {
+  return (ref: Node) => {
+    const cached = typeCacheMap.get(ref);
+    if (cached) {
+      return cached;
+    }
+    typeCacheMap.set(ref, []);
+    const result = fn(ref).filter((e) => !!e && !!e.type);
+    typeCacheMap.set(ref, result);
+
+    return result;
+  };
+}
+
+export const allTypesOfRef = cacheTypes((ref: Node): TypeEquation[] => {
   const createTypeEquation = (relation: TypeEquationRelation, type: TypeModel) =>
     new TypeEquation(ref.getText(), relation, type);
   const createEqualTypeEquation = (type: TypeModel) => createTypeEquation("equal", type);
@@ -152,7 +169,7 @@ export function allTypesOfRef(ref: Node): TypeEquation[] {
     const typesOfRefInArray = allTypesOfRef(parent);
     if (typesOfRefInArray.every((equation) => equation.type.kind === "array")) {
       return typesOfRefInArray
-        .map((equation) => (equation.type.kind === "array" ? createEqualTypeEquation(equation.type.value()) : null))
+        .map((equation) => (equation.type?.kind === "array" ? createEqualTypeEquation(equation.type.value()) : null))
         .filter(isNotNil);
     }
   }
@@ -166,7 +183,7 @@ export function allTypesOfRef(ref: Node): TypeEquation[] {
 
         return wrapperTypes
           .map((equation) => {
-            if (equation.type.kind !== "object") {
+            if (equation.type?.kind !== "object") {
               return null;
             }
 
@@ -197,11 +214,7 @@ export function allTypesOfRef(ref: Node): TypeEquation[] {
       return allTypesOfRef(parent);
     } else {
       const attributeName = parent.getNameNode().getText();
-      if (isFunctionLike(parent.getParent())) {
-        // This is a workaround to avoid infinite loop and stack error:
-        // allTypesOfRef may call getCallableTypes that will call allTypesOfRef
-        return [];
-      }
+
       const usagesFromRef = allTypesOfRef(parent).map((e) => e.type);
       if (usagesFromRef.length > 0) {
         return usagesFromRef.map((usageFromRef) =>
@@ -221,11 +234,14 @@ export function allTypesOfRef(ref: Node): TypeEquation[] {
 
     return [
       createEqualTypeEquation(parameterDeclaredType),
-      ...callablesType.argumentsTypes.map((p) => p[parameterIdx]).map((type) => createTypeEquation("supertype", type)),
-      ...[createTypeEquation("subtype", callablesType.usageInFunction[parameterIdx])],
+      ...callablesType
+        .argumentsTypes()
+        .map((p) => p[parameterIdx])
+        .map((type) => createTypeEquation("supertype", type)),
+      ...[createTypeEquation("subtype", callablesType.usageInFunction()[parameterIdx])],
     ].filter(isNotNil);
   }
-}
+});
 
 const isFunctionLike = combineGuards(
   combineGuards(Node.isFunctionDeclaration, Node.isMethodDeclaration),

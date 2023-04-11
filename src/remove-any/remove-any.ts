@@ -18,10 +18,15 @@ export function removeAny(
   if (sourceFile.getBaseName().endsWith("js")) {
     return { countOfAnys: 0, countChangesDone: 0 };
   }
+
   const noReverts = options?.noReverts ?? false;
   const verbosity = options?.verbosity ?? 0;
   const explicit = options?.explicit ?? false;
   const dryRun = options?.dryRun ?? false;
+
+  if (verbosity >= 2) {
+    console.info(`Starting any removal in file ${sourceFile.getBaseName()}`);
+  }
 
   const variableDeclarations: (VariableDeclaration | PropertyDeclaration)[] = [];
   const parametersDeclaration: ParameterDeclaration[] = [];
