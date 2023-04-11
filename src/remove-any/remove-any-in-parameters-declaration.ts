@@ -48,9 +48,7 @@ export function removeAnyInParametersFn(
     return noopRevertableOperation;
   }
   if (options.verbosity >= 2) {
-    console.info(
-      `Try to find type of '${parametersFn.getText()}', line: ${parametersFn.getStartLineNumber()}`
-    );
+    console.info(`Try to find type of '${parametersFn.getText()}', line: ${parametersFn.getStartLineNumber()}`);
   }
   const newType = getParameterComputedType(parametersFn, options);
 

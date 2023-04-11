@@ -10,26 +10,22 @@ export interface IntersectionTypeModel {
   kind: "intersection";
   value: () => TypeModel[];
   alias?: Alias;
-  original?: Type;
 }
 interface UnionTypeModel {
   kind: "union";
   value: () => TypeModel[];
   alias?: Alias;
-  original?: Type;
 }
 interface FunctionTypeModel {
   kind: "function";
   parameters: () => Record<string, TypeModel>;
   returnType: TypeModel;
   alias?: Alias;
-  original?: Type;
 }
 export interface ObjectTypeModel {
   kind: "object";
   value: () => Record<string, TypeModel>;
   alias?: Alias;
-  original?: Type;
 }
 export interface Alias {
   importPath: string | null;
@@ -48,19 +44,19 @@ function isObjectTypeModel(typeModel: TypeModel): typeModel is ObjectTypeModel {
 
 export type TypeModel =
   | { kind: "" }
-  | { kind: "number"; original?: Type }
-  | { kind: "number-literal"; value: number; original?: Type; alias?: Alias }
-  | { kind: "string"; original?: Type }
-  | { kind: "string-literal"; value: string; original?: Type; alias?: Alias }
-  | { kind: "boolean"; original?: Type }
-  | { kind: "boolean-literal"; value: boolean; original?: Type }
-  | { kind: "unknown"; original?: Type }
-  | { kind: "null"; original?: Type }
-  | { kind: "any"; original?: Type }
-  | { kind: "undefined"; original?: Type }
-  | { kind: "never"; original?: Type }
-  | { kind: "array"; value: () => TypeModel; readonly: boolean; alias?: Alias; original?: Type }
-  | { kind: "tuple"; value: () => TypeModel[]; readonly: boolean; alias?: Alias; original?: Type }
+  | { kind: "number" }
+  | { kind: "number-literal"; value: number; alias?: Alias }
+  | { kind: "string" }
+  | { kind: "string-literal"; value: string; alias?: Alias }
+  | { kind: "boolean" }
+  | { kind: "boolean-literal"; value: boolean }
+  | { kind: "unknown" }
+  | { kind: "null" }
+  | { kind: "any" }
+  | { kind: "undefined" }
+  | { kind: "never" }
+  | { kind: "array"; value: () => TypeModel; readonly: boolean; alias?: Alias }
+  | { kind: "tuple"; value: () => TypeModel[]; readonly: boolean; alias?: Alias }
   | FunctionTypeModel
   | ObjectTypeModel
   | UnionTypeModel
@@ -306,20 +302,19 @@ function sanitizeForName(str: string): string {
 export function createTypeModelFromType(type: Type, node: Node): TypeModel {
   const project = node.getProject();
   if (type.isNumber()) {
-    return { kind: "number", original: type };
+    return { kind: "number" };
   } else if (type.isString()) {
-    return { kind: "string", original: type };
+    return { kind: "string" };
   } else if (type.isBoolean()) {
-    return { kind: "boolean", original: type };
+    return { kind: "boolean" };
   } else if (type.isBooleanLiteral()) {
-    return { kind: "boolean-literal", value: type.getText() === "true", original: type };
+    return { kind: "boolean-literal", value: type.getText() === "true" };
   } else if (type.isNumberLiteral()) {
     const alias = getAlias(type, project);
 
     return {
       kind: "number-literal",
       value: Number(type.getText()),
-      original: type,
       alias: alias?.importPath ? alias : undefined,
     };
   } else if (type.isStringLiteral()) {
@@ -328,19 +323,18 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
     return {
       kind: "string-literal",
       value: type.getText(),
-      original: type,
       alias: alias?.importPath ? alias : undefined,
     };
   } else if (type.isNull()) {
-    return { kind: "null", original: type };
+    return { kind: "null" };
   } else if (type.isNever()) {
-    return { kind: "never", original: type };
+    return { kind: "never" };
   } else if (type.isUndefined()) {
-    return { kind: "undefined", original: type };
+    return { kind: "undefined" };
   } else if (type.isAny()) {
-    return { kind: "any", original: type };
+    return { kind: "any" };
   } else if (type.isUnknown()) {
-    return { kind: "unknown", original: type };
+    return { kind: "unknown" };
   } else if (type.isTuple()) {
     const symbolName = type.getAliasSymbol()?.getFullyQualifiedName();
 
@@ -350,7 +344,6 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
       value: () => type.getTupleElements().map((t) => createTypeModelFromType(t, node)),
       readonly: compilerType && "readonly" in compilerType ? !!compilerType.readonly : false,
       alias: symbolName ? { name: symbolName, isDefault: false, importPath: null } : undefined,
-      original: type,
     };
   } else if (type.isArray()) {
     const symbolName = type.getAliasSymbol()?.getFullyQualifiedName();
@@ -360,7 +353,6 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
       value: () => createTypeModelFromType(type.getTypeArguments()[0], node),
       readonly: type.isReadonlyArray(),
       alias: symbolName ? { name: symbolName, isDefault: false, importPath: null } : undefined,
-      original: type,
     };
   } else if (type.getCallSignatures().length > 0) {
     const firstCallSignature = type.getCallSignatures()[0];
@@ -376,7 +368,6 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
         ),
       returnType: createTypeModelFromType(firstCallSignature.getReturnType(), node),
       alias: symbolName ? { importPath: null, isDefault: false, name: symbolName } : undefined,
-      original: type,
     };
   } else if (type.isObject()) {
     const alias = getAlias(type, project);
@@ -393,7 +384,6 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
           type.getProperties().map((p) => [p.getName(), createTypeModelFromType(p.getTypeAtLocation(node), node)])
         ),
       alias: alias?.name?.startsWith("{") ? undefined : alias,
-      original: type,
     };
   } else if (type.isUnion()) {
     const unionTypes = type.getUnionTypes();
@@ -419,7 +409,6 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
         return unionTypes.map((t) => createTypeModelFromType(t, node));
       },
       alias: alias?.name?.startsWith("{") ? undefined : alias,
-      original: type,
     };
   } else if (type.isIntersection()) {
     const intersectionTypes = type.getIntersectionTypes();
@@ -435,7 +424,6 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
         return createIntersectionModels(typeModels);
       },
       alias: alias?.name?.startsWith("{") ? undefined : alias,
-      original: type,
     };
   } else {
     const alias = getAlias(type, project);
