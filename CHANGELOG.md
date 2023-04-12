@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.1](https://github.com/blemoine/ts-remove-any/compare/v0.1.61...v0.2.1) (2023-04-12)
+
+
+### Features
+
+* add support for id for dedup ([1aad90e](https://github.com/blemoine/ts-remove-any/commit/1aad90e177a224e936cbc7d6db95e2634a976200))
+* remove useless references to original type ([4e32288](https://github.com/blemoine/ts-remove-any/commit/4e3228822b6876f0574f5e4f97dbcb9cf0dd5d80))
+
 ### [0.1.61](https://github.com/blemoine/ts-remove-any/compare/v0.1.60...v0.1.61) (2023-04-11)
 
 
