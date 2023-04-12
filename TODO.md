@@ -3,3 +3,6 @@
   Math.parseInt(x) // x is a supertype of string
   }
   da('value') // x is a subtype of 'value'
+
+
+* deduplicate a call with string, and 2 usages with string

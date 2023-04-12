@@ -1,6 +1,6 @@
 # ts-remove-any
 
-`ts-remove-any` will replace automatically some implicit `any`s with a compatible type.
+`ts-remove-any` will replace automatically some implicit (and explicit) `any`s with a compatible type.
 
 ## Motivation
 
@@ -14,10 +14,10 @@ If that's the case, `ts-remove-any` is here for you: it will rewrite part of you
 
 This project is conservative in the sense that it tries to minimize the number of fixes you have to do afterward.
 It means that it won't fix _all_ your implicit `any`s, only those with a good chance to not be wrong.
-But even like this that, there may still be some errors - it's to be expected as `any` is an escape hatch usually
+But even like this, there may still be some errors; it's to be expected, as `any` is an escape hatch usually
 used to prevent TypeScript to check properly the code.
 
-So this project won't save you some manual fix of your code, but it will at least help you in the task.
+This project cannot completely eliminate the need for manual code fixes, but it can assist in this task.
 
 ## Usage
 
@@ -38,12 +38,13 @@ npx ts-remove-any -v
 More options are available, and can be found from the cli help.
 
 | Option | Effect                                                                                                                                                                                   |
-| ------ |------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|--------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | -v     | increase the verbosity, ie. the amount of logs displayed. Can be double to see even more logs: `-v -v`                                                                                   |
 | -p     | the path of tsconfig.json file to use                                                                                                                                                    |
 | -f     | a pattern against which the file name and path will be matched. <br/>Useful if you want to run `ts-remove-any` only on one file, or group of files                                       |
 | -r     | don't revert the code in case of errors. <br/>`ts-remove-any` may generate invalid types, this option will ensure that we keep those types. They may be used as a basis for a manual fix |
 | -d     | dry-run, don't apply any change, but display a log of the changes that would be made                                                                                                     |
+| -e     | also replace the explicit `any`s                                                                                                                                                         |
 | --help | display a contextual help                                                                                                                                                                |
 
 
