@@ -10,22 +10,26 @@ export interface IntersectionTypeModel {
   kind: "intersection";
   value: () => TypeModel[];
   alias?: Alias;
+  id?: string | undefined;
 }
 interface UnionTypeModel {
   kind: "union";
   value: () => TypeModel[];
   alias?: Alias;
+  id?: string | undefined;
 }
 interface FunctionTypeModel {
   kind: "function";
   parameters: () => Record<string, TypeModel>;
   returnType: TypeModel;
   alias?: Alias;
+  id?: string | undefined;
 }
 export interface ObjectTypeModel {
   kind: "object";
   value: () => Record<string, TypeModel>;
   alias?: Alias;
+  id?: string | undefined;
 }
 export interface Alias {
   importPath: string | null;
@@ -301,6 +305,9 @@ function sanitizeForName(str: string): string {
 
 export function createTypeModelFromType(type: Type, node: Node): TypeModel {
   const project = node.getProject();
+  const compilerId =
+    "id" in type.compilerType && typeof type.compilerType.id === "number" ? `${type.compilerType.id}` : undefined;
+
   if (type.isNumber()) {
     return { kind: "number" };
   } else if (type.isString()) {
@@ -368,6 +375,7 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
         ),
       returnType: createTypeModelFromType(firstCallSignature.getReturnType(), node),
       alias: symbolName ? { importPath: null, isDefault: false, name: symbolName } : undefined,
+      id: compilerId,
     };
   } else if (type.isObject()) {
     const alias = getAlias(type, project);
@@ -384,6 +392,7 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
           type.getProperties().map((p) => [p.getName(), createTypeModelFromType(p.getTypeAtLocation(node), node)])
         ),
       alias: alias?.name?.startsWith("{") ? undefined : alias,
+      id: compilerId,
     };
   } else if (type.isUnion()) {
     const unionTypes = type.getUnionTypes();
@@ -409,6 +418,7 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
         return unionTypes.map((t) => createTypeModelFromType(t, node));
       },
       alias: alias?.name?.startsWith("{") ? undefined : alias,
+      id: compilerId,
     };
   } else if (type.isIntersection()) {
     const intersectionTypes = type.getIntersectionTypes();
@@ -424,6 +434,7 @@ export function createTypeModelFromType(type: Type, node: Node): TypeModel {
         return createIntersectionModels(typeModels);
       },
       alias: alias?.name?.startsWith("{") ? undefined : alias,
+      id: compilerId,
     };
   } else {
     const alias = getAlias(type, project);
@@ -454,6 +465,9 @@ export function unionTypeModel(t1: TypeModel, t2: TypeModel): UnionTypeModel {
 
 function deduplicateTypes(types: (TypeModel | null | undefined)[]): TypeModel[] {
   return deduplicate(types.filter(isNotNil), (type: TypeModel) => {
+    if ("id" in type && !!type.id) {
+      return type.id;
+    }
     if (type.kind === "intersection" || type.kind === "union") {
       if (!type.alias) {
         // TODO probably better to try to find the id from the original type if possible
@@ -466,15 +480,19 @@ function deduplicateTypes(types: (TypeModel | null | undefined)[]): TypeModel[] 
 }
 
 export function deduplicateTypesEquations(types: (TypeEquation | null | undefined)[]): TypeEquation[] {
+  function getEquationKey(equation: TypeEquation): string {
+    if ("id" in equation.type && !!equation.type.id) {
+      return equation.type.id;
+    }
+    return JSON.stringify(getSerializedTypeModel(equation.type));
+  }
   return types.reduce<TypeEquation[]>((acc, equation) => {
     if (!equation || !equation.type) {
       return acc;
     }
 
     const key = JSON.stringify(getSerializedTypeModel(equation.type));
-    const existingEquation = acc.find(
-      (existingEquation) => JSON.stringify(getSerializedTypeModel(existingEquation.type)) === key
-    );
+    const existingEquation = acc.find((existingEquation) => getEquationKey(existingEquation) === key);
     if (!existingEquation) {
       acc.push(equation);
     } else {
@@ -484,9 +502,7 @@ export function deduplicateTypesEquations(types: (TypeEquation | null | undefine
           (equation.relation === "subtype" && existingEquation.relation === "supertype") ||
           (equation.relation === "supertype" && existingEquation.relation === "subtype")
         ) {
-          return acc
-            .filter((existingEquation) => JSON.stringify(getSerializedTypeModel(existingEquation.type)) === key)
-            .concat(equation);
+          return acc.filter((existingEquation) => getEquationKey(existingEquation) === key).concat(equation);
         }
       }
     }
@@ -529,6 +545,9 @@ export function getSupertype(typeWithNames: NonEmptyList<TypeModel>): TypeModel 
 }
 
 function getSuperTypeWithName(t1: TypeModel, t2: TypeModel): TypeModel {
+  const t1Id = "id" in t1 && t1.id ? t1.id : undefined;
+  const t2Id = "id" in t2 && t2.id ? t2.id : undefined;
+
   if (t1.kind === "object" && !t1.alias) {
     if (t2.kind === "object" && !t2.alias) {
       return mergeObjectTypeModel(t1, t2);
@@ -546,9 +565,14 @@ function getSuperTypeWithName(t1: TypeModel, t2: TypeModel): TypeModel {
           const [firstType, secondType] = t2Values;
           return createIntersectionModels([firstType, getSuperTypeWithName(t1, secondType)]);
         },
+        id: t1Id && t2Id ? t1Id + "::" + t2Id : undefined,
       };
     } else {
-      return { kind: "intersection", value: () => createIntersectionModels([t1, t2]) };
+      return {
+        kind: "intersection",
+        value: () => createIntersectionModels([t1, t2]),
+        id: t1Id && t2Id ? t1Id + "::" + t2Id : undefined,
+      };
     }
   } else if (t1.kind === "intersection") {
     return {
@@ -564,6 +588,7 @@ function getSuperTypeWithName(t1: TypeModel, t2: TypeModel): TypeModel {
         const [firstType, secondType] = t1Values;
         return createIntersectionModels([firstType, getSuperTypeWithName(secondType, t2)]);
       },
+      id: t1Id && t2Id ? t1Id + "::" + t2Id : undefined,
     };
   } else if (t1.kind === "union" && t2.kind === "union") {
     return {
@@ -571,6 +596,10 @@ function getSuperTypeWithName(t1: TypeModel, t2: TypeModel): TypeModel {
       value: () => deduplicateTypes([...t1.value(), ...t2.value()]),
     };
   } else {
-    return { kind: "intersection", value: () => createIntersectionModels([t1, t2]) };
+    return {
+      kind: "intersection",
+      value: () => createIntersectionModels([t1, t2]),
+      id: t1Id && t2Id ? t1Id + "::" + t2Id : undefined,
+    };
   }
 }
