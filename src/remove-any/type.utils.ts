@@ -72,26 +72,38 @@ export function filterUnusableTypes(typesFromRefs: TypeEquation[]): TypeEquation
 }
 
 function computeTypesFromList(equations: TypeEquation[]): SerializedTypeModel | null {
-  const callsiteTypes = equations.map((e) => e.type);
-  if (callsiteTypes.length === 0) {
+  if (equations.length === 0) {
     return null;
   }
+
+  const callsiteTypes = equations.map((e) => e.type);
+
   if (callsiteTypes.every((s) => s.kind === "boolean" || s.kind === "boolean-literal")) {
     return { imports: [], name: "boolean" };
   }
 
   if (callsiteTypes.length <= 4) {
-    if (
-      callsiteTypes.every((t) => t.kind === "number" || t.kind === "number-literal") &&
-      callsiteTypes.some((t) => t.kind === "number")
-    ) {
-      return { imports: [], name: "number" };
+    if (equations.every((e) => e.type.kind === "number" || e.type.kind === "number-literal")) {
+      if (equations.some((e) => e.type.kind === "number" && (e.relation === "equal" || e.relation === "supertype"))) {
+        return { imports: [], name: "number" };
+      } else {
+        const literals = equations.filter((e) => e.type.kind === "number-literal");
+        if (literals.length === 0) {
+          return { imports: [], name: "number" };
+        }
+        return getSerializedTypeModel(literals.map((e) => e.type).reduce(unionTypeModel));
+      }
     }
-    if (
-      callsiteTypes.every((t) => t.kind === "string" || t.kind === "string-literal") &&
-      callsiteTypes.some((t) => t.kind === "string")
-    ) {
-      return { imports: [], name: "string" };
+    if (equations.every((e) => e.type.kind === "string" || e.type.kind === "string-literal")) {
+      if (equations.some((e) => e.type.kind === "string" && (e.relation === "equal" || e.relation === "supertype"))) {
+        return { imports: [], name: "string" };
+      } else {
+        const literals = equations.filter((e) => e.type.kind === "string-literal");
+        if (literals.length === 0) {
+          return { imports: [], name: "string" };
+        }
+        return getSerializedTypeModel(literals.map((e) => e.type).reduce(unionTypeModel));
+      }
     }
 
     return getSerializedTypeModel(callsiteTypes.reduce(unionTypeModel));

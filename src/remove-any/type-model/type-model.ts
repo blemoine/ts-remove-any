@@ -596,10 +596,36 @@ function getSuperTypeWithName(t1: TypeModel, t2: TypeModel): TypeModel {
       value: () => deduplicateTypes([...t1.value(), ...t2.value()]),
     };
   } else {
+    if (t1.kind === "string" && t2.kind === "string-literal") {
+      return t2;
+    }
+    if (t2.kind === "string" && t1.kind === "string-literal") {
+      return t2;
+    }
+    if (t1.kind === "number" && t2.kind === "number-literal") {
+      return t2;
+    }
+    if (t2.kind === "number" && t1.kind === "number-literal") {
+      return t2;
+    }
+    if (t1.kind === "boolean" && t2.kind === "boolean-literal") {
+      return t2;
+    }
+    if (t2.kind === "boolean" && t1.kind === "boolean-literal") {
+      return t2;
+    }
+    if (t1.kind === t2.kind && isScalar(t1)) {
+      return t1;
+    }
+
     return {
       kind: "intersection",
       value: () => createIntersectionModels([t1, t2]),
       id: t1Id && t2Id ? t1Id + "::" + t2Id : undefined,
     };
   }
+}
+
+function isScalar(t: TypeModel): boolean {
+  return ["string", "number", "boolean", "void", "unknown"].includes(t.kind);
 }

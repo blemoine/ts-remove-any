@@ -56,6 +56,60 @@ function innerFn2(x: string | boolean) { }
     );
   });
 
+  it("should deduplicate union types with call", () => {
+    const sourceFile = createSourceFile(`
+function fnToIgnore(my_explicit_variable) {
+      innerFn(my_explicit_variable);
+      innerFn2(my_explicit_variable);
+}
+
+function innerFn(x: string) {}
+function innerFn2(x: string) {}
+
+const a:string = '123';
+fnToIgnore(a);
+`);
+
+    removeAny(sourceFile, { verbosity: 2 });
+    expect(sourceFile.print()).toStrictEqual(
+      `function fnToIgnore(my_explicit_variable: string) {
+    innerFn(my_explicit_variable);
+    innerFn2(my_explicit_variable);
+}
+function innerFn(x: string) { }
+function innerFn2(x: string) { }
+const a: string = '123';
+fnToIgnore(a);
+`
+    );
+  });
+
+  it("should deduplicate union types with a call using a literal", () => {
+    const sourceFile = createSourceFile(`
+function fnToIgnore(my_explicit_variable) {
+      innerFn(my_explicit_variable);
+      innerFn2(my_explicit_variable);
+}
+
+function innerFn(x: '123') {}
+function innerFn2(x: string) {}
+
+fnToIgnore('123');
+`);
+
+    removeAny(sourceFile, { verbosity: 2 });
+    expect(sourceFile.print()).toStrictEqual(
+      `function fnToIgnore(my_explicit_variable: "123") {
+    innerFn(my_explicit_variable);
+    innerFn2(my_explicit_variable);
+}
+function innerFn(x: '123') { }
+function innerFn2(x: string) { }
+fnToIgnore('123');
+`
+    );
+  });
+
   it("should type with intersection", () => {
     const sourceFile = createSourceFile(`
 function fnToIgnore(my_explicit_variable) {
