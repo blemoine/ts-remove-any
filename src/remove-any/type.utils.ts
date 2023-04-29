@@ -326,6 +326,7 @@ export type ComputedType =
 
 export function setTypeOnNode(node: TypedNode & Node, newTypes: SerializedTypeModel): RevertableOperation {
   const sourceFile = node.getSourceFile();
+  const sourceFilePath = sourceFile.getFilePath().replace(/\.tsx?$/, "");
   const nodeDeclaredType = node.getTypeNode()?.getText();
   try {
     const addedImports: { moduleSpecifier: string; name: string; isDefault: boolean; isNew: boolean }[] = [];
@@ -344,6 +345,10 @@ export function setTypeOnNode(node: TypedNode & Node, newTypes: SerializedTypeMo
         const projectDir = rootDir ? project.getDirectory(rootDir)?.getPath() : null;
 
         const moduleSpecifier = projectDir ? importName.replace(projectDir, "") : importName;
+        if (sourceFilePath.endsWith(moduleSpecifier)) {
+          // Don't import something which is the current file
+          return;
+        }
 
         const existingImport = sourceFile.getImportDeclaration((d) => {
           return d.getModuleSpecifier().getLiteralValue() === moduleSpecifier;

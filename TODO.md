@@ -6,6 +6,4 @@
 
 
 * zip-code.ts => invalid namespace
-* use-advertiser.ts => don't import if local file
 * trip-summary.tsx => {length:number} instead of unknown[]
-* 
