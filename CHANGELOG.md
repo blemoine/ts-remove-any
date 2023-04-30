@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.5](https://github.com/blemoine/ts-remove-any/compare/v0.2.4...v0.2.5) (2023-04-30)
+
+
+### Features
+
+* better support for array ([89fbf05](https://github.com/blemoine/ts-remove-any/commit/89fbf05621db9475bcc304b742b26d677eb7874b))
+
 ### [0.2.4](https://github.com/blemoine/ts-remove-any/compare/v0.2.3...v0.2.4) (2023-04-30)
 
 
