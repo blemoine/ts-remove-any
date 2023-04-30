@@ -262,9 +262,6 @@ function getAlias(type: Type, project: Project): Alias | undefined {
     if (importPath.startsWith("@types/")) {
       importPath = importPath.slice("@types/".length);
     }
-    if (importPath.startsWith("/")) {
-      importPath = importPath.slice("/".length);
-    }
     name = importsValues[2].slice(1); // removing the starting '.'
 
     if (name === "default" && !importsValues[3]) {
