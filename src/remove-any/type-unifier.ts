@@ -50,6 +50,7 @@ export const allTypesOfRef = cacheTypes((ref: Node): TypeEquation[] => {
   const createTypeEquationFromType = (type: Type) => createEqualTypeEquation(createTypeModelFromType(type, ref));
   const createTypeEquationFromNode = (node: Node) => createEqualTypeEquation(createTypeModelFromNode(node));
   const parent = ref.getParent();
+
   if (!parent) {
     return [];
   }
@@ -83,6 +84,8 @@ export const allTypesOfRef = cacheTypes((ref: Node): TypeEquation[] => {
       } else {
         return [createEqualTypeEquation({ kind: "number" })];
       }
+    } else if (operator === "&&" || operator === "||") {
+      return [createEqualTypeEquation({ kind: "boolean" })];
     }
   }
 

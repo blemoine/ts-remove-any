@@ -445,6 +445,25 @@ function cmp(a, b) {
     expect(numberOfChanges.countOfAnys).toBe(2);
   });
 
+    it("should set the type when using boolean operators", () => {
+        const sourceFile = createSourceFile(`
+function cmp(a, b) {
+  return a && b;
+}
+`);
+
+        const numberOfChanges = removeAny(sourceFile);
+
+        expect(sourceFile.print()).toStrictEqual(
+            `function cmp(a: boolean, b: boolean) {
+    return a && b;
+}
+`
+        );
+        expect(numberOfChanges.countChangesDone).toBe(2);
+        expect(numberOfChanges.countOfAnys).toBe(2);
+    })
+
   it("should set the type when using unary operator", () => {
     const sourceFile = createSourceFile(`
 function cmp(a:string, b) {

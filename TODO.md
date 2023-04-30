@@ -4,6 +4,6 @@
   }
   da('value') // x is a subtype of 'value'
 
-
-* zip-code.ts => invalid namespace
-* trip-summary.tsx => {length:number} instead of unknown[]
+action-block.tsx => missing is_himepage
+alternative-routes.test.tsx => SearchInfoBuilder pas importé ?
+analytics.ts => {length: number}
