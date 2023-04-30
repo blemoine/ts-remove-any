@@ -459,6 +459,32 @@ export function unionTypeModel(t1: TypeModel, t2: TypeModel): TypeModel {
   if (t2.kind === "booleanish") {
     return t1;
   }
+  if (t1.kind === "unknown") {
+    return t2;
+  }
+  if (t2.kind === "unknown") {
+    return t1;
+  }
+  if (t1.kind === "array" && t2.kind === "array") {
+    return {
+      kind: "array",
+      readonly: t1.readonly || t2.readonly,
+      alias: t1.alias || t2.alias,
+      value: () => unionTypeModel(t1.value(), t2.value()),
+    };
+  }
+
+  if (t1.kind === "array" && t2.kind === "object") {
+    if (Object.keys(t2.value()).every((property) => property in Array.prototype)) {
+      return t1;
+    }
+  }
+  if (t2.kind === "array" && t1.kind === "object") {
+    if (Object.keys(t1.value()).every((property) => property in Array.prototype)) {
+      return t2;
+    }
+  }
+
   return {
     kind: "union",
     value: () => {

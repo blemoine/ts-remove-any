@@ -4,6 +4,3 @@
   }
   da('value') // x is a subtype of 'value'
 
-action-block.tsx => missing is_himepage
-alternative-routes.test.tsx => SearchInfoBuilder pas importé ?
-analytics.ts => {length: number}

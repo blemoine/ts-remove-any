@@ -49,33 +49,41 @@ export function isImplicitAnyArray(node: TypedNode & Node) {
 }
 
 export function filterUnusableTypes(typesFromRefs: TypeEquation[]): TypeEquation[] {
-  return typesFromRefs.filter((t) => {
-    const typeModel = t.type;
-    const text = getSerializedTypeModel(typeModel).name;
+  return typesFromRefs
+    .map<TypeEquation | null>((t) => {
+      const typeModel = t.type;
+      if (typeModel.kind === "array" && !typeModel.alias && typeModel.value().kind === "any") {
+        return new TypeEquation(t.nodeText, t.relation, {
+          kind: "array",
+          readonly: typeModel.readonly,
+          value: () => ({ kind: "unknown" }),
+        });
+      }
+      const text = getSerializedTypeModel(typeModel).name;
 
-    if ("alias" in typeModel && !!typeModel.alias && text.startsWith('"')) {
-      return false;
-    }
-    return (
-      typeModel.kind !== "any" &&
-      !text.includes("any[]") &&
-      !text.includes("(any)") &&
-      !text.includes("<any") &&
-      !text.includes("any>") &&
-      !text.includes(" any,") &&
-      !text.includes(": any") &&
-      typeModel.kind !== "never" &&
-      !text.includes("never[]") &&
-      !text.includes(": never")
-    );
-  });
+      if ("alias" in typeModel && !!typeModel.alias && text.startsWith('"')) {
+        return null;
+      }
+      return typeModel.kind !== "any" &&
+        !text.includes("any[]") &&
+        !text.includes("(any)") &&
+        !text.includes("<any") &&
+        !text.includes("any>") &&
+        !text.includes(" any,") &&
+        !text.includes(": any") &&
+        typeModel.kind !== "never" &&
+        !text.includes("never[]") &&
+        !text.includes(": never")
+        ? t
+        : null;
+    })
+    .filter(isNotNil);
 }
 
 function computeTypesFromList(equations: TypeEquation[]): SerializedTypeModel | null {
   if (equations.length === 0) {
     return null;
   }
-
   const callsiteTypes = equations.map((e) => e.type);
 
   if (callsiteTypes.every((s) => s.kind === "boolean" || s.kind === "boolean-literal")) {

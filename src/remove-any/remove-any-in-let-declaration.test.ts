@@ -71,9 +71,8 @@ function wrapper() {
 }
 `);
 
-    const numberOfChanges = removeAny(sourceFile);
-    expect(numberOfChanges.countChangesDone).toBe(1);
-    expect(numberOfChanges.countOfAnys).toBe(1);
+    const numberOfChanges = removeAny(sourceFile, { verbosity: 2 });
+
     expect(sourceFile.print()).toStrictEqual(
       `interface Props {
     arr: string[];
@@ -87,6 +86,8 @@ function wrapper() {
 }
 `
     );
+    expect(numberOfChanges.countChangesDone).toBe(1);
+    expect(numberOfChanges.countOfAnys).toBe(1);
   });
 
   it("should deduce the type from jsx callback with spread", () => {

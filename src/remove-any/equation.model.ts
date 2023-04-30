@@ -4,7 +4,7 @@ export type TypeEquationRelation = "subtype" | "supertype" | "equal";
 
 export class TypeEquation {
   constructor(
-    private readonly nodeText: string,
+      public readonly nodeText: string,
     public readonly relation: TypeEquationRelation,
     public readonly type: TypeModel
   ) {}
