@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.4](https://github.com/blemoine/ts-remove-any/compare/v0.2.3...v0.2.4) (2023-04-30)
+
+
+### Features
+
+* add support for boolean operator ([5e6591a](https://github.com/blemoine/ts-remove-any/commit/5e6591ad736a38d14d72b55446c6eb0da05b0aa6))
+* support for boolean-ish ([278ee2c](https://github.com/blemoine/ts-remove-any/commit/278ee2c394878548778d92ae86a54540ffd3caab))
+
 ### [0.2.3](https://github.com/blemoine/ts-remove-any/compare/v0.2.2...v0.2.3) (2023-04-29)
 
 
