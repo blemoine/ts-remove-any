@@ -53,6 +53,7 @@ export type TypeModel =
   | { kind: "string" }
   | { kind: "string-literal"; value: string; alias?: Alias }
   | { kind: "boolean" }
+  | { kind: "booleanish" } // this type represent usage of something as boolean.. even though it's not explictly a boolean
   | { kind: "boolean-literal"; value: boolean }
   | { kind: "unknown" }
   | { kind: "null" }
@@ -83,6 +84,8 @@ export function getSerializedTypeModel(typeModel: TypeModel): SerializedTypeMode
     case "never":
     case "any":
       return { imports: [], name: typeModel.kind };
+    case "booleanish":
+      return { imports: [], name: "boolean" };
     case "number-literal": {
       const alias = typeModel.alias;
       if (alias) {
@@ -449,7 +452,13 @@ function flattenUnionTypeModel(t1: TypeModel): TypeModel[] {
   }
   return [t1];
 }
-export function unionTypeModel(t1: TypeModel, t2: TypeModel): UnionTypeModel {
+export function unionTypeModel(t1: TypeModel, t2: TypeModel): TypeModel {
+  if (t1.kind === "booleanish") {
+    return t2;
+  }
+  if (t2.kind === "booleanish") {
+    return t1;
+  }
   return {
     kind: "union",
     value: () => {

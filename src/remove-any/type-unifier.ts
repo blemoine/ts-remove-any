@@ -85,7 +85,7 @@ export const allTypesOfRef = cacheTypes((ref: Node): TypeEquation[] => {
         return [createEqualTypeEquation({ kind: "number" })];
       }
     } else if (operator === "&&" || operator === "||") {
-      return [createEqualTypeEquation({ kind: "boolean" })];
+      return [createEqualTypeEquation({ kind: "booleanish" })];
     }
   }
 

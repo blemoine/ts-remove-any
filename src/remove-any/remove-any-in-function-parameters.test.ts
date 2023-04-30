@@ -445,24 +445,45 @@ function cmp(a, b) {
     expect(numberOfChanges.countOfAnys).toBe(2);
   });
 
-    it("should set the type when using boolean operators", () => {
-        const sourceFile = createSourceFile(`
+  it("should set the type when using boolean operators", () => {
+    const sourceFile = createSourceFile(`
 function cmp(a, b) {
   return a && b;
 }
 `);
 
-        const numberOfChanges = removeAny(sourceFile);
+    const numberOfChanges = removeAny(sourceFile);
 
-        expect(sourceFile.print()).toStrictEqual(
-            `function cmp(a: boolean, b: boolean) {
+    expect(sourceFile.print()).toStrictEqual(
+      `function cmp(a: boolean, b: boolean) {
     return a && b;
 }
 `
-        );
-        expect(numberOfChanges.countChangesDone).toBe(2);
-        expect(numberOfChanges.countOfAnys).toBe(2);
-    })
+    );
+    expect(numberOfChanges.countChangesDone).toBe(2);
+    expect(numberOfChanges.countOfAnys).toBe(2);
+  });
+
+  it("should not set the type when using boolean-ish operators", () => {
+    const sourceFile = createSourceFile(`
+function cmp(a, b) {
+  return a && b;
+}
+cmp(0, 'test');
+`);
+
+    const numberOfChanges = removeAny(sourceFile, { verbosity: 2 });
+
+    expect(sourceFile.print()).toStrictEqual(
+      `function cmp(a: 0, b: "test") {
+    return a && b;
+}
+cmp(0, 'test');
+`
+    );
+    expect(numberOfChanges.countChangesDone).toBe(2);
+    expect(numberOfChanges.countOfAnys).toBe(2);
+  });
 
   it("should set the type when using unary operator", () => {
     const sourceFile = createSourceFile(`
